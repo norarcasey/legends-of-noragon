@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNoragon } from '../game/useNoragon'
-import type { Direction } from '../game/types'
+import type { AttackProfiles, Direction } from '../game/types'
 import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
@@ -9,12 +9,9 @@ import './Noragon.css'
 export interface NoragonProps {
   /** The hero's starting (and maximum) hit points. Default `6`. */
   maxHp?: number
-  /** Chance (0–1) that a hero melee swing lands. Default `0.8`. */
-  accuracy?: number
-  /** Minimum damage a landed hero hit deals. Default `2`. */
-  minDamage?: number
-  /** Maximum damage a landed hero hit deals. Default `5`. */
-  maxDamage?: number
+  /** Override attack profiles; each provided kind replaces its default. Only
+   *  `melee` affects play today (`ranged`/`spell` are reserved for later). */
+  attacks?: Partial<AttackProfiles>
   /** Seed for the combat RNG; pass a fixed number for reproducible runs. */
   seed?: number
   /** Move with the arrow keys / WASD. Default `true`. */
@@ -38,15 +35,14 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 
 export function Noragon({
   maxHp,
-  accuracy,
-  minDamage,
-  maxDamage,
+  attacks,
   seed,
   enableKeyboard = true,
   title = 'Legends of Noragon',
   className,
 }: NoragonProps) {
-  const game = useNoragon({ maxHp, accuracy, minDamage, maxDamage, seed })
+  const game = useNoragon({ maxHp, attacks, seed })
+  const melee = game.attacks.melee
   const { status, start, move } = game
 
   useEffect(() => {
@@ -86,19 +82,13 @@ export function Noragon({
             </dd>
           </div>
           <div className="noragon__stat">
-            <dt>Stamina</dt>
-            <dd>
-              {game.stamina}/{game.maxStamina}
-            </dd>
-          </div>
-          <div className="noragon__stat">
             <dt>Melee</dt>
-            <dd>{Math.round(game.accuracy * 100)}%</dd>
+            <dd>{Math.round(melee.accuracy * 100)}%</dd>
           </div>
           <div className="noragon__stat">
             <dt>Damage</dt>
             <dd>
-              {game.minDamage}–{game.maxDamage}
+              {melee.minDamage}–{melee.maxDamage}
             </dd>
           </div>
           <div className="noragon__stat">

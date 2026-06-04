@@ -44,6 +44,26 @@ export interface LogEntry {
 }
 
 /**
+ * The ways the hero can attack. Only `melee` (bump-to-attack) is wired up today;
+ * `ranged` (bow/throw) and `spell` are planned and already have profiles so that
+ * adding them is a data + targeting change rather than a combat-system refactor.
+ */
+export type AttackKind = 'melee' | 'ranged' | 'spell'
+
+/** Tuning for one kind of attack: how often it lands and how hard it hits. */
+export interface AttackProfile {
+  /** Chance (0–1) that the attack lands. */
+  accuracy: number
+  /** Minimum damage a landed hit deals. */
+  minDamage: number
+  /** Maximum damage a landed hit deals. */
+  maxDamage: number
+}
+
+/** The hero's full set of attack profiles, one per {@link AttackKind}. */
+export type AttackProfiles = Record<AttackKind, AttackProfile>
+
+/**
  * An enemy on the grid. For the MVP every enemy is a Bat: 1 hit point (so the
  * hero one-shots it) and it deals a flat 1 damage when it lands a hit.
  */

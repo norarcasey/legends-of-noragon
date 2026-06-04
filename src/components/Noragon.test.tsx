@@ -96,7 +96,12 @@ describe('useNoragon', () => {
     // StrictMode double-invokes the reducer; a seeded, pure reducer must survive
     // it. Sure-hit, high-damage tuning makes the kills deterministic.
     const { result } = renderHook(
-      () => useNoragon({ maxHp: 99, accuracy: 1, minDamage: 10, maxDamage: 10, seed: 1 }),
+      () =>
+        useNoragon({
+          maxHp: 99,
+          attacks: { melee: { accuracy: 1, minDamage: 10, maxDamage: 10 } },
+          seed: 1,
+        }),
       { wrapper: StrictMode },
     )
     act(() => result.current.start())
@@ -116,7 +121,13 @@ describe('useNoragon', () => {
 
   it('can miss in melee, leaving the bat unharmed', () => {
     // Accuracy 0 — every swing whiffs, so no bat takes damage.
-    const { result } = renderHook(() => useNoragon({ maxHp: 99, accuracy: 0, seed: 1 }))
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 0, minDamage: 2, maxDamage: 5 } },
+        seed: 1,
+      }),
+    )
     act(() => result.current.start())
 
     for (let i = 0; i < 30; i++) {
@@ -133,7 +144,11 @@ describe('useNoragon', () => {
 
   it('keeps melee damage within the configured range', () => {
     const { result } = renderHook(() =>
-      useNoragon({ maxHp: 99, accuracy: 1, minDamage: 2, maxDamage: 5, seed: 3 }),
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 2, maxDamage: 5 } },
+        seed: 3,
+      }),
     )
     act(() => result.current.start())
 
@@ -182,7 +197,13 @@ describe('useNoragon', () => {
   it('kills the hero when bats land enough bites', () => {
     // A 1-HP hero who never connects (accuracy 0) is doomed once adjacent — the
     // bats stay alive and bite until one lands. Seeded for a deterministic death.
-    const { result } = renderHook(() => useNoragon({ maxHp: 1, accuracy: 0, seed: 1 }))
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 1,
+        attacks: { melee: { accuracy: 0, minDamage: 2, maxDamage: 5 } },
+        seed: 1,
+      }),
+    )
     act(() => result.current.start())
 
     for (let i = 0; i < 100 && result.current.status === 'playing'; i++) {

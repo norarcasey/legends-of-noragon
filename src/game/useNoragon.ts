@@ -1,16 +1,23 @@
-import { useCallback, useEffect, useReducer } from 'react'
-import type { Direction, Enemy, GameStatus, LogEntry, Point, Room, TileType } from './types'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import type {
+  AttackProfile,
+  AttackProfiles,
+  Direction,
+  Enemy,
+  GameStatus,
+  LogEntry,
+  Point,
+  Room,
+  TileType,
+} from './types'
 import { ENEMY_INFO } from './enemies'
 
 export interface UseNoragonOptions {
   /** The hero's starting (and maximum) hit points. Default `6`. */
   maxHp?: number
-  /** Chance (0–1) that a hero melee swing lands. Default `0.8`. */
-  accuracy?: number
-  /** Minimum damage a landed hero hit deals. Default `2`. */
-  minDamage?: number
-  /** Maximum damage a landed hero hit deals. Default `5`. */
-  maxDamage?: number
+  /** Override any attack profiles; each provided kind replaces its default.
+   *  Only `melee` affects play today — `ranged`/`spell` are reserved for later. */
+  attacks?: Partial<AttackProfiles>
   /** Seed for the combat RNG. Omit for a fresh random run each `start`; pass a
    *  fixed number for deterministic, reproducible combat (used in tests). */
   seed?: number
@@ -29,16 +36,9 @@ export interface NoragonApi {
   hp: number
   /** Maximum hit points. */
   maxHp: number
-  /** Stamina pool — displayed only in the MVP; it does not gate movement yet. */
-  stamina: number
-  /** Maximum stamina. */
-  maxStamina: number
-  /** Chance (0–1) that a hero melee swing lands. */
-  accuracy: number
-  /** Minimum damage a landed hero hit deals. */
-  minDamage: number
-  /** Maximum damage a landed hero hit deals. */
-  maxDamage: number
+  /** The hero's attack profiles, one per kind. Only `melee` is used in play
+   *  today; `ranged`/`spell` are present for forthcoming attack modes. */
+  attacks: AttackProfiles
   /** Living enemies currently on the grid. */
   enemies: Enemy[]
   /** The subset of `enemies` that are active — sharing the hero's room. These
@@ -66,10 +66,34 @@ export interface NoragonApi {
   move: (dir: Direction) => void
 }
 
-const DEFAULTS = { maxHp: 6, accuracy: 0.8, minDamage: 2, maxDamage: 5, maxStamina: 10 }
+const DEFAULTS = { maxHp: 6 }
+
+/**
+ * Default attack profiles. `melee` drives the current bump-to-attack; `ranged`
+ * and `spell` are tuned and ready but not yet wired to a targeting action.
+ */
+const DEFAULT_ATTACKS: AttackProfiles = {
+  melee: { accuracy: 0.8, minDamage: 2, maxDamage: 5 },
+  ranged: { accuracy: 0.6, minDamage: 1, maxDamage: 4 },
+  spell: { accuracy: 0.9, minDamage: 3, maxDamage: 6 },
+}
 
 /** Chance (0–1) that a bat lands its bite when adjacent. */
 const BAT_ACCURACY = 0.6
+
+/**
+ * Resolve one attack against a profile, drawing from `roll`: first the to-hit
+ * check, then (on a hit) the damage within the profile's range. Generic over
+ * attack kind, so melee/ranged/spell all share this once they're wired up.
+ */
+function resolveAttack(
+  profile: AttackProfile,
+  roll: () => number,
+): { hit: boolean; damage: number } {
+  if (roll() >= profile.accuracy) return { hit: false, damage: 0 }
+  const span = profile.maxDamage - profile.minDamage + 1
+  return { hit: true, damage: profile.minDamage + Math.floor(roll() * span) }
+}
 
 /**
  * A small deterministic PRNG (mulberry32). Kept pure and seeded from state so
@@ -228,19 +252,15 @@ const DUNGEON = parseDungeon()
 // every enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
 // same discipline that the other games in this family rely on.
-/** The hero's tunable combat profile, carried so reset/start can rebuild it. */
+/** The hero's tunable profile, carried so reset/start can rebuild it. */
 interface HeroConfig {
   maxHp: number
-  accuracy: number
-  minDamage: number
-  maxDamage: number
+  attacks: AttackProfiles
 }
 
 interface GameState extends HeroConfig {
   player: Point
   hp: number
-  stamina: number
-  maxStamina: number
   enemies: Enemy[]
   status: GameStatus
   kills: number
@@ -264,8 +284,6 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
     ...config,
     player: { ...DUNGEON.playerStart },
     hp: config.maxHp,
-    stamina: DEFAULTS.maxStamina,
-    maxStamina: DEFAULTS.maxStamina,
     enemies: DUNGEON.enemies.map((e) => ({ ...e })),
     status: 'idle',
     kills: 0,
@@ -278,14 +296,9 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
   }
 }
 
-/** Pull the hero's combat profile back out of a live game state. */
+/** Pull the hero's profile back out of a live game state. */
 function configOf(state: GameState): HeroConfig {
-  return {
-    maxHp: state.maxHp,
-    accuracy: state.accuracy,
-    minDamage: state.minDamage,
-    maxDamage: state.maxDamage,
-  }
+  return { maxHp: state.maxHp, attacks: state.attacks }
 }
 
 /** Append messages to the log, minting a stable id for each. Pure. */
@@ -360,11 +373,10 @@ function reducer(state: GameState, action: GameAction): GameState {
       }
 
       if (targetBat) {
-        // Bump-to-attack: roll the hero's melee chance, then variable damage.
+        // Bump-to-attack resolves the hero's melee profile: to-hit, then damage.
         const name = ENEMY_INFO[targetBat.kind].name
-        if (roll() < state.accuracy) {
-          const span = state.maxDamage - state.minDamage + 1
-          const damage = state.minDamage + Math.floor(roll() * span)
+        const { hit, damage } = resolveAttack(state.attacks.melee, roll)
+        if (hit) {
           enemies = state.enemies
             .map((e) => (e.id === targetBat.id ? { ...e, hp: e.hp - damage } : e))
             .filter((e) => e.hp > 0)
@@ -458,27 +470,53 @@ function reducer(state: GameState, action: GameAction): GameState {
 
 export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const maxHp = options.maxHp ?? DEFAULTS.maxHp
-  const accuracy = options.accuracy ?? DEFAULTS.accuracy
-  const minDamage = options.minDamage ?? DEFAULTS.minDamage
-  const maxDamage = options.maxDamage ?? DEFAULTS.maxDamage
   const seed = options.seed
+
+  // Flatten the attack overrides to primitives so the config effect depends on
+  // actual values, not the identity of an inline `attacks` object (which would
+  // otherwise re-fire every render and reset the game mid-play).
+  const a = options.attacks
+  const meleeAccuracy = a?.melee?.accuracy ?? DEFAULT_ATTACKS.melee.accuracy
+  const meleeMinDamage = a?.melee?.minDamage ?? DEFAULT_ATTACKS.melee.minDamage
+  const meleeMaxDamage = a?.melee?.maxDamage ?? DEFAULT_ATTACKS.melee.maxDamage
+  const rangedAccuracy = a?.ranged?.accuracy ?? DEFAULT_ATTACKS.ranged.accuracy
+  const rangedMinDamage = a?.ranged?.minDamage ?? DEFAULT_ATTACKS.ranged.minDamage
+  const rangedMaxDamage = a?.ranged?.maxDamage ?? DEFAULT_ATTACKS.ranged.maxDamage
+  const spellAccuracy = a?.spell?.accuracy ?? DEFAULT_ATTACKS.spell.accuracy
+  const spellMinDamage = a?.spell?.minDamage ?? DEFAULT_ATTACKS.spell.minDamage
+  const spellMaxDamage = a?.spell?.maxDamage ?? DEFAULT_ATTACKS.spell.maxDamage
+
+  const attacks = useMemo<AttackProfiles>(
+    () => ({
+      melee: { accuracy: meleeAccuracy, minDamage: meleeMinDamage, maxDamage: meleeMaxDamage },
+      ranged: { accuracy: rangedAccuracy, minDamage: rangedMinDamage, maxDamage: rangedMaxDamage },
+      spell: { accuracy: spellAccuracy, minDamage: spellMinDamage, maxDamage: spellMaxDamage },
+    }),
+    [
+      meleeAccuracy,
+      meleeMinDamage,
+      meleeMaxDamage,
+      rangedAccuracy,
+      rangedMinDamage,
+      rangedMaxDamage,
+      spellAccuracy,
+      spellMinDamage,
+      spellMaxDamage,
+    ],
+  )
 
   // A fixed `seed` makes every run reproducible; otherwise each (re)start draws
   // a fresh random seed. Generated outside the reducer so the reducer stays pure.
   const makeSeed = useCallback(() => seed ?? Math.floor(Math.random() * 0x7fffffff), [seed])
 
   const [state, dispatch] = useReducer(reducer, undefined, () =>
-    makeInitial({ maxHp, accuracy, minDamage, maxDamage }, seed ?? 1),
+    makeInitial({ maxHp, attacks }, seed ?? 1),
   )
 
-  // Re-lay the dungeon whenever the hero's combat profile changes.
+  // Re-lay the dungeon whenever the hero's profile changes.
   useEffect(() => {
-    dispatch({
-      type: 'configure',
-      config: { maxHp, accuracy, minDamage, maxDamage },
-      seed: makeSeed(),
-    })
-  }, [maxHp, accuracy, minDamage, maxDamage, makeSeed])
+    dispatch({ type: 'configure', config: { maxHp, attacks }, seed: makeSeed() })
+  }, [maxHp, attacks, makeSeed])
 
   const start = useCallback(() => dispatch({ type: 'start', seed: makeSeed() }), [makeSeed])
   const reset = useCallback(() => dispatch({ type: 'reset', seed: makeSeed() }), [makeSeed])
@@ -496,11 +534,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     player: state.player,
     hp: state.hp,
     maxHp: state.maxHp,
-    stamina: state.stamina,
-    maxStamina: state.maxStamina,
-    accuracy: state.accuracy,
-    minDamage: state.minDamage,
-    maxDamage: state.maxDamage,
+    attacks: state.attacks,
     enemies: state.enemies,
     activeEnemies,
     status: state.status,

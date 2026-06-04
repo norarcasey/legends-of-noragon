@@ -46,16 +46,14 @@ export function App() {
 
 ### Props
 
-| Prop             | Type             | Default                | Description                                        |
-| ---------------- | ---------------- | ---------------------- | -------------------------------------------------- |
-| `maxHp`          | `number`         | `6`                    | The hero's starting (and maximum) hit points.      |
-| `accuracy`       | `number`         | `0.8`                  | Chance (0–1) that a hero melee swing lands.        |
-| `minDamage`      | `number`         | `2`                    | Minimum damage a landed hero hit deals.            |
-| `maxDamage`      | `number`         | `5`                    | Maximum damage a landed hero hit deals.            |
-| `seed`           | `number`         | — (random)             | Fix the combat RNG for reproducible runs.          |
-| `enableKeyboard` | `boolean`        | `true`                 | Move with the arrow keys / WASD.                   |
-| `title`          | `string \| null` | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it. |
-| `className`      | `string`         | —                      | Extra class on the root element.                   |
+| Prop             | Type                      | Default                | Description                                                                                                   |
+| ---------------- | ------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `maxHp`          | `number`                  | `6`                    | The hero's starting (and maximum) hit points.                                                                 |
+| `attacks`        | `Partial<AttackProfiles>` | melee `0.8` / `2`–`5`  | Override attack profiles; each kind is `{ accuracy, minDamage, maxDamage }`. Only `melee` affects play today. |
+| `seed`           | `number`                  | — (random)             | Fix the combat RNG for reproducible runs.                                                                     |
+| `enableKeyboard` | `boolean`                 | `true`                 | Move with the arrow keys / WASD.                                                                              |
+| `title`          | `string \| null`          | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it.                                                            |
+| `className`      | `string`                  | —                      | Extra class on the root element.                                                                              |
 
 ### Headless engine
 
@@ -64,9 +62,12 @@ The game logic lives in a framework-free hook if you want to build your own UI:
 ```tsx
 import { useNoragon } from '@norarcasey/legends-of-noragon'
 
-const game = useNoragon({ maxHp: 6, accuracy: 0.8, minDamage: 2, maxDamage: 5 })
+const game = useNoragon({
+  maxHp: 6,
+  attacks: { melee: { accuracy: 0.8, minDamage: 2, maxDamage: 5 } },
+})
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
-// game.accuracy, game.minDamage, game.maxDamage (hero combat stats)
+// game.attacks.melee (and .ranged / .spell, reserved for later)
 // game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
 // game.log (turn-by-turn LogEntry[])
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
@@ -81,8 +82,8 @@ StrictMode and is trivial to drive headlessly in tests.
 This is the MVP: explore three hand-built rooms, fight bats, grab the chest.
 Planned, in roughly the order it was dreamed up:
 
-- **Stamina-gated movement** — the displayed stamina pool will start limiting how
-  far the hero moves per turn.
+- **Ranged & spell attacks** — the `ranged` (bow/throw) and `spell` attack
+  profiles already exist in the model; this wires them to a targeting action.
 - **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
   enemy evasion, criticals, and per-weapon damage profiles.
 - **Loot & equipment** — the chest grants loot (or springs a trap); equip armor,
