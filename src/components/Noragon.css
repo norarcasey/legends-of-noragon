@@ -190,6 +190,42 @@
   transition: width 0.15s ease;
 }
 
+/* ---- Activity log ---- */
+.noragon__log {
+  margin-top: 0.75rem;
+}
+
+.noragon__log-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--noragon-stairs);
+}
+
+.noragon__log-list {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  list-style: none;
+  max-height: 8.5rem;
+  overflow-y: auto;
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.noragon__log-entry {
+  color: var(--noragon-text);
+}
+
+.noragon__log-entry + .noragon__log-entry {
+  border-top: 1px solid var(--noragon-floor-line);
+  padding-top: 0.15rem;
+  margin-top: 0.15rem;
+}
+
 /* ---- Overlay ---- */
 .noragon__overlay {
   position: absolute;

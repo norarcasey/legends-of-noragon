@@ -17,6 +17,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Enemy cards: while the hero shares a room with active enemies, a card per
   creature shows its name, description, and a health bar, backed by an
   extensible `ENEMY_INFO` bestiary and an `activeEnemies` field on the hook.
+- Activity log: a scrolling, turn-by-turn record of moves, room discoveries,
+  strikes, bites, and the run's end, emitted by the reducer as part of each
+  transition and exposed as a `log` of `LogEntry` items on the hook.
 - `useNoragon()` hook owning the whole game as a single pure reducer.
 - Framework-free types and a Vitest + React Testing Library suite (including a
   StrictMode regression test for the reducer).

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
-import type { Direction, Enemy, GameStatus, Point, Room, TileType } from './types'
+import type { Direction, Enemy, GameStatus, LogEntry, Point, Room, TileType } from './types'
+import { ENEMY_INFO } from './enemies'
 
 export interface UseNoragonOptions {
   /** The hero's starting (and maximum) hit points. Default `6`. */
@@ -37,6 +38,8 @@ export interface NoragonApi {
   turns: number
   /** The room id the hero currently stands in, or `null` if in a doorway. */
   currentRoom: number | null
+  /** A running log of what happened each turn, oldest entry first. */
+  log: LogEntry[]
   /** Ids of rooms the hero has entered; their tiles and contents are revealed. */
   revealedRooms: number[]
   /** Per-tile fog-of-war mask (`visible[y][x]`): a tile is shown once a room it
@@ -57,6 +60,14 @@ const DELTA: Record<Direction, Point> = {
   down: { x: 0, y: 1 },
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
+}
+
+/** Compass words for the activity log. */
+const DIR_NAME: Record<Direction, string> = {
+  up: 'north',
+  down: 'south',
+  left: 'west',
+  right: 'east',
 }
 
 // ---- The hardcoded first dungeon ------------------------------------------
@@ -82,9 +93,9 @@ const LAYOUT = [
 // The three rooms, in inclusive interior coordinates. Walls sit on the borders
 // and at the shared columns (x = 6, 12); the doorways punch through those.
 const ROOMS: Room[] = [
-  { id: 0, x0: 1, y0: 1, x1: 5, y1: 5 },
-  { id: 1, x0: 7, y0: 1, x1: 11, y1: 5 },
-  { id: 2, x0: 13, y0: 1, x1: 17, y1: 5 },
+  { id: 0, name: 'the entry hall', x0: 1, y0: 1, x1: 5, y1: 5 },
+  { id: 1, name: 'the roost', x0: 7, y0: 1, x1: 11, y1: 5 },
+  { id: 2, name: 'the vault', x0: 13, y0: 1, x1: 17, y1: 5 },
 ]
 
 interface Dungeon {
@@ -200,6 +211,9 @@ interface GameState {
   kills: number
   turns: number
   revealedRooms: number[]
+  log: LogEntry[]
+  /** Next id to hand out for a log entry; keeps keys stable and monotonic. */
+  nextLogId: number
 }
 
 type GameAction =
@@ -222,7 +236,20 @@ function makeInitial(maxHp: number): GameState {
     turns: 0,
     // The hero can already see the room they start in.
     revealedRooms: reveal([], roomAt(DUNGEON.playerStart.x, DUNGEON.playerStart.y)),
+    log: [],
+    nextLogId: 0,
   }
+}
+
+/** Append messages to the log, minting a stable id for each. Pure. */
+function logLines(
+  log: LogEntry[],
+  nextLogId: number,
+  messages: string[],
+): { log: LogEntry[]; nextLogId: number } {
+  if (messages.length === 0) return { log, nextLogId }
+  const added = messages.map((text, i) => ({ id: nextLogId + i, text }))
+  return { log: [...log, ...added], nextLogId: nextLogId + messages.length }
 }
 
 function tileAt(x: number, y: number): TileType {
@@ -255,8 +282,15 @@ function reducer(state: GameState, action: GameAction): GameState {
       return makeInitial(action.maxHp)
     case 'reset':
       return makeInitial(state.maxHp)
-    case 'start':
-      return { ...makeInitial(state.maxHp), status: 'playing' }
+    case 'start': {
+      const fresh = makeInitial(state.maxHp)
+      const room = roomAt(fresh.player.x, fresh.player.y)
+      const opening = [
+        'You descend into the dungeon of Noragon.',
+        room !== null ? `You enter ${ROOMS[room].name}.` : 'You press into the dark.',
+      ]
+      return { ...fresh, status: 'playing', ...logLines(fresh.log, fresh.nextLogId, opening) }
+    }
     case 'move': {
       if (state.status !== 'playing') return state
 
@@ -267,6 +301,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       let player = state.player
       let enemies = state.enemies
       let kills = state.kills
+      const messages: string[] = []
 
       if (targetBat) {
         // Bump-to-attack. The hero's rating one-shots a bat in the MVP, so the
@@ -274,21 +309,36 @@ function reducer(state: GameState, action: GameAction): GameState {
         enemies = state.enemies
           .map((e) => (e.id === targetBat.id ? { ...e, hp: e.hp - state.attack } : e))
           .filter((e) => e.hp > 0)
-        kills = state.kills + (enemies.length < state.enemies.length ? 1 : 0)
+        const slain = enemies.length < state.enemies.length
+        kills = state.kills + (slain ? 1 : 0)
+        const name = ENEMY_INFO[targetBat.kind].name
+        messages.push(
+          slain
+            ? `You strike the ${name} for ${state.attack} — slain!`
+            : `You strike the ${name} for ${state.attack}.`,
+        )
       } else if (tileAt(target.x, target.y) === 'wall') {
-        // Bumping a wall is not a turn — nothing happens.
+        // Bumping a wall is not a turn — nothing happens, and nothing is logged.
         return state
       } else {
         player = target
+        messages.push(`You move ${DIR_NAME[action.dir]}.`)
         // Stepping onto the chest completes the level before enemies act.
         if (tileAt(target.x, target.y) === 'chest') {
+          messages.push('You reach the chest. The level is cleared!')
           return {
             ...state,
             player,
             status: 'won',
             turns: state.turns + 1,
             revealedRooms: reveal(state.revealedRooms, roomAt(player.x, player.y)),
+            ...logLines(state.log, state.nextLogId, messages),
           }
+        }
+        // Announce crossing into a room the hero hasn't been in before.
+        const steppedInto = roomAt(player.x, player.y)
+        if (steppedInto !== null && !state.revealedRooms.includes(steppedInto)) {
+          messages.push(`You enter ${ROOMS[steppedInto].name}.`)
         }
       }
 
@@ -310,6 +360,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         if (manhattan === 1) {
           // Adjacent: the bat lands a hit for a flat 1 damage.
           hp -= 1
+          messages.push(`The ${ENEMY_INFO[bat.kind].name} bites you for 1.`)
           moved.push(bat)
           continue
         }
@@ -321,6 +372,8 @@ function reducer(state: GameState, action: GameAction): GameState {
       }
 
       const status: GameStatus = hp <= 0 ? 'dead' : 'playing'
+      if (status === 'dead') messages.push('You collapse, slain in the dark.')
+
       return {
         ...state,
         player,
@@ -330,6 +383,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         status,
         turns: state.turns + 1,
         revealedRooms,
+        ...logLines(state.log, state.nextLogId, messages),
       }
     }
   }
@@ -370,6 +424,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     kills: state.kills,
     turns: state.turns,
     currentRoom,
+    log: state.log,
     revealedRooms: state.revealedRooms,
     visible: computeVisible(state.revealedRooms),
     start,

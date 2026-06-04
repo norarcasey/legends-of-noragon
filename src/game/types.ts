@@ -29,10 +29,18 @@ export type TileType = 'wall' | 'floor' | 'door' | 'chest' | 'stairs'
  */
 export interface Room {
   id: number
+  /** A short name used in the activity log, e.g. "the roost". */
+  name: string
   x0: number
   y0: number
   x1: number
   y1: number
+}
+
+/** A single line in the activity log. `id` is a stable, monotonic key. */
+export interface LogEntry {
+  id: number
+  text: string
 }
 
 /**

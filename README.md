@@ -60,8 +60,9 @@ The game logic lives in a framework-free hook if you want to build your own UI:
 import { useNoragon } from '@norarcasey/legends-of-noragon'
 
 const game = useNoragon({ maxHp: 6 })
-// game.tiles, game.player, game.enemies, game.hp, game.kills, game.status
-// game.currentRoom, game.revealedRooms, game.visible (fog-of-war mask)
+// game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
+// game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
+// game.log (turn-by-turn LogEntry[])
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
 ```
 

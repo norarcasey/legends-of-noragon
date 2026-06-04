@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNoragon } from '../game/useNoragon'
 import type { Direction } from '../game/types'
+import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
 import './Noragon.css'
@@ -115,6 +116,8 @@ export function Noragon({
       </div>
 
       {status === 'playing' && <EnemyCards enemies={game.activeEnemies} />}
+
+      {status !== 'idle' && <ActivityLog entries={game.log} />}
     </section>
   )
 }

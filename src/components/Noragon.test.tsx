@@ -78,6 +78,15 @@ describe('<Noragon />', () => {
     expect(screen.getAllByText('Bat')).toHaveLength(2)
     expect(screen.getAllByText('1/1')).toHaveLength(2)
   })
+
+  it('records each turn in the activity log', () => {
+    render(<Noragon />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + first step east
+    const log = screen.getByTestId('activity-log')
+    expect(log).toHaveTextContent('You descend into the dungeon of Noragon.')
+    expect(log).toHaveTextContent('You enter the entry hall.')
+    expect(log).toHaveTextContent('You move east.')
+  })
 })
 
 describe('useNoragon', () => {
@@ -161,6 +170,24 @@ describe('useNoragon', () => {
     expect(result.current.currentRoom).toBe(1)
     expect(result.current.activeEnemies).toHaveLength(2)
     expect(result.current.activeEnemies.every((e) => e.kind === 'bat')).toBe(true)
+  })
+
+  it('narrates moves, room discoveries, and strikes in the activity log', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 99 }), { wrapper: StrictMode })
+    act(() => result.current.start())
+    expect(result.current.log.map((e) => e.text)).toContain('You enter the entry hall.')
+
+    for (let i = 0; i < 200 && result.current.enemies.length > 0; i++) {
+      const dir = stepToward(result.current, result.current.enemies[0])
+      act(() => result.current.move(dir))
+    }
+
+    const texts = result.current.log.map((e) => e.text)
+    expect(texts).toContain('You enter the roost.')
+    expect(texts.some((t) => t.endsWith('— slain!'))).toBe(true)
+    // Ids are unique and monotonic so React keys stay stable.
+    const ids = result.current.log.map((e) => e.id)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('ignores a move into a wall — no step, no turn', () => {
