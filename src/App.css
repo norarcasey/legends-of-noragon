@@ -1,0 +1,56 @@
+.demo {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 3.5rem;
+}
+
+.demo__intro {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.demo__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+}
+
+.demo__lede {
+  margin: 0 auto;
+  max-width: 54ch;
+  color: #aab2c5;
+  line-height: 1.6;
+}
+
+.demo__lede kbd {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  background: #1a1d28;
+  border: 1px solid #2c3243;
+  border-radius: 4px;
+  padding: 0 0.35em;
+  font-size: 0.85em;
+}
+
+.demo__hero {
+  color: #4fc3f7;
+}
+
+.demo__bat {
+  color: #b39ddb;
+}
+
+.demo__chest {
+  color: #d4a017;
+}
+
+.demo__credit {
+  margin-top: 2rem;
+  text-align: center;
+  color: #6b7286;
+}
+
+.demo__credit code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  background: #1a1d28;
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+}

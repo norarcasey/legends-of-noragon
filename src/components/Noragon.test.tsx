@@ -1,0 +1,121 @@
+import { StrictMode } from 'react'
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import { Noragon } from './Noragon'
+import { useNoragon } from '../game/useNoragon'
+import type { NoragonApi } from '../game/useNoragon'
+import type { Direction, Point } from '../game/types'
+
+const DELTA: Record<Direction, Point> = {
+  up: { x: 0, y: -1 },
+  down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+}
+
+// Pick a legal (non-wall) step that heads toward `target`, closing the larger
+// gap first. Used to drive the hero deterministically without hand-listing moves.
+function stepToward(state: NoragonApi, target: Point): Direction {
+  const { player, tiles } = state
+  const dx = target.x - player.x
+  const dy = target.y - player.y
+  const horiz: Direction | null = dx > 0 ? 'right' : dx < 0 ? 'left' : null
+  const vert: Direction | null = dy > 0 ? 'down' : dy < 0 ? 'up' : null
+  const preferred = Math.abs(dx) >= Math.abs(dy) ? [horiz, vert] : [vert, horiz]
+  const order: Direction[] = []
+  for (const d of [...preferred, 'up', 'down', 'left', 'right'] as const) {
+    if (d && !order.includes(d)) order.push(d)
+  }
+  for (const d of order) {
+    const tx = player.x + DELTA[d].x
+    const ty = player.y + DELTA[d].y
+    if (tiles[ty]?.[tx] && tiles[ty][tx] !== 'wall') return d
+  }
+  return 'right'
+}
+
+describe('<Noragon />', () => {
+  it('renders the title, the hero stats, and the idle overlay by default', () => {
+    render(<Noragon />)
+    expect(screen.getByRole('heading', { name: 'Legends of Noragon' })).toBeInTheDocument()
+    expect(screen.getByText('6/6')).toBeInTheDocument() // HP
+    expect(screen.getByText('Descend into the dungeon of Noragon')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enter' })).toBeInTheDocument()
+  })
+
+  it('hides the title when title is null', () => {
+    render(<Noragon title={null} />)
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+  })
+
+  it('starts on the first direction key and renders the hero and both bats', () => {
+    render(<Noragon />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(screen.queryByText('Descend into the dungeon of Noragon')).not.toBeInTheDocument()
+    expect(screen.getByTestId('player')).toBeInTheDocument()
+    expect(screen.getAllByTestId('bat')).toHaveLength(2)
+  })
+})
+
+describe('useNoragon', () => {
+  it('one-shots both bats when the hero bumps them (StrictMode)', () => {
+    // StrictMode double-invokes the reducer; a pure reducer must survive it.
+    const { result } = renderHook(() => useNoragon({ maxHp: 99 }), { wrapper: StrictMode })
+    act(() => result.current.start())
+    expect(result.current.enemies).toHaveLength(2)
+
+    // Hunt the nearest bat each turn, bumping it to attack once adjacent.
+    for (let i = 0; i < 200 && result.current.enemies.length > 0; i++) {
+      const target = result.current.enemies[0]
+      const dir = stepToward(result.current, target)
+      act(() => result.current.move(dir))
+    }
+
+    expect(result.current.kills).toBe(2)
+    expect(result.current.enemies).toHaveLength(0)
+    expect(result.current.status).toBe('playing')
+  })
+
+  it('completes the level when the hero reaches the chest', () => {
+    const { result } = renderHook(() => useNoragon())
+    act(() => result.current.start())
+
+    // A straight rush east along the door row reaches the chest at (15, 3); the
+    // bats trail diagonally and never land a hit on this path.
+    for (let i = 0; i < 14 && result.current.status === 'playing'; i++) {
+      act(() => result.current.move('right'))
+    }
+
+    expect(result.current.status).toBe('won')
+    expect(result.current.hp).toBe(result.current.maxHp)
+    expect(result.current.kills).toBe(0)
+  })
+
+  it('kills the hero when bats whittle its hit points to zero', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 1 }))
+    act(() => result.current.start())
+
+    // Walk into the bats' room and let them sandwich the hero, then bump one —
+    // the other lands the killing blow during the same enemy phase.
+    const moves: Direction[] = ['right', 'right', 'right', 'right', 'right', 'right', 'right', 'up']
+    for (const dir of moves) {
+      act(() => result.current.move(dir))
+    }
+
+    expect(result.current.status).toBe('dead')
+    expect(result.current.hp).toBe(0)
+  })
+
+  it('ignores a move into a wall — no step, no turn', () => {
+    const { result } = renderHook(() => useNoragon())
+    act(() => result.current.start())
+    const before = result.current.player
+
+    // The hero starts hard against the west wall; stepping left is impossible.
+    act(() => result.current.move('left'))
+
+    expect(result.current.player).toEqual(before)
+    expect(result.current.turns).toBe(0)
+    expect(result.current.status).toBe('playing')
+  })
+})
