@@ -12,6 +12,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `<Noragon />` component: renders a hardcoded three-room dungeon as a block
   grid; move the hero with the arrow keys / WASD, bump bats to slay them, and
   step onto the chest to complete the level.
+- Fog of war: rooms and their contents (bats, chest, stairs) stay hidden until
+  the hero steps into them; the room then stays revealed for the rest of the level.
 - `useNoragon()` hook owning the whole game as a single pure reducer.
 - Framework-free types and a Vitest + React Testing Library suite (including a
   StrictMode regression test for the reducer).

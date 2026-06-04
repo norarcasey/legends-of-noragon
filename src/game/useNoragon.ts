@@ -34,6 +34,11 @@ export interface NoragonApi {
   turns: number
   /** The room id the hero currently stands in, or `null` if in a doorway. */
   currentRoom: number | null
+  /** Ids of rooms the hero has entered; their tiles and contents are revealed. */
+  revealedRooms: number[]
+  /** Per-tile fog-of-war mask (`visible[y][x]`): a tile is shown once a room it
+   *  borders has been discovered. Undiscovered tiles render as fog. */
+  visible: boolean[][]
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
@@ -139,6 +144,31 @@ function roomAt(x: number, y: number): number | null {
   return null
 }
 
+/** Add `room` to the revealed set (returning the same array if already known). */
+function reveal(revealedRooms: number[], room: number | null): number[] {
+  if (room === null || revealedRooms.includes(room)) return revealedRooms
+  return [...revealedRooms, room]
+}
+
+/**
+ * Build the fog-of-war mask for a set of revealed rooms. A tile is visible when
+ * it falls within a revealed room's interior *or* the ring of walls/doorways
+ * around it — so entering a room lights up the room, its walls, and the doors
+ * out of it, while everything beyond stays dark until you cross the threshold.
+ */
+function computeVisible(revealedRooms: number[]): boolean[][] {
+  const grid: boolean[][] = DUNGEON.tiles.map((row) => row.map(() => false))
+  for (const id of revealedRooms) {
+    const r = ROOMS[id]
+    for (let y = r.y0 - 1; y <= r.y1 + 1; y++) {
+      for (let x = r.x0 - 1; x <= r.x1 + 1; x++) {
+        if (y >= 0 && y < DUNGEON.rows && x >= 0 && x < DUNGEON.cols) grid[y][x] = true
+      }
+    }
+  }
+  return grid
+}
+
 // Parsed once at module load. `tiles` is never mutated, so every game can share
 // the same reference; the mutable bits (hero, enemies) are copied per game.
 const DUNGEON = parseDungeon()
@@ -158,6 +188,7 @@ interface GameState {
   status: GameStatus
   kills: number
   turns: number
+  revealedRooms: number[]
 }
 
 type GameAction =
@@ -178,6 +209,8 @@ function makeInitial(maxHp: number): GameState {
     status: 'idle',
     kills: 0,
     turns: 0,
+    // The hero can already see the room they start in.
+    revealedRooms: reveal([], roomAt(DUNGEON.playerStart.x, DUNGEON.playerStart.y)),
   }
 }
 
@@ -238,9 +271,18 @@ function reducer(state: GameState, action: GameAction): GameState {
         player = target
         // Stepping onto the chest completes the level before enemies act.
         if (tileAt(target.x, target.y) === 'chest') {
-          return { ...state, player, status: 'won', turns: state.turns + 1 }
+          return {
+            ...state,
+            player,
+            status: 'won',
+            turns: state.turns + 1,
+            revealedRooms: reveal(state.revealedRooms, roomAt(player.x, player.y)),
+          }
         }
       }
+
+      // Light up the room the hero just stepped into (a no-op if already known).
+      const revealedRooms = reveal(state.revealedRooms, roomAt(player.x, player.y))
 
       // ---- Enemy phase: bats in the hero's room take one action each. -------
       const room = roomAt(player.x, player.y)
@@ -276,6 +318,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         kills,
         status,
         turns: state.turns + 1,
+        revealedRooms,
       }
     }
   }
@@ -310,6 +353,8 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     kills: state.kills,
     turns: state.turns,
     currentRoom: roomAt(state.player.x, state.player.y),
+    revealedRooms: state.revealedRooms,
+    visible: computeVisible(state.revealedRooms),
     start,
     reset,
     move,

@@ -91,6 +91,7 @@ export function Noragon({
           tiles={game.tiles}
           player={game.player}
           enemies={game.enemies}
+          visible={game.visible}
         />
 
         {status !== 'playing' && (

@@ -27,6 +27,9 @@ The first dungeon is a hardcoded three-room run:
 3. **The vault** — a chest (`▣`) and a stairway down (`>`). Step onto the chest
    to clear the level. Lose all your hit points first and you die in the dark.
 
+Each room is shrouded in **fog of war** — you can't see a room or its contents
+until you step inside, at which point it stays lit for the rest of the level.
+
 ## Embedding the component
 
 ```tsx
@@ -57,7 +60,8 @@ The game logic lives in a framework-free hook if you want to build your own UI:
 import { useNoragon } from '@norarcasey/legends-of-noragon'
 
 const game = useNoragon({ maxHp: 6 })
-// game.tiles, game.player, game.enemies, game.hp, game.kills, game.status, game.currentRoom
+// game.tiles, game.player, game.enemies, game.hp, game.kills, game.status
+// game.currentRoom, game.revealedRooms, game.visible (fog-of-war mask)
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
 ```
 

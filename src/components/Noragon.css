@@ -92,6 +92,10 @@
   user-select: none;
 }
 
+.noragon__tile--hidden {
+  background: var(--noragon-bg);
+}
+
 .noragon__tile--floor {
   background: var(--noragon-floor);
   box-shadow: inset 0 0 0 1px var(--noragon-floor-line);

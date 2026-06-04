@@ -48,11 +48,21 @@ describe('<Noragon />', () => {
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   })
 
-  it('starts on the first direction key and renders the hero and both bats', () => {
+  it('starts on the first direction key and renders the hero', () => {
     render(<Noragon />)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(screen.queryByText('Descend into the dungeon of Noragon')).not.toBeInTheDocument()
     expect(screen.getByTestId('player')).toBeInTheDocument()
+  })
+
+  it('keeps a room and its bats hidden until the hero enters it', () => {
+    render(<Noragon />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + step into the entry hall
+    // The bats live in the next room, still in the dark.
+    expect(screen.queryAllByTestId('bat')).toHaveLength(0)
+
+    // Press east until the hero crosses into the bats' room.
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(screen.getAllByTestId('bat')).toHaveLength(2)
   })
 })
@@ -104,6 +114,26 @@ describe('useNoragon', () => {
 
     expect(result.current.status).toBe('dead')
     expect(result.current.hp).toBe(0)
+  })
+
+  it('reveals rooms through fog only as the hero enters them', () => {
+    const { result } = renderHook(() => useNoragon())
+    act(() => result.current.start())
+
+    // Start room (around the hero) is lit; the bats' room and the vault are dark.
+    expect(result.current.visible[3][1]).toBe(true) // hero start tile
+    expect(result.current.visible[2][8]).toBe(false) // a bat in the next room
+    expect(result.current.visible[3][15]).toBe(false) // the chest, two rooms over
+    expect(result.current.revealedRooms).toEqual([0])
+
+    // Walk east into the bats' room.
+    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
+      act(() => result.current.move('right'))
+    }
+
+    expect(result.current.revealedRooms).toContain(1)
+    expect(result.current.visible[2][8]).toBe(true) // the bats' room is now lit
+    expect(result.current.visible[3][15]).toBe(false) // the vault is still dark
   })
 
   it('ignores a move into a wall — no step, no turn', () => {

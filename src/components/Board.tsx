@@ -7,6 +7,8 @@ interface BoardProps {
   tiles: TileType[][]
   player: Point
   enemies: Enemy[]
+  /** Fog-of-war mask (`visible[y][x]`); undiscovered tiles render as fog. */
+  visible: boolean[][]
 }
 
 const TILE_GLYPH: Record<TileType, string> = {
@@ -22,7 +24,7 @@ const TILE_GLYPH: Record<TileType, string> = {
  * are drawn on top of whatever tile they stand on, so the whole grid is a single
  * pass over `tiles` with the entities looked up per cell.
  */
-export function Board({ cols, rows, tiles, player, enemies }: BoardProps) {
+export function Board({ cols, rows, tiles, player, enemies, visible }: BoardProps) {
   const gridStyle: CSSProperties = {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
@@ -36,6 +38,11 @@ export function Board({ cols, rows, tiles, player, enemies }: BoardProps) {
       {tiles.flatMap((row, y) =>
         row.map((tile, x) => {
           const isPlayer = player.x === x && player.y === y
+          // The hero is always lit; everything else stays dark until discovered.
+          const lit = isPlayer || visible[y]?.[x]
+          if (!lit) {
+            return <div key={`${x},${y}`} className="noragon__tile noragon__tile--hidden" />
+          }
           const bat = enemyAt(x, y)
           let cls = `noragon__tile noragon__tile--${tile}`
           let glyph = TILE_GLYPH[tile]
