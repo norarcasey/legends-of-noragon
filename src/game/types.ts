@@ -1,5 +1,7 @@
 // Framework-free types shared by the dungeon engine and the React layer.
 
+import type { EnemyKind } from './enemies'
+
 /** A tile on the dungeon grid. Origin is top-left; x grows right, y grows down. */
 export interface Point {
   x: number
@@ -39,11 +41,13 @@ export interface Room {
  */
 export interface Enemy {
   id: number
-  kind: 'bat'
+  kind: EnemyKind
   x: number
   y: number
   /** Current hit points; the enemy is removed from play at 0. */
   hp: number
+  /** Maximum hit points, for the health bar on the enemy's card. */
+  maxHp: number
   /** The room this enemy patrols; it only acts while the hero is in it. */
   room: number
 }

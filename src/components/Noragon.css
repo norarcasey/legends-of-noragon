@@ -131,6 +131,65 @@
   text-shadow: 0 0 5px currentColor;
 }
 
+/* ---- Enemy cards ---- */
+.noragon__enemies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noragon__enemy-card {
+  flex: 1 1 0;
+  min-width: 11rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-left: 3px solid var(--noragon-bat);
+  border-radius: 6px;
+}
+
+.noragon__enemy-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.noragon__enemy-name {
+  font-weight: 700;
+  color: var(--noragon-bat);
+}
+
+.noragon__enemy-hp {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--noragon-text);
+}
+
+.noragon__enemy-desc {
+  margin: 0.3rem 0 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--noragon-stairs);
+}
+
+.noragon__enemy-bar {
+  height: 5px;
+  background: var(--noragon-wall);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.noragon__enemy-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e53935, #ff7043);
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}
+
 /* ---- Overlay ---- */
 .noragon__overlay {
   position: absolute;

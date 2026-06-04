@@ -6,3 +6,5 @@ export { useNoragon } from './game/useNoragon'
 export type { NoragonApi, UseNoragonOptions } from './game/useNoragon'
 
 export type { Direction, Enemy, GameStatus, Point, Room, TileType } from './game/types'
+export { ENEMY_INFO } from './game/enemies'
+export type { EnemyInfo, EnemyKind } from './game/enemies'

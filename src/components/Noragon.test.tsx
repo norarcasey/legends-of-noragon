@@ -65,6 +65,19 @@ describe('<Noragon />', () => {
     for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(screen.getAllByTestId('bat')).toHaveLength(2)
   })
+
+  it('shows enemy cards only once the hero shares a room with active enemies', () => {
+    render(<Noragon />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start in the empty entry hall
+    expect(screen.queryAllByTestId('enemy-card')).toHaveLength(0)
+
+    // Walk into the bats' room — two cards, named and with a health readout.
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+    const cards = screen.getAllByTestId('enemy-card')
+    expect(cards).toHaveLength(2)
+    expect(screen.getAllByText('Bat')).toHaveLength(2)
+    expect(screen.getAllByText('1/1')).toHaveLength(2)
+  })
 })
 
 describe('useNoragon', () => {
@@ -134,6 +147,20 @@ describe('useNoragon', () => {
     expect(result.current.revealedRooms).toContain(1)
     expect(result.current.visible[2][8]).toBe(true) // the bats' room is now lit
     expect(result.current.visible[3][15]).toBe(false) // the vault is still dark
+  })
+
+  it('marks enemies active only while the hero shares their room', () => {
+    const { result } = renderHook(() => useNoragon())
+    act(() => result.current.start())
+    expect(result.current.activeEnemies).toHaveLength(0) // empty entry hall
+
+    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
+      act(() => result.current.move('right'))
+    }
+
+    expect(result.current.currentRoom).toBe(1)
+    expect(result.current.activeEnemies).toHaveLength(2)
+    expect(result.current.activeEnemies.every((e) => e.kind === 'bat')).toBe(true)
   })
 
   it('ignores a move into a wall — no step, no turn', () => {

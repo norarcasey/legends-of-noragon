@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNoragon } from '../game/useNoragon'
 import type { Direction } from '../game/types'
 import { Board } from './Board'
+import { EnemyCards } from './EnemyCards'
 import './Noragon.css'
 
 export interface NoragonProps {
@@ -112,6 +113,8 @@ export function Noragon({
           </div>
         )}
       </div>
+
+      {status === 'playing' && <EnemyCards enemies={game.activeEnemies} />}
     </section>
   )
 }

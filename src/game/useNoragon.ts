@@ -27,6 +27,9 @@ export interface NoragonApi {
   attack: number
   /** Living enemies currently on the grid. */
   enemies: Enemy[]
+  /** The subset of `enemies` that are active — sharing the hero's room. These
+   *  are the ones taking turns, and the ones shown as cards. */
+  activeEnemies: Enemy[]
   status: GameStatus
   /** Enemies slain so far this level. */
   kills: number
@@ -123,7 +126,15 @@ function parseDungeon(): Dungeon {
           row.push('floor')
           break
         case 'b':
-          enemies.push({ id: enemyId++, kind: 'bat', x, y, hp: 1, room: roomAt(x, y) ?? 0 })
+          enemies.push({
+            id: enemyId++,
+            kind: 'bat',
+            x,
+            y,
+            hp: 1,
+            maxHp: 1,
+            room: roomAt(x, y) ?? 0,
+          })
           row.push('floor')
           break
         default:
@@ -338,6 +349,11 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const reset = useCallback(() => dispatch({ type: 'reset' }), [])
   const move = useCallback((dir: Direction) => dispatch({ type: 'move', dir }), [])
 
+  // Enemies are "active" only while the hero shares their room — the same rule
+  // that governs whether they take turns. Those are the ones we surface as cards.
+  const currentRoom = roomAt(state.player.x, state.player.y)
+  const activeEnemies = state.enemies.filter((e) => e.room === currentRoom)
+
   return {
     cols: DUNGEON.cols,
     rows: DUNGEON.rows,
@@ -349,10 +365,11 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     maxStamina: state.maxStamina,
     attack: state.attack,
     enemies: state.enemies,
+    activeEnemies,
     status: state.status,
     kills: state.kills,
     turns: state.turns,
-    currentRoom: roomAt(state.player.x, state.player.y),
+    currentRoom,
     revealedRooms: state.revealedRooms,
     visible: computeVisible(state.revealedRooms),
     start,

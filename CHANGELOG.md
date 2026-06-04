@@ -14,6 +14,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   step onto the chest to complete the level.
 - Fog of war: rooms and their contents (bats, chest, stairs) stay hidden until
   the hero steps into them; the room then stays revealed for the rest of the level.
+- Enemy cards: while the hero shares a room with active enemies, a card per
+  creature shows its name, description, and a health bar, backed by an
+  extensible `ENEMY_INFO` bestiary and an `activeEnemies` field on the hook.
 - `useNoragon()` hook owning the whole game as a single pure reducer.
 - Framework-free types and a Vitest + React Testing Library suite (including a
   StrictMode regression test for the reducer).
