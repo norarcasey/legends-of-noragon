@@ -5,6 +5,15 @@ import { ENEMY_INFO } from './enemies'
 export interface UseNoragonOptions {
   /** The hero's starting (and maximum) hit points. Default `6`. */
   maxHp?: number
+  /** Chance (0–1) that a hero melee swing lands. Default `0.8`. */
+  accuracy?: number
+  /** Minimum damage a landed hero hit deals. Default `2`. */
+  minDamage?: number
+  /** Maximum damage a landed hero hit deals. Default `5`. */
+  maxDamage?: number
+  /** Seed for the combat RNG. Omit for a fresh random run each `start`; pass a
+   *  fixed number for deterministic, reproducible combat (used in tests). */
+  seed?: number
 }
 
 export interface NoragonApi {
@@ -24,8 +33,12 @@ export interface NoragonApi {
   stamina: number
   /** Maximum stamina. */
   maxStamina: number
-  /** The hero's attack rating; high enough to one-shot a bat in the MVP. */
-  attack: number
+  /** Chance (0–1) that a hero melee swing lands. */
+  accuracy: number
+  /** Minimum damage a landed hero hit deals. */
+  minDamage: number
+  /** Maximum damage a landed hero hit deals. */
+  maxDamage: number
   /** Living enemies currently on the grid. */
   enemies: Enemy[]
   /** The subset of `enemies` that are active — sharing the hero's room. These
@@ -53,7 +66,23 @@ export interface NoragonApi {
   move: (dir: Direction) => void
 }
 
-const DEFAULTS = { maxHp: 6, attack: 5, maxStamina: 10 }
+const DEFAULTS = { maxHp: 6, accuracy: 0.8, minDamage: 2, maxDamage: 5, maxStamina: 10 }
+
+/** Chance (0–1) that a bat lands its bite when adjacent. */
+const BAT_ACCURACY = 0.6
+
+/**
+ * A small deterministic PRNG (mulberry32). Kept pure and seeded from state so
+ * the reducer stays a pure function of (state, action) — identical results under
+ * StrictMode's double-invocation, and reproducible from a seed in tests.
+ */
+function nextRng(seed: number): { value: number; state: number } {
+  let t = (seed + 0x6d2b79f5) | 0
+  t = Math.imul(t ^ (t >>> 15), t | 1)
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+  const value = ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  return { value, state: t >>> 0 }
+}
 
 const DELTA: Record<Direction, Point> = {
   up: { x: 0, y: -1 },
@@ -142,8 +171,8 @@ function parseDungeon(): Dungeon {
             kind: 'bat',
             x,
             y,
-            hp: 1,
-            maxHp: 1,
+            hp: 3,
+            maxHp: 3,
             room: roomAt(x, y) ?? 0,
           })
           row.push('floor')
@@ -199,13 +228,19 @@ const DUNGEON = parseDungeon()
 // every enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
 // same discipline that the other games in this family rely on.
-interface GameState {
+/** The hero's tunable combat profile, carried so reset/start can rebuild it. */
+interface HeroConfig {
+  maxHp: number
+  accuracy: number
+  minDamage: number
+  maxDamage: number
+}
+
+interface GameState extends HeroConfig {
   player: Point
   hp: number
-  maxHp: number
   stamina: number
   maxStamina: number
-  attack: number
   enemies: Enemy[]
   status: GameStatus
   kills: number
@@ -214,22 +249,23 @@ interface GameState {
   log: LogEntry[]
   /** Next id to hand out for a log entry; keeps keys stable and monotonic. */
   nextLogId: number
+  /** Current PRNG state driving combat rolls; advanced purely each transition. */
+  rngState: number
 }
 
 type GameAction =
-  | { type: 'configure'; maxHp: number }
-  | { type: 'reset' }
-  | { type: 'start' }
+  | { type: 'configure'; config: HeroConfig; seed: number }
+  | { type: 'reset'; seed: number }
+  | { type: 'start'; seed: number }
   | { type: 'move'; dir: Direction }
 
-function makeInitial(maxHp: number): GameState {
+function makeInitial(config: HeroConfig, seed: number): GameState {
   return {
+    ...config,
     player: { ...DUNGEON.playerStart },
-    hp: maxHp,
-    maxHp,
+    hp: config.maxHp,
     stamina: DEFAULTS.maxStamina,
     maxStamina: DEFAULTS.maxStamina,
-    attack: DEFAULTS.attack,
     enemies: DUNGEON.enemies.map((e) => ({ ...e })),
     status: 'idle',
     kills: 0,
@@ -238,6 +274,17 @@ function makeInitial(maxHp: number): GameState {
     revealedRooms: reveal([], roomAt(DUNGEON.playerStart.x, DUNGEON.playerStart.y)),
     log: [],
     nextLogId: 0,
+    rngState: seed >>> 0,
+  }
+}
+
+/** Pull the hero's combat profile back out of a live game state. */
+function configOf(state: GameState): HeroConfig {
+  return {
+    maxHp: state.maxHp,
+    accuracy: state.accuracy,
+    minDamage: state.minDamage,
+    maxDamage: state.maxDamage,
   }
 }
 
@@ -279,11 +326,11 @@ function chaseStep(bat: Enemy, target: Point, occupied: Set<string>): Point {
 function reducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'configure':
-      return makeInitial(action.maxHp)
+      return makeInitial(action.config, action.seed)
     case 'reset':
-      return makeInitial(state.maxHp)
+      return makeInitial(configOf(state), action.seed)
     case 'start': {
-      const fresh = makeInitial(state.maxHp)
+      const fresh = makeInitial(configOf(state), action.seed)
       const room = roomAt(fresh.player.x, fresh.player.y)
       const opening = [
         'You descend into the dungeon of Noragon.',
@@ -303,20 +350,34 @@ function reducer(state: GameState, action: GameAction): GameState {
       let kills = state.kills
       const messages: string[] = []
 
+      // All combat randomness flows through this one advancing seed, so the
+      // whole turn stays a pure function of (state, action).
+      let rngState = state.rngState
+      const roll = () => {
+        const r = nextRng(rngState)
+        rngState = r.state
+        return r.value
+      }
+
       if (targetBat) {
-        // Bump-to-attack. The hero's rating one-shots a bat in the MVP, so the
-        // hit always lands and the bat is removed; the hero holds its ground.
-        enemies = state.enemies
-          .map((e) => (e.id === targetBat.id ? { ...e, hp: e.hp - state.attack } : e))
-          .filter((e) => e.hp > 0)
-        const slain = enemies.length < state.enemies.length
-        kills = state.kills + (slain ? 1 : 0)
+        // Bump-to-attack: roll the hero's melee chance, then variable damage.
         const name = ENEMY_INFO[targetBat.kind].name
-        messages.push(
-          slain
-            ? `You strike the ${name} for ${state.attack} — slain!`
-            : `You strike the ${name} for ${state.attack}.`,
-        )
+        if (roll() < state.accuracy) {
+          const span = state.maxDamage - state.minDamage + 1
+          const damage = state.minDamage + Math.floor(roll() * span)
+          enemies = state.enemies
+            .map((e) => (e.id === targetBat.id ? { ...e, hp: e.hp - damage } : e))
+            .filter((e) => e.hp > 0)
+          const slain = enemies.length < state.enemies.length
+          kills = state.kills + (slain ? 1 : 0)
+          messages.push(
+            slain
+              ? `You strike the ${name} for ${damage} — slain!`
+              : `You strike the ${name} for ${damage}.`,
+          )
+        } else {
+          messages.push(`You swing at the ${name} and miss.`)
+        }
       } else if (tileAt(target.x, target.y) === 'wall') {
         // Bumping a wall is not a turn — nothing happens, and nothing is logged.
         return state
@@ -358,9 +419,14 @@ function reducer(state: GameState, action: GameAction): GameState {
         }
         const manhattan = Math.abs(bat.x - player.x) + Math.abs(bat.y - player.y)
         if (manhattan === 1) {
-          // Adjacent: the bat lands a hit for a flat 1 damage.
-          hp -= 1
-          messages.push(`The ${ENEMY_INFO[bat.kind].name} bites you for 1.`)
+          // Adjacent: the bat rolls to land its bite for a flat 1 damage.
+          const name = ENEMY_INFO[bat.kind].name
+          if (roll() < BAT_ACCURACY) {
+            hp -= 1
+            messages.push(`The ${name} bites you for 1.`)
+          } else {
+            messages.push(`The ${name} swoops at you but misses.`)
+          }
           moved.push(bat)
           continue
         }
@@ -383,6 +449,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         status,
         turns: state.turns + 1,
         revealedRooms,
+        rngState,
         ...logLines(state.log, state.nextLogId, messages),
       }
     }
@@ -391,16 +458,30 @@ function reducer(state: GameState, action: GameAction): GameState {
 
 export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const maxHp = options.maxHp ?? DEFAULTS.maxHp
+  const accuracy = options.accuracy ?? DEFAULTS.accuracy
+  const minDamage = options.minDamage ?? DEFAULTS.minDamage
+  const maxDamage = options.maxDamage ?? DEFAULTS.maxDamage
+  const seed = options.seed
 
-  const [state, dispatch] = useReducer(reducer, undefined, () => makeInitial(maxHp))
+  // A fixed `seed` makes every run reproducible; otherwise each (re)start draws
+  // a fresh random seed. Generated outside the reducer so the reducer stays pure.
+  const makeSeed = useCallback(() => seed ?? Math.floor(Math.random() * 0x7fffffff), [seed])
 
-  // Re-lay the dungeon whenever the hero's max HP changes.
+  const [state, dispatch] = useReducer(reducer, undefined, () =>
+    makeInitial({ maxHp, accuracy, minDamage, maxDamage }, seed ?? 1),
+  )
+
+  // Re-lay the dungeon whenever the hero's combat profile changes.
   useEffect(() => {
-    dispatch({ type: 'configure', maxHp })
-  }, [maxHp])
+    dispatch({
+      type: 'configure',
+      config: { maxHp, accuracy, minDamage, maxDamage },
+      seed: makeSeed(),
+    })
+  }, [maxHp, accuracy, minDamage, maxDamage, makeSeed])
 
-  const start = useCallback(() => dispatch({ type: 'start' }), [])
-  const reset = useCallback(() => dispatch({ type: 'reset' }), [])
+  const start = useCallback(() => dispatch({ type: 'start', seed: makeSeed() }), [makeSeed])
+  const reset = useCallback(() => dispatch({ type: 'reset', seed: makeSeed() }), [makeSeed])
   const move = useCallback((dir: Direction) => dispatch({ type: 'move', dir }), [])
 
   // Enemies are "active" only while the hero shares their room — the same rule
@@ -417,7 +498,9 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     maxHp: state.maxHp,
     stamina: state.stamina,
     maxStamina: state.maxStamina,
-    attack: state.attack,
+    accuracy: state.accuracy,
+    minDamage: state.minDamage,
+    maxDamage: state.maxDamage,
     enemies: state.enemies,
     activeEnemies,
     status: state.status,

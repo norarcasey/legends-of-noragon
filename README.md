@@ -21,9 +21,10 @@ npm run build:lib  # build the embeddable component library
 The first dungeon is a hardcoded three-room run:
 
 1. **The entry hall** — empty. Find the doorway east.
-2. **The roost** — two bats. Bump into a bat to strike it; in this build the
-   hero one-shots a bat, while a bat that reaches you deals a flat 1 damage.
-   Enemies only stir once you enter their room.
+2. **The roost** — two bats (3 HP each). Bump into a bat to swing at it: the
+   hero lands a hit 80% of the time for a random 2–5 damage, so a kill may take
+   a couple of swings — and a swing can whiff. A bat that reaches you rolls its
+   own 60% chance to bite for 1. Enemies only stir once you enter their room.
 3. **The vault** — a chest (`▣`) and a stairway down (`>`). Step onto the chest
    to clear the level. Lose all your hit points first and you die in the dark.
 
@@ -48,6 +49,10 @@ export function App() {
 | Prop             | Type             | Default                | Description                                        |
 | ---------------- | ---------------- | ---------------------- | -------------------------------------------------- |
 | `maxHp`          | `number`         | `6`                    | The hero's starting (and maximum) hit points.      |
+| `accuracy`       | `number`         | `0.8`                  | Chance (0–1) that a hero melee swing lands.        |
+| `minDamage`      | `number`         | `2`                    | Minimum damage a landed hero hit deals.            |
+| `maxDamage`      | `number`         | `5`                    | Maximum damage a landed hero hit deals.            |
+| `seed`           | `number`         | — (random)             | Fix the combat RNG for reproducible runs.          |
 | `enableKeyboard` | `boolean`        | `true`                 | Move with the arrow keys / WASD.                   |
 | `title`          | `string \| null` | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it. |
 | `className`      | `string`         | —                      | Extra class on the root element.                   |
@@ -59,8 +64,9 @@ The game logic lives in a framework-free hook if you want to build your own UI:
 ```tsx
 import { useNoragon } from '@norarcasey/legends-of-noragon'
 
-const game = useNoragon({ maxHp: 6 })
+const game = useNoragon({ maxHp: 6, accuracy: 0.8, minDamage: 2, maxDamage: 5 })
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
+// game.accuracy, game.minDamage, game.maxDamage (hero combat stats)
 // game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
 // game.log (turn-by-turn LogEntry[])
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
@@ -77,8 +83,8 @@ Planned, in roughly the order it was dreamed up:
 
 - **Stamina-gated movement** — the displayed stamina pool will start limiting how
   far the hero moves per turn.
-- **Real combat rolls** — attack rating vs. evasion to decide whether a hit
-  lands, and variable damage instead of one-shot kills / flat 1-damage bats.
+- **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
+  enemy evasion, criticals, and per-weapon damage profiles.
 - **Loot & equipment** — the chest grants loot (or springs a trap); equip armor,
   weapon, and shield, drink potions, and fire a bow.
 - **Descending the stairs** — the stairway carries you to the next level.

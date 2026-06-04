@@ -44,7 +44,9 @@
 
 .noragon__stats {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
   margin: 0;
 }
 

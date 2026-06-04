@@ -39,6 +39,8 @@ describe('<Noragon />', () => {
     render(<Noragon />)
     expect(screen.getByRole('heading', { name: 'Legends of Noragon' })).toBeInTheDocument()
     expect(screen.getByText('6/6')).toBeInTheDocument() // HP
+    expect(screen.getByText('80%')).toBeInTheDocument() // melee accuracy
+    expect(screen.getByText('2–5')).toBeInTheDocument() // damage range
     expect(screen.getByText('Descend into the dungeon of Noragon')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enter' })).toBeInTheDocument()
   })
@@ -76,7 +78,7 @@ describe('<Noragon />', () => {
     const cards = screen.getAllByTestId('enemy-card')
     expect(cards).toHaveLength(2)
     expect(screen.getAllByText('Bat')).toHaveLength(2)
-    expect(screen.getAllByText('1/1')).toHaveLength(2)
+    expect(screen.getAllByText('3/3')).toHaveLength(2)
   })
 
   it('records each turn in the activity log', () => {
@@ -90,9 +92,13 @@ describe('<Noragon />', () => {
 })
 
 describe('useNoragon', () => {
-  it('one-shots both bats when the hero bumps them (StrictMode)', () => {
-    // StrictMode double-invokes the reducer; a pure reducer must survive it.
-    const { result } = renderHook(() => useNoragon({ maxHp: 99 }), { wrapper: StrictMode })
+  it('slays both bats when the hero hunts them down (StrictMode)', () => {
+    // StrictMode double-invokes the reducer; a seeded, pure reducer must survive
+    // it. Sure-hit, high-damage tuning makes the kills deterministic.
+    const { result } = renderHook(
+      () => useNoragon({ maxHp: 99, accuracy: 1, minDamage: 10, maxDamage: 10, seed: 1 }),
+      { wrapper: StrictMode },
+    )
     act(() => result.current.start())
     expect(result.current.enemies).toHaveLength(2)
 
@@ -106,6 +112,56 @@ describe('useNoragon', () => {
     expect(result.current.kills).toBe(2)
     expect(result.current.enemies).toHaveLength(0)
     expect(result.current.status).toBe('playing')
+  })
+
+  it('can miss in melee, leaving the bat unharmed', () => {
+    // Accuracy 0 — every swing whiffs, so no bat takes damage.
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, accuracy: 0, seed: 1 }))
+    act(() => result.current.start())
+
+    for (let i = 0; i < 30; i++) {
+      const bat = result.current.enemies[0]
+      if (!bat) break
+      act(() => result.current.move(stepToward(result.current, bat)))
+    }
+
+    const texts = result.current.log.map((e) => e.text)
+    expect(texts).toContain('You swing at the Bat and miss.')
+    expect(result.current.enemies).toHaveLength(2)
+    expect(result.current.enemies.every((e) => e.hp === e.maxHp)).toBe(true)
+  })
+
+  it('keeps melee damage within the configured range', () => {
+    const { result } = renderHook(() =>
+      useNoragon({ maxHp: 99, accuracy: 1, minDamage: 2, maxDamage: 5, seed: 3 }),
+    )
+    act(() => result.current.start())
+
+    for (let i = 0; i < 200 && result.current.enemies.length > 0; i++) {
+      act(() => result.current.move(stepToward(result.current, result.current.enemies[0])))
+    }
+
+    const damages: number[] = []
+    for (const entry of result.current.log) {
+      const match = entry.text.match(/^You strike the Bat for (\d+)/)
+      if (match) damages.push(Number(match[1]))
+    }
+    expect(damages.length).toBeGreaterThan(0)
+    expect(damages.every((d) => d >= 2 && d <= 5)).toBe(true)
+  })
+
+  it('produces identical runs from the same seed', () => {
+    const run = () => {
+      const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 42 }))
+      act(() => result.current.start())
+      for (let i = 0; i < 40; i++) {
+        const bat = result.current.enemies[0]
+        const dir = bat ? stepToward(result.current, bat) : 'right'
+        act(() => result.current.move(dir))
+      }
+      return result.current.log.map((e) => e.text)
+    }
+    expect(run()).toEqual(run())
   })
 
   it('completes the level when the hero reaches the chest', () => {
@@ -123,15 +179,16 @@ describe('useNoragon', () => {
     expect(result.current.kills).toBe(0)
   })
 
-  it('kills the hero when bats whittle its hit points to zero', () => {
-    const { result } = renderHook(() => useNoragon({ maxHp: 1 }))
+  it('kills the hero when bats land enough bites', () => {
+    // A 1-HP hero who never connects (accuracy 0) is doomed once adjacent — the
+    // bats stay alive and bite until one lands. Seeded for a deterministic death.
+    const { result } = renderHook(() => useNoragon({ maxHp: 1, accuracy: 0, seed: 1 }))
     act(() => result.current.start())
 
-    // Walk into the bats' room and let them sandwich the hero, then bump one —
-    // the other lands the killing blow during the same enemy phase.
-    const moves: Direction[] = ['right', 'right', 'right', 'right', 'right', 'right', 'right', 'up']
-    for (const dir of moves) {
-      act(() => result.current.move(dir))
+    for (let i = 0; i < 100 && result.current.status === 'playing'; i++) {
+      const bat = result.current.enemies[0]
+      if (!bat) break
+      act(() => result.current.move(stepToward(result.current, bat)))
     }
 
     expect(result.current.status).toBe('dead')
@@ -173,7 +230,7 @@ describe('useNoragon', () => {
   })
 
   it('narrates moves, room discoveries, and strikes in the activity log', () => {
-    const { result } = renderHook(() => useNoragon({ maxHp: 99 }), { wrapper: StrictMode })
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 5 }), { wrapper: StrictMode })
     act(() => result.current.start())
     expect(result.current.log.map((e) => e.text)).toContain('You enter the entry hall.')
 

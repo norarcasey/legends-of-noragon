@@ -20,6 +20,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Activity log: a scrolling, turn-by-turn record of moves, room discoveries,
   strikes, bites, and the run's end, emitted by the reducer as part of each
   transition and exposed as a `log` of `LogEntry` items on the hook.
+- Melee combat with rolls: the hero has a chance-to-hit (`accuracy`, default
+  80%) and deals variable damage (`minDamage`–`maxDamage`, default 2–5); bats
+  have 3 HP and roll their own 60% chance to bite for 1. Randomness comes from a
+  seeded PRNG carried in reducer state, so combat is pure (StrictMode-safe) and
+  reproducible from a `seed` — omit it for a fresh random run each game.
 - `useNoragon()` hook owning the whole game as a single pure reducer.
 - Framework-free types and a Vitest + React Testing Library suite (including a
   StrictMode regression test for the reducer).

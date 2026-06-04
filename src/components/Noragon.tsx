@@ -9,6 +9,14 @@ import './Noragon.css'
 export interface NoragonProps {
   /** The hero's starting (and maximum) hit points. Default `6`. */
   maxHp?: number
+  /** Chance (0–1) that a hero melee swing lands. Default `0.8`. */
+  accuracy?: number
+  /** Minimum damage a landed hero hit deals. Default `2`. */
+  minDamage?: number
+  /** Maximum damage a landed hero hit deals. Default `5`. */
+  maxDamage?: number
+  /** Seed for the combat RNG; pass a fixed number for reproducible runs. */
+  seed?: number
   /** Move with the arrow keys / WASD. Default `true`. */
   enableKeyboard?: boolean
   /** Heading shown above the dungeon. Pass `null` to hide it. */
@@ -30,11 +38,15 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 
 export function Noragon({
   maxHp,
+  accuracy,
+  minDamage,
+  maxDamage,
+  seed,
   enableKeyboard = true,
   title = 'Legends of Noragon',
   className,
 }: NoragonProps) {
-  const game = useNoragon({ maxHp })
+  const game = useNoragon({ maxHp, accuracy, minDamage, maxDamage, seed })
   const { status, start, move } = game
 
   useEffect(() => {
@@ -77,6 +89,16 @@ export function Noragon({
             <dt>Stamina</dt>
             <dd>
               {game.stamina}/{game.maxStamina}
+            </dd>
+          </div>
+          <div className="noragon__stat">
+            <dt>Melee</dt>
+            <dd>{Math.round(game.accuracy * 100)}%</dd>
+          </div>
+          <div className="noragon__stat">
+            <dt>Damage</dt>
+            <dd>
+              {game.minDamage}–{game.maxDamage}
             </dd>
           </div>
           <div className="noragon__stat">
