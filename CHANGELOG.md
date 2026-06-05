@@ -29,6 +29,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reproducible from a `seed` — omit it for a fresh random run each game.
 - Movement is pure roguelike (one move, one turn); the placeholder stamina stat
   was removed.
+- A fourth room and a tougher foe: the dungeon is now a 2×2 clockwise ring —
+  entry hall, roost (2 bats), goblin den (1 Goblin: 8 HP, hits for 2 at 70%),
+  and the vault with the chest. Enemy combat stats (hp, accuracy, damage, glyph,
+  flavor) are data-driven per kind in the `ENEMY_INFO` bestiary, and the shared
+  enemy-phase resolver applies each foe's own numbers. Goblins render and card
+  in their own colour.
 - Ranged attacks with an aiming mode: press F to aim (nearest enemy auto-targeted,
   shown with an on-board reticle and a highlighted enemy card), Tab/arrow keys to
   switch targets, F/Enter to loose an arrow, Esc to cancel. Firing resolves the

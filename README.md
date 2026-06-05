@@ -18,18 +18,22 @@ npm run build:lib  # build the embeddable component library
 
 ## How to play
 
-The first dungeon is a hardcoded three-room run:
+The first dungeon is a hardcoded four-room ring; you work clockwise from the
+top-left:
 
 1. **The entry hall** — empty. Find the doorway east.
 2. **The roost** — two bats (3 HP each). Bump into a bat to swing at it: the
    hero lands a melee hit 80% of the time for a random 2–5 damage, so a kill may
    take a couple of swings — and a swing can whiff. Or press **F** to take aim
-   (the nearest bat is auto-targeted; **Tab** or the arrow keys switch targets,
+   (the nearest foe is auto-targeted; **Tab** or the arrow keys switch targets,
    **F**/**Enter** looses an arrow, **Esc** cancels) and fight from range. A bat
-   that reaches you rolls its own 60% chance to bite for 1. Enemies only stir
-   once you enter their room.
-3. **The vault** — a chest (`▣`) and a stairway down (`>`). Step onto the chest
+   that reaches you rolls its own 60% chance to bite for 1.
+3. **The goblin den** — a lone **Goblin** (8 HP), far sturdier than a bat and
+   hitting for 2 at 70%. Soften it with arrows before it closes, or trade blows.
+4. **The vault** — a chest (`▣`) and a stairway down (`>`). Step onto the chest
    to clear the level. Lose all your hit points first and you die in the dark.
+
+Enemies only stir once you enter their room.
 
 Each room is shrouded in **fog of war** — you can't see a room or its contents
 until you step inside, at which point it stays lit for the rest of the level.
@@ -95,7 +99,7 @@ Planned, in roughly the order it was dreamed up:
 - **Descending the stairs** — the stairway carries you to the next level.
 - **Procedural dungeons** — generated room layouts with procedurally placed
   monsters, replacing the hardcoded map.
-- **More monsters & boss fights** — beyond the humble bat.
+- **More monsters & boss fights** — beyond bats and goblins.
 - **Sprites/SVGs** — replacing the block tiles with real art.
 
 ## License

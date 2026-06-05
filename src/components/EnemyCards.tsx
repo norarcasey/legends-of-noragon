@@ -26,7 +26,9 @@ export function EnemyCards({ enemies, targetId = null }: EnemyCardsProps) {
         return (
           <li
             key={enemy.id}
-            className={`noragon__enemy-card${targeted ? ' noragon__enemy-card--targeted' : ''}`}
+            className={`noragon__enemy-card noragon__enemy-card--${enemy.kind}${
+              targeted ? ' noragon__enemy-card--targeted' : ''
+            }`}
             data-testid="enemy-card"
             aria-current={targeted ? 'true' : undefined}
           >

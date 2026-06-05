@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { Enemy, Point, TileType } from '../game/types'
+import { ENEMY_INFO } from '../game/enemies'
 
 interface BoardProps {
   cols: number
@@ -56,22 +57,22 @@ export function Board({
           if (!lit) {
             return <div key={`${x},${y}`} className="noragon__tile noragon__tile--hidden" />
           }
-          const bat = enemyAt(x, y)
+          const foe = enemyAt(x, y)
           let cls = `noragon__tile noragon__tile--${tile}`
           let glyph = TILE_GLYPH[tile]
           if (isPlayer) {
             cls += ' noragon__tile--player'
             glyph = '☻'
-          } else if (bat) {
-            cls += ' noragon__tile--bat'
-            glyph = '𝕓'
-            if (aiming && bat.id === targetId) cls += ' noragon__tile--target'
+          } else if (foe) {
+            cls += ` noragon__tile--enemy noragon__tile--${foe.kind}`
+            glyph = ENEMY_INFO[foe.kind].glyph
+            if (aiming && foe.id === targetId) cls += ' noragon__tile--target'
           }
           return (
             <div
               key={`${x},${y}`}
               className={cls}
-              data-testid={isPlayer ? 'player' : bat ? 'bat' : undefined}
+              data-testid={isPlayer ? 'player' : foe ? `enemy-${foe.kind}` : undefined}
             >
               {glyph}
             </div>

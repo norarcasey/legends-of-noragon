@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
 import { useNoragon } from '../game/useNoragon'
 import type { NoragonApi } from '../game/useNoragon'
+import { ENEMY_INFO } from '../game/enemies'
 import type { Direction, Point } from '../game/types'
 
 const DELTA: Record<Direction, Point> = {
@@ -34,6 +35,22 @@ function stepToward(state: NoragonApi, target: Point): Direction {
   return 'right'
 }
 
+// Drive the hero through a list of waypoints, stepping toward each until reached.
+// Enemies in the way get bumped (and eventually cleared) — fine for navigation.
+function walkThrough(result: { current: NoragonApi }, points: Point[], cap = 150) {
+  for (const wp of points) {
+    let i = 0
+    while (
+      result.current.status === 'playing' &&
+      !(result.current.player.x === wp.x && result.current.player.y === wp.y) &&
+      i < cap
+    ) {
+      act(() => result.current.move(stepToward(result.current, wp)))
+      i++
+    }
+  }
+}
+
 describe('<Noragon />', () => {
   it('renders the title, the hero stats, and the idle overlay by default', () => {
     render(<Noragon />)
@@ -61,11 +78,11 @@ describe('<Noragon />', () => {
     render(<Noragon />)
     fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + step into the entry hall
     // The bats live in the next room, still in the dark.
-    expect(screen.queryAllByTestId('bat')).toHaveLength(0)
+    expect(screen.queryAllByTestId('enemy-bat')).toHaveLength(0)
 
     // Press east until the hero crosses into the bats' room.
     for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
-    expect(screen.getAllByTestId('bat')).toHaveLength(2)
+    expect(screen.getAllByTestId('enemy-bat')).toHaveLength(2)
   })
 
   it('shows enemy cards only once the hero shares a room with active enemies', () => {
@@ -136,17 +153,18 @@ describe('useNoragon', () => {
       { wrapper: StrictMode },
     )
     act(() => result.current.start())
-    expect(result.current.enemies).toHaveLength(2)
 
-    // Hunt the nearest bat each turn, bumping it to attack once adjacent.
-    for (let i = 0; i < 200 && result.current.enemies.length > 0; i++) {
-      const target = result.current.enemies[0]
-      const dir = stepToward(result.current, target)
-      act(() => result.current.move(dir))
+    // Hunt the bats in the roost (the goblin sits in its own room, unbothered).
+    const firstBat = () => result.current.enemies.find((e) => e.kind === 'bat')
+    for (let i = 0; i < 200 && firstBat(); i++) {
+      const bat = firstBat()
+      if (!bat) break
+      act(() => result.current.move(stepToward(result.current, bat)))
     }
 
     expect(result.current.kills).toBe(2)
-    expect(result.current.enemies).toHaveLength(0)
+    expect(result.current.enemies.some((e) => e.kind === 'bat')).toBe(false)
+    expect(result.current.enemies.some((e) => e.kind === 'goblin')).toBe(true)
     expect(result.current.status).toBe('playing')
   })
 
@@ -169,7 +187,7 @@ describe('useNoragon', () => {
 
     const texts = result.current.log.map((e) => e.text)
     expect(texts).toContain('You swing at the Bat and miss.')
-    expect(result.current.enemies).toHaveLength(2)
+    expect(result.current.enemies.filter((e) => e.kind === 'bat')).toHaveLength(2)
     expect(result.current.enemies.every((e) => e.hp === e.maxHp)).toBe(true)
   })
 
@@ -234,7 +252,7 @@ describe('useNoragon', () => {
     expect(result.current.aiming).toBe(false)
     expect(result.current.turns).toBe(turnsBefore + 1)
     expect(result.current.kills).toBe(1)
-    expect(result.current.enemies).toHaveLength(1)
+    expect(result.current.enemies.filter((e) => e.kind === 'bat')).toHaveLength(1) // one bat felled
     expect(result.current.log.some((e) => /^You shoot the Bat for 10 — slain!$/.test(e.text))).toBe(
       true,
     )
@@ -274,7 +292,7 @@ describe('useNoragon', () => {
     act(() => result.current.aimStart())
     act(() => result.current.fire())
 
-    expect(result.current.enemies).toHaveLength(2)
+    expect(result.current.enemies.filter((e) => e.kind === 'bat')).toHaveLength(2) // none felled
     expect(result.current.log.some((e) => /^Your arrow misses the Bat\.$/.test(e.text))).toBe(true)
   })
 
@@ -287,19 +305,52 @@ describe('useNoragon', () => {
     expect(result.current.log.map((e) => e.text)).toContain('There is nothing in range to shoot.')
   })
 
-  it('completes the level when the hero reaches the chest', () => {
-    const { result } = renderHook(() => useNoragon())
+  it('spawns a lone goblin in the fourth room, tougher than the bats', () => {
+    const { result } = renderHook(() => useNoragon({ seed: 1 }))
     act(() => result.current.start())
 
-    // A straight rush east along the door row reaches the chest at (15, 3); the
-    // bats trail diagonally and never land a hit on this path.
-    for (let i = 0; i < 14 && result.current.status === 'playing'; i++) {
-      act(() => result.current.move('right'))
-    }
+    const goblins = result.current.enemies.filter((e) => e.kind === 'goblin')
+    expect(goblins).toHaveLength(1)
+    expect(result.current.enemies).toHaveLength(3) // two bats + the goblin
+    expect(goblins[0].maxHp).toBe(8)
+    expect(goblins[0].room).toBe(2) // the goblin den
+
+    // The bestiary makes the goblin the sturdier, harder-hitting foe.
+    expect(ENEMY_INFO.goblin.maxHp).toBeGreaterThan(ENEMY_INFO.bat.maxHp)
+    expect(ENEMY_INFO.goblin.damage).toBeGreaterThan(ENEMY_INFO.bat.damage)
+  })
+
+  it('the goblin only stirs once the hero enters its room', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 1 }))
+    act(() => result.current.start())
+
+    // Reach the goblin den (clockwise: roost, then down into the den).
+    walkThrough(result, [
+      { x: 6, y: 3 },
+      { x: 9, y: 4 },
+      { x: 9, y: 7 },
+    ])
+
+    expect(result.current.currentRoom).toBe(2)
+    expect(result.current.activeEnemies.some((e) => e.kind === 'goblin')).toBe(true)
+  })
+
+  it('completes the level when the hero reaches the chest', () => {
+    // A sturdy, seeded hero navigates the clockwise ring of rooms to the vault
+    // chest, fighting through whatever's in the way.
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 1 }))
+    act(() => result.current.start())
+
+    walkThrough(result, [
+      { x: 6, y: 3 }, // hall → roost doorway
+      { x: 9, y: 4 }, // across the roost
+      { x: 9, y: 7 }, // roost → goblin den doorway
+      { x: 7, y: 9 }, // across the den toward the next door
+      { x: 5, y: 9 }, // den → vault doorway
+      { x: 3, y: 9 }, // the chest
+    ])
 
     expect(result.current.status).toBe('won')
-    expect(result.current.hp).toBe(result.current.maxHp)
-    expect(result.current.kills).toBe(0)
   })
 
   it('kills the hero when bats land enough bites', () => {
@@ -328,20 +379,20 @@ describe('useNoragon', () => {
     const { result } = renderHook(() => useNoragon())
     act(() => result.current.start())
 
-    // Start room (around the hero) is lit; the bats' room and the vault are dark.
-    expect(result.current.visible[3][1]).toBe(true) // hero start tile
-    expect(result.current.visible[2][8]).toBe(false) // a bat in the next room
-    expect(result.current.visible[3][15]).toBe(false) // the chest, two rooms over
+    // Start room (around the hero) is lit; the roost and the vault are dark.
+    expect(result.current.visible[3][3]).toBe(true) // hero start tile
+    expect(result.current.visible[2][8]).toBe(false) // a bat in the roost
+    expect(result.current.visible[9][3]).toBe(false) // the chest in the vault
     expect(result.current.revealedRooms).toEqual([0])
 
-    // Walk east into the bats' room.
+    // Walk east into the roost.
     for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
       act(() => result.current.move('right'))
     }
 
     expect(result.current.revealedRooms).toContain(1)
-    expect(result.current.visible[2][8]).toBe(true) // the bats' room is now lit
-    expect(result.current.visible[3][15]).toBe(false) // the vault is still dark
+    expect(result.current.visible[2][8]).toBe(true) // the roost is now lit
+    expect(result.current.visible[9][3]).toBe(false) // the vault is still dark
   })
 
   it('marks enemies active only while the hero shares their room', () => {
@@ -379,13 +430,17 @@ describe('useNoragon', () => {
   it('ignores a move into a wall — no step, no turn', () => {
     const { result } = renderHook(() => useNoragon())
     act(() => result.current.start())
-    const before = result.current.player
 
-    // The hero starts hard against the west wall; stepping left is impossible.
-    act(() => result.current.move('left'))
+    // Walk up to the entry hall's north wall, then try to step through it.
+    act(() => result.current.move('up'))
+    act(() => result.current.move('up')) // now hard against the top row
+    const before = result.current.player
+    const turnsBefore = result.current.turns
+
+    act(() => result.current.move('up')) // into the wall — a no-op
 
     expect(result.current.player).toEqual(before)
-    expect(result.current.turns).toBe(0)
+    expect(result.current.turns).toBe(turnsBefore)
     expect(result.current.status).toBe('playing')
   })
 })

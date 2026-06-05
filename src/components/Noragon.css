@@ -9,6 +9,7 @@
   --noragon-stairs: #5a6172;
   --noragon-player: #4fc3f7;
   --noragon-bat: #b39ddb;
+  --noragon-goblin: #7cb342;
   --noragon-accent: #d4a017;
   --noragon-text: #e6e9f0;
 
@@ -128,9 +129,16 @@
   text-shadow: 0 0 6px currentColor;
 }
 
+.noragon__tile--enemy {
+  text-shadow: 0 0 5px currentColor;
+}
+
 .noragon__tile--bat {
   color: var(--noragon-bat);
-  text-shadow: 0 0 5px currentColor;
+}
+
+.noragon__tile--goblin {
+  color: var(--noragon-goblin);
 }
 
 .noragon__tile--target {
@@ -152,13 +160,22 @@
 }
 
 .noragon__enemy-card {
+  --card-accent: var(--noragon-bat);
   flex: 1 1 0;
   min-width: 11rem;
   padding: 0.6rem 0.7rem;
   background: var(--noragon-floor);
   border: 1px solid var(--noragon-wall-edge);
-  border-left: 3px solid var(--noragon-bat);
+  border-left: 3px solid var(--card-accent);
   border-radius: 6px;
+}
+
+.noragon__enemy-card--bat {
+  --card-accent: var(--noragon-bat);
+}
+
+.noragon__enemy-card--goblin {
+  --card-accent: var(--noragon-goblin);
 }
 
 .noragon__enemy-card--targeted {
@@ -176,7 +193,7 @@
 
 .noragon__enemy-name {
   font-weight: 700;
-  color: var(--noragon-bat);
+  color: var(--card-accent);
 }
 
 .noragon__enemy-hp {

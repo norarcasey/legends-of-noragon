@@ -11,6 +11,7 @@ import type {
   TileType,
 } from './types'
 import { ENEMY_INFO } from './enemies'
+import type { EnemyKind } from './enemies'
 
 export interface UseNoragonOptions {
   /** The hero's starting (and maximum) hit points. Default `6`. */
@@ -90,9 +91,6 @@ const DEFAULT_ATTACKS: AttackProfiles = {
   spell: { accuracy: 0.9, minDamage: 3, maxDamage: 6 },
 }
 
-/** Chance (0–1) that a bat lands its bite when adjacent. */
-const BAT_ACCURACY = 0.6
-
 /**
  * Resolve one attack against a profile, drawing from `roll`: first the to-hit
  * check, then (on a hit) the damage within the profile's range. Generic over
@@ -137,30 +135,40 @@ const DIR_NAME: Record<Direction, string> = {
 
 // ---- The hardcoded first dungeon ------------------------------------------
 //
-// Three rooms in a row, joined by doorways. The first room is empty, the middle
-// room holds two bats, and the last room holds the chest (step on it to win)
-// plus a stairway down (inert in the MVP). A future feature will generate this
-// layout — and place monsters — procedurally; for now it is a fixed map.
+// Four rooms in a 2×2 ring, joined by single doorways. The hero starts in the
+// empty entry hall (top-left) and works clockwise: the roost (top-right) holds
+// two bats, the goblin den (bottom-right) holds a lone goblin, and the vault
+// (bottom-left) holds the chest (step on it to win) and an inert stairway down.
+// A future feature will generate this layout — and place monsters —
+// procedurally; for now it is a fixed map.
 //
 //   #  wall      .  floor    +  door
-//   @  hero start (becomes floor)      b  bat (becomes floor)
+//   @  hero start      b  bat      g  goblin   (all become floor)
 //   C  chest     >  stairs down
 const LAYOUT = [
-  '###################',
-  '#.....#.....#.....#',
-  '#.....#.b...#.....#',
-  '#@....+.....+..C>.#',
-  '#.....#...b.#.....#',
-  '#.....#.....#.....#',
-  '###################',
+  '#############',
+  '#.....#.....#',
+  '#.....#.b...#',
+  '#..@..+.....#',
+  '#.....#...b.#',
+  '#.....#.....#',
+  '#########+###',
+  '#.....#.....#',
+  '#.....#.....#',
+  '#..C>.+..g..#',
+  '#.....#.....#',
+  '#.....#.....#',
+  '#############',
 ]
 
-// The three rooms, in inclusive interior coordinates. Walls sit on the borders
-// and at the shared columns (x = 6, 12); the doorways punch through those.
+// The four rooms, in inclusive interior coordinates. Walls sit on the borders
+// and at the shared column/row (x = 6, y = 6); the doorways punch through those
+// at (6,3) hall→roost, (9,6) roost→den, and (6,9) den→vault.
 const ROOMS: Room[] = [
   { id: 0, name: 'the entry hall', x0: 1, y0: 1, x1: 5, y1: 5 },
   { id: 1, name: 'the roost', x0: 7, y0: 1, x1: 11, y1: 5 },
-  { id: 2, name: 'the vault', x0: 13, y0: 1, x1: 17, y1: 5 },
+  { id: 2, name: 'the goblin den', x0: 7, y0: 7, x1: 11, y1: 11 },
+  { id: 3, name: 'the vault', x0: 1, y0: 7, x1: 5, y1: 11 },
 ]
 
 interface Dungeon {
@@ -169,6 +177,12 @@ interface Dungeon {
   tiles: TileType[][]
   playerStart: Point
   enemies: Enemy[]
+}
+
+/** Spawn an enemy of `kind` at full health for the tile it was placed on. */
+function spawnEnemy(kind: EnemyKind, id: number, x: number, y: number): Enemy {
+  const { maxHp } = ENEMY_INFO[kind]
+  return { id, kind, x, y, hp: maxHp, maxHp, room: roomAt(x, y) ?? 0 }
 }
 
 /** Parse {@link LAYOUT} once into a structured dungeon the reducer can clone. */
@@ -202,15 +216,11 @@ function parseDungeon(): Dungeon {
           row.push('floor')
           break
         case 'b':
-          enemies.push({
-            id: enemyId++,
-            kind: 'bat',
-            x,
-            y,
-            hp: 3,
-            maxHp: 3,
-            room: roomAt(x, y) ?? 0,
-          })
+          enemies.push(spawnEnemy('bat', enemyId++, x, y))
+          row.push('floor')
+          break
+        case 'g':
+          enemies.push(spawnEnemy('goblin', enemyId++, x, y))
           row.push('floor')
           break
         default:
@@ -367,10 +377,11 @@ function activeEnemiesOf(player: Point, enemies: Enemy[]): Enemy[] {
 }
 
 /**
- * Run the enemy phase: every bat sharing the hero's room either bites (if
- * adjacent, rolling its accuracy) or chases one step. Mutates `messages` and
- * draws from the shared `roll`; returns the bats' new positions and the hero's
- * remaining hp. Used by both moving and firing so a turn always ends the same way.
+ * Run the enemy phase: every foe sharing the hero's room either attacks (if
+ * adjacent, rolling its own accuracy for its own damage) or chases one step.
+ * Mutates `messages` and draws from the shared `roll`; returns the foes' new
+ * positions and the hero's remaining hp. Used by both moving and firing so a
+ * turn always ends the same way.
  */
 function runEnemyPhase(
   player: Point,
@@ -384,28 +395,28 @@ function runEnemyPhase(
   const moved: Enemy[] = []
   let nextHp = hp
 
-  for (const bat of enemies) {
-    if (bat.room !== room) {
-      moved.push(bat)
+  for (const foe of enemies) {
+    if (foe.room !== room) {
+      moved.push(foe)
       continue
     }
-    if (manhattan(bat, player) === 1) {
-      // Adjacent: the bat rolls to land its bite for a flat 1 damage.
-      const name = ENEMY_INFO[bat.kind].name
-      if (roll() < BAT_ACCURACY) {
-        nextHp -= 1
-        messages.push(`The ${name} bites you for 1.`)
+    if (manhattan(foe, player) === 1) {
+      // Adjacent: the foe rolls to land its attack for its flat damage.
+      const info = ENEMY_INFO[foe.kind]
+      if (roll() < info.accuracy) {
+        nextHp -= info.damage
+        messages.push(`The ${info.name} ${info.verb} you for ${info.damage}.`)
       } else {
-        messages.push(`The ${name} swoops at you but misses.`)
+        messages.push(`The ${info.name} misses you.`)
       }
-      moved.push(bat)
+      moved.push(foe)
       continue
     }
-    // Otherwise chase. Reserve the destination so two bats can't stack.
-    occupied.delete(`${bat.x},${bat.y}`)
-    const step = chaseStep(bat, player, occupied)
+    // Otherwise chase. Reserve the destination so two foes can't stack.
+    occupied.delete(`${foe.x},${foe.y}`)
+    const step = chaseStep(foe, player, occupied)
     occupied.add(`${step.x},${step.y}`)
-    moved.push({ ...bat, x: step.x, y: step.y })
+    moved.push({ ...foe, x: step.x, y: step.y })
   }
 
   return { enemies: moved, hp: nextHp }
