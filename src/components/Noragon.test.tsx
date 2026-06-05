@@ -293,6 +293,42 @@ describe('useNoragon — procedural generation', () => {
     }
   })
 
+  it('reveals the room ahead while the hero stands in a doorway', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 7 }))
+    act(() => result.current.start())
+    const chest = findTile(result.current.tiles, 'chest')
+    expect(chest).not.toBeNull()
+
+    // Step toward the chest until the hero is standing on a door tile.
+    let onDoor = false
+    for (let i = 0; i < 200 && result.current.status === 'playing'; i++) {
+      const p = result.current.player
+      if (result.current.tiles[p.y][p.x] === 'door') {
+        onDoor = true
+        break
+      }
+      if (!chest) break
+      const dir = bfsDir(result.current.tiles, p, chest, false)
+      if (!dir) break
+      act(() => result.current.move(dir))
+    }
+    expect(onDoor).toBe(true)
+
+    // The floor tiles on both sides of the doorway (both rooms) are now lit —
+    // including the room the hero hasn't entered yet.
+    const { player, tiles, visible } = result.current
+    let floorNeighbors = 0
+    for (const dir of DIRECTIONS) {
+      const nx = player.x + DELTA[dir].x
+      const ny = player.y + DELTA[dir].y
+      if (tiles[ny]?.[nx] === 'floor') {
+        floorNeighbors++
+        expect(visible[ny][nx]).toBe(true)
+      }
+    }
+    expect(floorNeighbors).toBeGreaterThan(0)
+  })
+
   it('keeps the starting room safe (no enemies share it)', () => {
     for (const seed of SEEDS) {
       const { result } = renderHook(() => useNoragon({ seed }))

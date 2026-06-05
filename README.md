@@ -38,7 +38,9 @@ Combat:
 
 Enemies only stir once you enter their room, and each room is shrouded in
 **fog of war** until you step inside, at which point it stays lit for the rest of
-the level. Pass a `seed` to replay the exact same dungeon and combat.
+the level. Standing in a doorway peeks into the room beyond — so you can see what
+(and who) is waiting before you commit. Pass a `seed` to replay the exact same
+dungeon and combat.
 
 ## Embedding the component
 

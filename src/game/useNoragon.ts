@@ -389,6 +389,18 @@ function computeVisible(dungeon: Dungeon, revealedRooms: number[]): boolean[][] 
   return grid
 }
 
+/** Rooms an orthogonal step from a door tile — so a hero standing in the doorway
+ *  can see into the room beyond (and any foe waiting just inside). Empty off a door. */
+function roomsByDoor(dungeon: Dungeon, p: Point): number[] {
+  if (tileAt(dungeon, p.x, p.y) !== 'door') return []
+  const out: number[] = []
+  for (const d of Object.values(DELTA)) {
+    const room = roomAt(dungeon.rooms, p.x + d.x, p.y + d.y)
+    if (room !== null) out.push(room)
+  }
+  return out
+}
+
 // The whole level lives in one reducer, so each turn — the hero's step plus
 // every enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
@@ -818,7 +830,12 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     currentRoom,
     log: state.log,
     revealedRooms: state.revealedRooms,
-    visible: computeVisible(state.dungeon, state.revealedRooms),
+    // Standing in a doorway also lights up the room ahead (view only — it isn't
+    // counted as "entered" until the hero actually steps inside).
+    visible: computeVisible(state.dungeon, [
+      ...state.revealedRooms,
+      ...roomsByDoor(state.dungeon, state.player),
+    ]),
     aiming: state.aiming,
     targetId: state.targetId,
     start,

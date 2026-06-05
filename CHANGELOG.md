@@ -13,7 +13,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   grid; move the hero with the arrow keys / WASD, bump bats to slay them, and
   step onto the chest to complete the level.
 - Fog of war: rooms and their contents (bats, chest, stairs) stay hidden until
-  the hero steps into them; the room then stays revealed for the rest of the level.
+  the hero steps into them; the room then stays revealed for the rest of the
+  level. Standing in a doorway also peeks into the adjacent room (view only), so
+  foes waiting just inside a door are visible before the hero commits to entering.
 - Enemy cards: while the hero shares a room with active enemies, a card per
   creature shows its name, description, and a health bar, backed by an
   extensible `ENEMY_INFO` bestiary and an `activeEnemies` field on the hook.
