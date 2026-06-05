@@ -39,10 +39,13 @@ export function Board({
   aiming,
   targetId,
 }: BoardProps) {
-  const gridStyle: CSSProperties = {
+  // `--noragon-cols` lets the CSS scale the glyph size to the column count, so
+  // tiles stay legible whatever the (eventually procedural) board dimensions are.
+  const gridStyle: CSSProperties & Record<string, string | number> = {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
     aspectRatio: `${cols} / ${rows}`,
+    '--noragon-cols': cols,
   }
 
   const enemyAt = (x: number, y: number) => enemies.find((e) => e.x === x && e.y === y)

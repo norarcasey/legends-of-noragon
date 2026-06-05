@@ -99,74 +99,77 @@ export function Noragon({
       className={`noragon${className ? ` ${className}` : ''}`}
       aria-label={title ?? 'Legends of Noragon dungeon crawler'}
     >
-      <header className="noragon__header">
-        {title !== null && <h2 className="noragon__title">{title}</h2>}
-        <dl className="noragon__stats" aria-live="polite">
-          <div className="noragon__stat">
-            <dt>HP</dt>
-            <dd>
-              {game.hp}/{game.maxHp}
-            </dd>
-          </div>
-          <div className="noragon__stat">
-            <dt>Melee</dt>
-            <dd>{Math.round(melee.accuracy * 100)}%</dd>
-          </div>
-          <div className="noragon__stat">
-            <dt>Damage</dt>
-            <dd>
-              {melee.minDamage}–{melee.maxDamage}
-            </dd>
-          </div>
-          <div className="noragon__stat">
-            <dt>Slain</dt>
-            <dd>{game.kills}</dd>
-          </div>
-        </dl>
-      </header>
+      {title !== null && <h2 className="noragon__title">{title}</h2>}
 
-      <div className="noragon__stage">
-        <Board
-          cols={game.cols}
-          rows={game.rows}
-          tiles={game.tiles}
-          player={game.player}
-          enemies={game.enemies}
-          visible={game.visible}
-          aiming={aiming}
-          targetId={game.targetId}
-        />
+      <div className="noragon__layout">
+        <div className="noragon__stage">
+          <Board
+            cols={game.cols}
+            rows={game.rows}
+            tiles={game.tiles}
+            player={game.player}
+            enemies={game.enemies}
+            visible={game.visible}
+            aiming={aiming}
+            targetId={game.targetId}
+          />
 
-        {aiming && (
-          <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
-            Aiming — <kbd>Tab</kbd>/arrows switch target · <kbd>F</kbd> fire · <kbd>Esc</kbd> cancel
-          </div>
-        )}
+          {aiming && (
+            <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
+              Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>F</kbd> fire · <kbd>Esc</kbd> cancel
+            </div>
+          )}
 
-        {status !== 'playing' && (
-          <div className="noragon__overlay" role="status">
-            {status === 'idle' && (
-              <p className="noragon__message">Descend into the dungeon of Noragon</p>
-            )}
-            {status === 'won' && (
-              <p className="noragon__message">You reached the chest — level cleared! 🗝️</p>
-            )}
-            {status === 'dead' && <p className="noragon__message">You died in the dark. 💀</p>}
-            <button type="button" className="noragon__button" onClick={start}>
-              {isOver ? 'Delve again' : 'Enter'}
-            </button>
-            <p className="noragon__hint">
-              Move with the arrow keys or WASD — bump bats to slay them, or press F to shoot
-            </p>
-          </div>
-        )}
+          {status !== 'playing' && (
+            <div className="noragon__overlay" role="status">
+              {status === 'idle' && (
+                <p className="noragon__message">Descend into the dungeon of Noragon</p>
+              )}
+              {status === 'won' && (
+                <p className="noragon__message">You reached the chest — level cleared! 🗝️</p>
+              )}
+              {status === 'dead' && <p className="noragon__message">You died in the dark. 💀</p>}
+              <button type="button" className="noragon__button" onClick={start}>
+                {isOver ? 'Delve again' : 'Enter'}
+              </button>
+              <p className="noragon__hint">
+                Move with the arrow keys or WASD — bump foes to strike, or press F to shoot
+              </p>
+            </div>
+          )}
+        </div>
+
+        <aside className="noragon__panel">
+          <dl className="noragon__stats" aria-live="polite">
+            <div className="noragon__stat">
+              <dt>HP</dt>
+              <dd>
+                {game.hp}/{game.maxHp}
+              </dd>
+            </div>
+            <div className="noragon__stat">
+              <dt>Melee</dt>
+              <dd>{Math.round(melee.accuracy * 100)}%</dd>
+            </div>
+            <div className="noragon__stat">
+              <dt>Damage</dt>
+              <dd>
+                {melee.minDamage}–{melee.maxDamage}
+              </dd>
+            </div>
+            <div className="noragon__stat">
+              <dt>Slain</dt>
+              <dd>{game.kills}</dd>
+            </div>
+          </dl>
+
+          {status === 'playing' && (
+            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+          )}
+
+          {status !== 'idle' && <ActivityLog entries={game.log} />}
+        </aside>
       </div>
-
-      {status === 'playing' && (
-        <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
-      )}
-
-      {status !== 'idle' && <ActivityLog entries={game.log} />}
     </section>
   )
 }

@@ -98,7 +98,9 @@ Planned, in roughly the order it was dreamed up:
   weapon, and shield, drink potions, and fire a bow.
 - **Descending the stairs** — the stairway carries you to the next level.
 - **Procedural dungeons** — generated room layouts with procedurally placed
-  monsters, replacing the hardcoded map.
+  monsters, replacing the hardcoded map. The seam is in place: the level is
+  produced by `generateDungeon(seed)` and carried in state, so a seeded
+  rooms-on-a-grid generator can drop in behind it.
 - **More monsters & boss fights** — beyond bats and goblins.
 - **Sprites/SVGs** — replacing the block tiles with real art.
 

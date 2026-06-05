@@ -171,22 +171,42 @@ const ROOMS: Room[] = [
   { id: 3, name: 'the vault', x0: 1, y0: 7, x1: 5, y1: 11 },
 ]
 
+/**
+ * A fully-realized dungeon level. Everything spatial lives here so it can be
+ * generated per game (from the seed) and carried in state — nothing reaches for
+ * a module-level map. Today {@link generateDungeon} emits a fixed layout; a
+ * future version will build it procedurally behind this same shape.
+ */
 interface Dungeon {
   cols: number
   rows: number
   tiles: TileType[][]
+  rooms: Room[]
   playerStart: Point
   enemies: Enemy[]
 }
 
-/** Spawn an enemy of `kind` at full health for the tile it was placed on. */
-function spawnEnemy(kind: EnemyKind, id: number, x: number, y: number): Enemy {
-  const { maxHp } = ENEMY_INFO[kind]
-  return { id, kind, x, y, hp: maxHp, maxHp, room: roomAt(x, y) ?? 0 }
+/** The room containing a tile, or `null` for walls / doorways between rooms. */
+function roomAt(rooms: Room[], x: number, y: number): number | null {
+  for (const r of rooms) {
+    if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return r.id
+  }
+  return null
 }
 
-/** Parse {@link LAYOUT} once into a structured dungeon the reducer can clone. */
-function parseDungeon(): Dungeon {
+/** Spawn an enemy of `kind` at full health for the tile it was placed on. */
+function spawnEnemy(rooms: Room[], kind: EnemyKind, id: number, x: number, y: number): Enemy {
+  const { maxHp } = ENEMY_INFO[kind]
+  return { id, kind, x, y, hp: maxHp, maxHp, room: roomAt(rooms, x, y) ?? 0 }
+}
+
+/**
+ * Build the dungeon for a run. The `seed` will drive procedural generation; for
+ * now it is ignored and the fixed {@link LAYOUT} / {@link ROOMS} are parsed, so
+ * every run is identical (and the seed still seeds combat as before).
+ */
+function generateDungeon(_seed: number): Dungeon {
+  const rooms = ROOMS
   const rows = LAYOUT.length
   const cols = LAYOUT[0].length
   const tiles: TileType[][] = []
@@ -216,11 +236,11 @@ function parseDungeon(): Dungeon {
           row.push('floor')
           break
         case 'b':
-          enemies.push(spawnEnemy('bat', enemyId++, x, y))
+          enemies.push(spawnEnemy(rooms, 'bat', enemyId++, x, y))
           row.push('floor')
           break
         case 'g':
-          enemies.push(spawnEnemy('goblin', enemyId++, x, y))
+          enemies.push(spawnEnemy(rooms, 'goblin', enemyId++, x, y))
           row.push('floor')
           break
         default:
@@ -230,15 +250,7 @@ function parseDungeon(): Dungeon {
     tiles.push(row)
   }
 
-  return { cols, rows, tiles, playerStart, enemies }
-}
-
-/** The room containing a tile, or `null` for walls / doorways between rooms. */
-function roomAt(x: number, y: number): number | null {
-  for (const r of ROOMS) {
-    if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return r.id
-  }
-  return null
+  return { cols, rows, tiles, rooms, playerStart, enemies }
 }
 
 /** Add `room` to the revealed set (returning the same array if already known). */
@@ -253,22 +265,18 @@ function reveal(revealedRooms: number[], room: number | null): number[] {
  * around it — so entering a room lights up the room, its walls, and the doors
  * out of it, while everything beyond stays dark until you cross the threshold.
  */
-function computeVisible(revealedRooms: number[]): boolean[][] {
-  const grid: boolean[][] = DUNGEON.tiles.map((row) => row.map(() => false))
+function computeVisible(dungeon: Dungeon, revealedRooms: number[]): boolean[][] {
+  const grid: boolean[][] = dungeon.tiles.map((row) => row.map(() => false))
   for (const id of revealedRooms) {
-    const r = ROOMS[id]
+    const r = dungeon.rooms[id]
     for (let y = r.y0 - 1; y <= r.y1 + 1; y++) {
       for (let x = r.x0 - 1; x <= r.x1 + 1; x++) {
-        if (y >= 0 && y < DUNGEON.rows && x >= 0 && x < DUNGEON.cols) grid[y][x] = true
+        if (y >= 0 && y < dungeon.rows && x >= 0 && x < dungeon.cols) grid[y][x] = true
       }
     }
   }
   return grid
 }
-
-// Parsed once at module load. `tiles` is never mutated, so every game can share
-// the same reference; the mutable bits (hero, enemies) are copied per game.
-const DUNGEON = parseDungeon()
 
 // The whole level lives in one reducer, so each turn — the hero's step plus
 // every enemy's response — is computed from the previous state in a single pure
@@ -281,6 +289,8 @@ interface HeroConfig {
 }
 
 interface GameState extends HeroConfig {
+  /** The generated level for this run; spatial helpers read from it. */
+  dungeon: Dungeon
   player: Point
   hp: number
   enemies: Enemy[]
@@ -310,16 +320,18 @@ type GameAction =
   | { type: 'fire' }
 
 function makeInitial(config: HeroConfig, seed: number): GameState {
+  const dungeon = generateDungeon(seed)
   return {
     ...config,
-    player: { ...DUNGEON.playerStart },
+    dungeon,
+    player: { ...dungeon.playerStart },
     hp: config.maxHp,
-    enemies: DUNGEON.enemies.map((e) => ({ ...e })),
+    enemies: dungeon.enemies.map((e) => ({ ...e })),
     status: 'idle',
     kills: 0,
     turns: 0,
     // The hero can already see the room they start in.
-    revealedRooms: reveal([], roomAt(DUNGEON.playerStart.x, DUNGEON.playerStart.y)),
+    revealedRooms: reveal([], roomAt(dungeon.rooms, dungeon.playerStart.x, dungeon.playerStart.y)),
     log: [],
     nextLogId: 0,
     rngState: seed >>> 0,
@@ -344,19 +356,19 @@ function logLines(
   return { log: [...log, ...added], nextLogId: nextLogId + messages.length }
 }
 
-function tileAt(x: number, y: number): TileType {
-  if (y < 0 || y >= DUNGEON.rows || x < 0 || x >= DUNGEON.cols) return 'wall'
-  return DUNGEON.tiles[y][x]
+function tileAt(dungeon: Dungeon, x: number, y: number): TileType {
+  if (y < 0 || y >= dungeon.rows || x < 0 || x >= dungeon.cols) return 'wall'
+  return dungeon.tiles[y][x]
 }
 
-/** Choose a bat's next tile: one orthogonal step toward the hero, staying inside
- *  its room and off any occupied tile. Returns the bat's current tile if boxed in. */
-function chaseStep(bat: Enemy, target: Point, occupied: Set<string>): Point {
-  const room = ROOMS[bat.room]
-  const dx = target.x - bat.x
-  const dy = target.y - bat.y
-  const horiz: Point | null = dx !== 0 ? { x: bat.x + Math.sign(dx), y: bat.y } : null
-  const vert: Point | null = dy !== 0 ? { x: bat.x, y: bat.y + Math.sign(dy) } : null
+/** Choose a foe's next tile: one orthogonal step toward the hero, staying inside
+ *  its room and off any occupied tile. Returns the foe's current tile if boxed in. */
+function chaseStep(rooms: Room[], foe: Enemy, target: Point, occupied: Set<string>): Point {
+  const room = rooms[foe.room]
+  const dx = target.x - foe.x
+  const dy = target.y - foe.y
+  const horiz: Point | null = dx !== 0 ? { x: foe.x + Math.sign(dx), y: foe.y } : null
+  const vert: Point | null = dy !== 0 ? { x: foe.x, y: foe.y + Math.sign(dy) } : null
   // Try to close the larger gap first; fall back to the other axis if blocked.
   const candidates = Math.abs(dx) >= Math.abs(dy) ? [horiz, vert] : [vert, horiz]
 
@@ -365,14 +377,14 @@ function chaseStep(bat: Enemy, target: Point, occupied: Set<string>): Point {
     const inRoom = c.x >= room.x0 && c.x <= room.x1 && c.y >= room.y0 && c.y <= room.y1
     if (inRoom && !occupied.has(`${c.x},${c.y}`)) return c
   }
-  return { x: bat.x, y: bat.y }
+  return { x: foe.x, y: foe.y }
 }
 
 const manhattan = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
 /** Enemies sharing the hero's current room, in stable id order. */
-function activeEnemiesOf(player: Point, enemies: Enemy[]): Enemy[] {
-  const room = roomAt(player.x, player.y)
+function activeEnemiesOf(rooms: Room[], player: Point, enemies: Enemy[]): Enemy[] {
+  const room = roomAt(rooms, player.x, player.y)
   return enemies.filter((e) => e.room === room).sort((a, b) => a.id - b.id)
 }
 
@@ -384,13 +396,14 @@ function activeEnemiesOf(player: Point, enemies: Enemy[]): Enemy[] {
  * turn always ends the same way.
  */
 function runEnemyPhase(
+  dungeon: Dungeon,
   player: Point,
   enemies: Enemy[],
   hp: number,
   roll: () => number,
   messages: string[],
 ): { enemies: Enemy[]; hp: number } {
-  const room = roomAt(player.x, player.y)
+  const room = roomAt(dungeon.rooms, player.x, player.y)
   const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
   const moved: Enemy[] = []
   let nextHp = hp
@@ -414,7 +427,7 @@ function runEnemyPhase(
     }
     // Otherwise chase. Reserve the destination so two foes can't stack.
     occupied.delete(`${foe.x},${foe.y}`)
-    const step = chaseStep(foe, player, occupied)
+    const step = chaseStep(dungeon.rooms, foe, player, occupied)
     occupied.add(`${step.x},${step.y}`)
     moved.push({ ...foe, x: step.x, y: step.y })
   }
@@ -430,10 +443,10 @@ function reducer(state: GameState, action: GameAction): GameState {
       return makeInitial(configOf(state), action.seed)
     case 'start': {
       const fresh = makeInitial(configOf(state), action.seed)
-      const room = roomAt(fresh.player.x, fresh.player.y)
+      const room = roomAt(fresh.dungeon.rooms, fresh.player.x, fresh.player.y)
       const opening = [
         'You descend into the dungeon of Noragon.',
-        room !== null ? `You enter ${ROOMS[room].name}.` : 'You press into the dark.',
+        room !== null ? `You enter ${fresh.dungeon.rooms[room].name}.` : 'You press into the dark.',
       ]
       return { ...fresh, status: 'playing', ...logLines(fresh.log, fresh.nextLogId, opening) }
     }
@@ -476,35 +489,41 @@ function reducer(state: GameState, action: GameAction): GameState {
         } else {
           messages.push(`You swing at the ${name} and miss.`)
         }
-      } else if (tileAt(target.x, target.y) === 'wall') {
+      } else if (tileAt(state.dungeon, target.x, target.y) === 'wall') {
         // Bumping a wall is not a turn — nothing happens, and nothing is logged.
         return state
       } else {
         player = target
         messages.push(`You move ${DIR_NAME[action.dir]}.`)
         // Stepping onto the chest completes the level before enemies act.
-        if (tileAt(target.x, target.y) === 'chest') {
+        if (tileAt(state.dungeon, target.x, target.y) === 'chest') {
           messages.push('You reach the chest. The level is cleared!')
           return {
             ...state,
             player,
             status: 'won',
             turns: state.turns + 1,
-            revealedRooms: reveal(state.revealedRooms, roomAt(player.x, player.y)),
+            revealedRooms: reveal(
+              state.revealedRooms,
+              roomAt(state.dungeon.rooms, player.x, player.y),
+            ),
             ...logLines(state.log, state.nextLogId, messages),
           }
         }
         // Announce crossing into a room the hero hasn't been in before.
-        const steppedInto = roomAt(player.x, player.y)
+        const steppedInto = roomAt(state.dungeon.rooms, player.x, player.y)
         if (steppedInto !== null && !state.revealedRooms.includes(steppedInto)) {
-          messages.push(`You enter ${ROOMS[steppedInto].name}.`)
+          messages.push(`You enter ${state.dungeon.rooms[steppedInto].name}.`)
         }
       }
 
       // Light up the room the hero just stepped into (a no-op if already known).
-      const revealedRooms = reveal(state.revealedRooms, roomAt(player.x, player.y))
+      const revealedRooms = reveal(
+        state.revealedRooms,
+        roomAt(state.dungeon.rooms, player.x, player.y),
+      )
 
-      const phase = runEnemyPhase(player, enemies, state.hp, roll, messages)
+      const phase = runEnemyPhase(state.dungeon, player, enemies, state.hp, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
@@ -526,7 +545,7 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'aimStart': {
       if (state.status !== 'playing') return state
-      const actives = activeEnemiesOf(state.player, state.enemies)
+      const actives = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
       if (actives.length === 0) {
         return {
           ...state,
@@ -542,7 +561,7 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'aimCycle': {
       if (!state.aiming) return state
-      const actives = activeEnemiesOf(state.player, state.enemies)
+      const actives = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
       if (actives.length === 0) return { ...state, aiming: false, targetId: null }
       const current = actives.findIndex((e) => e.id === state.targetId)
       const base = current === -1 ? 0 : current
@@ -555,7 +574,7 @@ function reducer(state: GameState, action: GameAction): GameState {
     case 'fire': {
       if (state.status !== 'playing' || !state.aiming) return state
       const target = state.enemies.find((e) => e.id === state.targetId)
-      const room = roomAt(state.player.x, state.player.y)
+      const room = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
       // Target must still be a live enemy in the hero's room.
       if (!target || target.room !== room) {
         return { ...state, aiming: false, targetId: null }
@@ -589,7 +608,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         messages.push(`Your arrow misses the ${name}.`)
       }
 
-      const phase = runEnemyPhase(state.player, enemies, state.hp, roll, messages)
+      const phase = runEnemyPhase(state.dungeon, state.player, enemies, state.hp, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
@@ -669,13 +688,13 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
 
   // Enemies are "active" only while the hero shares their room — the same rule
   // that governs whether they take turns. Those are the ones we surface as cards.
-  const currentRoom = roomAt(state.player.x, state.player.y)
+  const currentRoom = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
   const activeEnemies = state.enemies.filter((e) => e.room === currentRoom)
 
   return {
-    cols: DUNGEON.cols,
-    rows: DUNGEON.rows,
-    tiles: DUNGEON.tiles,
+    cols: state.dungeon.cols,
+    rows: state.dungeon.rows,
+    tiles: state.dungeon.tiles,
     player: state.player,
     hp: state.hp,
     maxHp: state.maxHp,
@@ -688,7 +707,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     currentRoom,
     log: state.log,
     revealedRooms: state.revealedRooms,
-    visible: computeVisible(state.revealedRooms),
+    visible: computeVisible(state.dungeon, state.revealedRooms),
     aiming: state.aiming,
     targetId: state.targetId,
     start,

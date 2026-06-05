@@ -28,6 +28,9 @@ export default tseslint.config(
       // No non-null assertions either: `x!` hides the same nulls the type
       // checker is trying to surface. Narrow with a real runtime check instead.
       '@typescript-eslint/no-non-null-assertion': 'error',
+      // Allow a leading underscore to mark an argument as intentionally unused
+      // (e.g. a reserved param like `_seed` that a later feature will consume).
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
   // Vitest provides describe/it/expect etc. as globals via vite.config test setup.

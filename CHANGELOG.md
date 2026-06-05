@@ -29,6 +29,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reproducible from a `seed` — omit it for a fresh random run each game.
 - Movement is pure roguelike (one move, one turn); the placeholder stamina stat
   was removed.
+- Responsive side-panel layout: the board sits beside the stats / enemy cards /
+  activity log on wide screens (stacking on narrow), the board is capped by
+  viewport height, and tile glyphs scale to the grid — so a bigger board never
+  pushes the cards or log off the bottom of the page.
+- Dungeon-generation seam: the level is now produced by `generateDungeon(seed)`
+  and carried in game state, with the spatial helpers (`roomAt`, `tileAt`,
+  fog-of-war, enemy chase/phase) taking the dungeon as input instead of a
+  module-level constant. The generator still emits the fixed map today, so a
+  seed-based procedural layout can drop in behind it without touching the rest of
+  the engine.
 - A fourth room and a tougher foe: the dungeon is now a 2×2 clockwise ring —
   entry hall, roost (2 bats), goblin den (1 Goblin: 8 HP, hits for 2 at 70%),
   and the vault with the chest. Enemy combat stats (hp, accuracy, damage, glyph,

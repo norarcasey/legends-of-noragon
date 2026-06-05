@@ -15,7 +15,7 @@
 
   box-sizing: border-box;
   width: 100%;
-  max-width: 620px;
+  max-width: 820px;
   margin: 0 auto;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
@@ -29,32 +29,46 @@
   box-sizing: border-box;
 }
 
-.noragon__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
 .noragon__title {
-  margin: 0;
+  margin: 0 0 0.75rem;
   font-size: 1.4rem;
   font-weight: 700;
+}
+
+/* Board on the left, info panel on the right; stacks on narrow screens. */
+.noragon__layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+@media (min-width: 640px) {
+  .noragon__layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.noragon__panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .noragon__stats {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem 1rem;
+  gap: 0.4rem 1rem;
   margin: 0;
 }
 
 .noragon__stat {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   line-height: 1.1;
 }
 
@@ -75,6 +89,18 @@
 /* ---- Board ---- */
 .noragon__stage {
   position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  /* Cap the board by viewport height so it never shoves the panel off-screen,
+     and keep the tiles modest. The board inside fills this width. */
+  max-width: min(58vh, 460px);
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .noragon__stage {
+    margin: 0;
+  }
 }
 
 .noragon__board {
@@ -84,13 +110,15 @@
   border: 2px solid var(--noragon-wall-edge);
   border-radius: 8px;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 .noragon__tile {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.6rem, 2.6vw, 1.1rem);
+  /* ~66% of a tile's width, derived from the board width and column count. */
+  font-size: clamp(0.4rem, calc(66cqi / var(--noragon-cols, 13)), 1.05rem);
   line-height: 1;
   user-select: none;
 }
@@ -240,7 +268,7 @@
   margin: 0;
   padding: 0.5rem 0.75rem;
   list-style: none;
-  max-height: 8.5rem;
+  max-height: 13rem;
   overflow-y: auto;
   background: var(--noragon-floor);
   border: 1px solid var(--noragon-wall-edge);
