@@ -133,43 +133,40 @@ const DIR_NAME: Record<Direction, string> = {
   right: 'east',
 }
 
-// ---- The hardcoded first dungeon ------------------------------------------
+// ---- Procedural dungeon generation ----------------------------------------
 //
-// Four rooms in a 2×2 ring, joined by single doorways. The hero starts in the
-// empty entry hall (top-left) and works clockwise: the roost (top-right) holds
-// two bats, the goblin den (bottom-right) holds a lone goblin, and the vault
-// (bottom-left) holds the chest (step on it to win) and an inert stairway down.
-// A future feature will generate this layout — and place monsters —
-// procedurally; for now it is a fixed map.
-//
-//   #  wall      .  floor    +  door
-//   @  hero start      b  bat      g  goblin   (all become floor)
-//   C  chest     >  stairs down
-const LAYOUT = [
-  '#############',
-  '#.....#.....#',
-  '#.....#.b...#',
-  '#..@..+.....#',
-  '#.....#...b.#',
-  '#.....#.....#',
-  '#########+###',
-  '#.....#.....#',
-  '#.....#.....#',
-  '#..C>.+.....#',
-  '#.....#.....#',
-  '#.....#..g..#',
-  '#############',
+// The level is a grid of rooms joined by doorways. A seeded RNG carves a
+// spanning set of doors (so every room is reachable), picks a start room and the
+// farthest room for the chest, and scatters enemies by depth. Rooms-on-a-grid
+// keeps today's room model — fog of war, enemy confinement, and activation are
+// all keyed on rooms — while making every run different.
+
+/** Rooms across and down, and each room's interior size (in tiles). */
+const GRID_COLS = 3
+const GRID_ROWS = 2
+const ROOM_W = 5
+const ROOM_H = 5
+
+/** Atmospheric names for the rooms between the entrance and the vault. */
+const ROOM_NAMES = [
+  'a dank chamber',
+  'a mossy crypt',
+  'a collapsed gallery',
+  'a torch-lit hall',
+  'a bone-strewn cell',
+  'a flooded cavern',
 ]
 
-// The four rooms, in inclusive interior coordinates. Walls sit on the borders
-// and at the shared column/row (x = 6, y = 6); the doorways punch through those
-// at (6,3) hall→roost, (9,6) roost→den, and (6,9) den→vault.
-const ROOMS: Room[] = [
-  { id: 0, name: 'the entry hall', x0: 1, y0: 1, x1: 5, y1: 5 },
-  { id: 1, name: 'the roost', x0: 7, y0: 1, x1: 11, y1: 5 },
-  { id: 2, name: 'the goblin den', x0: 7, y0: 7, x1: 11, y1: 11 },
-  { id: 3, name: 'the vault', x0: 1, y0: 7, x1: 5, y1: 11 },
-]
+/** A tiny seeded RNG built on {@link nextRng}, for layout generation. */
+function makeRng(seed: number) {
+  let s = seed >>> 0
+  const next = () => {
+    const r = nextRng(s)
+    s = r.state
+    return r.value
+  }
+  return { next, int: (n: number) => Math.floor(next() * n) }
+}
 
 /**
  * A fully-realized dungeon level. Everything spatial lives here so it can be
@@ -201,53 +198,167 @@ function spawnEnemy(rooms: Room[], kind: EnemyKind, id: number, x: number, y: nu
 }
 
 /**
- * Build the dungeon for a run. The `seed` will drive procedural generation; for
- * now it is ignored and the fixed {@link LAYOUT} / {@link ROOMS} are parsed, so
- * every run is identical (and the seed still seeds combat as before).
+ * Build the dungeon for a run from `seed`: carve a grid of rooms, connect them
+ * with a random spanning set of doors (plus a few loops), drop the chest in the
+ * farthest room, and scatter enemies by depth — the start room stays safe and
+ * the vault is guarded. Deterministic: the same seed always yields the same map.
  */
-function generateDungeon(_seed: number): Dungeon {
-  const rooms = ROOMS
-  const rows = LAYOUT.length
-  const cols = LAYOUT[0].length
-  const tiles: TileType[][] = []
-  const enemies: Enemy[] = []
-  let playerStart: Point = { x: 1, y: 1 }
-  let enemyId = 0
+function generateDungeon(seed: number): Dungeon {
+  // A stream distinct from the combat RNG (which is seeded directly from `seed`).
+  const rng = makeRng((seed ^ 0x9e3779b9) >>> 0)
+  const cols = GRID_COLS * (ROOM_W + 1) + 1
+  const rows = GRID_ROWS * (ROOM_H + 1) + 1
+  const cellCount = GRID_COLS * GRID_ROWS
 
+  // Start every tile as wall; rooms and doors are carved into it.
+  const tiles: TileType[][] = []
   for (let y = 0; y < rows; y++) {
     const row: TileType[] = []
-    for (let x = 0; x < cols; x++) {
-      const ch = LAYOUT[y][x]
-      switch (ch) {
-        case '#':
-          row.push('wall')
-          break
-        case '+':
-          row.push('door')
-          break
-        case 'C':
-          row.push('chest')
-          break
-        case '>':
-          row.push('stairs')
-          break
-        case '@':
-          playerStart = { x, y }
-          row.push('floor')
-          break
-        case 'b':
-          enemies.push(spawnEnemy(rooms, 'bat', enemyId++, x, y))
-          row.push('floor')
-          break
-        case 'g':
-          enemies.push(spawnEnemy(rooms, 'goblin', enemyId++, x, y))
-          row.push('floor')
-          break
-        default:
-          row.push('floor')
+    for (let x = 0; x < cols; x++) row.push('wall')
+    tiles.push(row)
+  }
+
+  const rectOf = (cell: number) => {
+    const gx = cell % GRID_COLS
+    const gy = Math.floor(cell / GRID_COLS)
+    const x0 = gx * (ROOM_W + 1) + 1
+    const y0 = gy * (ROOM_H + 1) + 1
+    return { gx, gy, x0, y0, x1: x0 + ROOM_W - 1, y1: y0 + ROOM_H - 1 }
+  }
+  const centerOf = (cell: number): Point => {
+    const r = rectOf(cell)
+    return { x: Math.floor((r.x0 + r.x1) / 2), y: Math.floor((r.y0 + r.y1) / 2) }
+  }
+
+  // Carve each room's interior to floor.
+  for (let cell = 0; cell < cellCount; cell++) {
+    const r = rectOf(cell)
+    for (let y = r.y0; y <= r.y1; y++) {
+      for (let x = r.x0; x <= r.x1; x++) tiles[y][x] = 'floor'
+    }
+  }
+
+  const neighbors = (cell: number): number[] => {
+    const gx = cell % GRID_COLS
+    const gy = Math.floor(cell / GRID_COLS)
+    const out: number[] = []
+    if (gx > 0) out.push(cell - 1)
+    if (gx < GRID_COLS - 1) out.push(cell + 1)
+    if (gy > 0) out.push(cell - GRID_COLS)
+    if (gy < GRID_ROWS - 1) out.push(cell + GRID_COLS)
+    return out
+  }
+
+  // Track which cells are linked so we can BFS over doors and avoid duplicates.
+  const links: Set<number>[] = []
+  for (let i = 0; i < cellCount; i++) links.push(new Set<number>())
+  const carveDoor = (a: number, b: number) => {
+    if (links[a].has(b)) return
+    links[a].add(b)
+    links[b].add(a)
+    const ra = rectOf(a)
+    const rb = rectOf(b)
+    if (ra.gy === rb.gy) {
+      // Horizontal neighbours: door on the shared column, a random shared row.
+      tiles[ra.y0 + rng.int(ROOM_H)][Math.min(ra.x1, rb.x1) + 1] = 'door'
+    } else {
+      // Vertical neighbours: door on the shared row, a random shared column.
+      tiles[Math.min(ra.y1, rb.y1) + 1][ra.x0 + rng.int(ROOM_W)] = 'door'
+    }
+  }
+
+  // Spanning tree via randomized DFS, so every room is reachable.
+  const startCell = rng.int(cellCount)
+  const visited = new Set<number>([startCell])
+  const stack = [startCell]
+  while (stack.length) {
+    const cur = stack[stack.length - 1]
+    const open = neighbors(cur).filter((n) => !visited.has(n))
+    if (open.length === 0) {
+      stack.pop()
+      continue
+    }
+    const next = open[rng.int(open.length)]
+    carveDoor(cur, next)
+    visited.add(next)
+    stack.push(next)
+  }
+
+  // A few extra doors for loops, so it isn't a pure tree.
+  for (let cell = 0; cell < cellCount; cell++) {
+    for (const n of neighbors(cell)) {
+      if (n > cell && !links[cell].has(n) && rng.next() < 0.25) carveDoor(cell, n)
+    }
+  }
+
+  // BFS distances from the start cell over the carved doors.
+  const dist = new Array<number>(cellCount).fill(-1)
+  dist[startCell] = 0
+  const queue = [startCell]
+  for (let i = 0; i < queue.length; i++) {
+    for (const n of links[queue[i]]) {
+      if (dist[n] === -1) {
+        dist[n] = dist[queue[i]] + 1
+        queue.push(n)
       }
     }
-    tiles.push(row)
+  }
+
+  // The chest goes in the farthest room (ties broken by lowest cell id).
+  let chestCell = startCell
+  for (let cell = 0; cell < cellCount; cell++) {
+    if (dist[cell] > dist[chestCell]) chestCell = cell
+  }
+
+  // Name and record every room.
+  const rooms: Room[] = []
+  let nameIdx = 0
+  for (let cell = 0; cell < cellCount; cell++) {
+    const r = rectOf(cell)
+    const name =
+      cell === startCell
+        ? 'the entry hall'
+        : cell === chestCell
+          ? 'the vault'
+          : ROOM_NAMES[nameIdx++ % ROOM_NAMES.length]
+    rooms.push({ id: cell, name, x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 })
+  }
+
+  const playerStart = centerOf(startCell)
+
+  // Place the chest (the win tile) and an inert stairway beside it.
+  const chestAt = centerOf(chestCell)
+  tiles[chestAt.y][chestAt.x] = 'chest'
+  if (chestAt.x + 1 <= rectOf(chestCell).x1) tiles[chestAt.y][chestAt.x + 1] = 'stairs'
+
+  // Scatter enemies by depth onto free interior floor tiles.
+  const taken = new Set<string>([`${playerStart.x},${playerStart.y}`])
+  const enemies: Enemy[] = []
+  let enemyId = 0
+  const placeIn = (cell: number, kinds: EnemyKind[]) => {
+    const r = rectOf(cell)
+    const free: Point[] = []
+    for (let y = r.y0; y <= r.y1; y++) {
+      for (let x = r.x0; x <= r.x1; x++) {
+        if (tiles[y][x] === 'floor' && !taken.has(`${x},${y}`)) free.push({ x, y })
+      }
+    }
+    for (const kind of kinds) {
+      if (free.length === 0) break
+      const spot = free.splice(rng.int(free.length), 1)[0]
+      taken.add(`${spot.x},${spot.y}`)
+      enemies.push(spawnEnemy(rooms, kind, enemyId++, spot.x, spot.y))
+    }
+  }
+  for (let cell = 0; cell < cellCount; cell++) {
+    if (cell === startCell) continue
+    if (cell === chestCell) {
+      placeIn(cell, ['goblin', 'bat']) // guarded loot
+      continue
+    }
+    const d = dist[cell]
+    const kinds: EnemyKind[] = d >= 3 ? ['bat', 'goblin'] : d === 2 ? ['bat', 'bat'] : ['bat']
+    placeIn(cell, kinds)
   }
 
   return { cols, rows, tiles, rooms, playerStart, enemies }

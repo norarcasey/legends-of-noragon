@@ -33,12 +33,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   activity log on wide screens (stacking on narrow), the board is capped by
   viewport height, and tile glyphs scale to the grid — so a bigger board never
   pushes the cards or log off the bottom of the page.
-- Dungeon-generation seam: the level is now produced by `generateDungeon(seed)`
-  and carried in game state, with the spatial helpers (`roomAt`, `tileAt`,
-  fog-of-war, enemy chase/phase) taking the dungeon as input instead of a
-  module-level constant. The generator still emits the fixed map today, so a
-  seed-based procedural layout can drop in behind it without touching the rest of
-  the engine.
+- Procedural dungeons: `generateDungeon(seed)` now builds a randomized
+  rooms-on-a-grid level — a seeded RNG carves a spanning set of doors (plus a few
+  loops) so every room is reachable, drops the chest in the farthest room, and
+  scatters enemies by depth (the start room stays safe, the vault is guarded).
+  Every seed is a different, fully-solvable map; pass a `seed` to replay one
+  exactly. The dungeon is carried in game state and the spatial helpers
+  (`roomAt`, `tileAt`, fog-of-war, enemy chase/phase) take it as input rather
+  than a module-level constant.
 - A fourth room and a tougher foe: the dungeon is now a 2×2 clockwise ring —
   entry hall, roost (2 bats), goblin den (1 Goblin: 8 HP, hits for 2 at 70%),
   and the vault with the chest. Enemy combat stats (hp, accuracy, damage, glyph,

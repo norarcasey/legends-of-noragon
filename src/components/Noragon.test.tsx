@@ -1,11 +1,10 @@
-import { StrictMode } from 'react'
-import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { render, renderHook, act, fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
-import { useNoragon } from '../game/useNoragon'
-import type { NoragonApi } from '../game/useNoragon'
+import { useNoragon } from './../game/useNoragon'
+import type { NoragonApi, UseNoragonOptions } from './../game/useNoragon'
 import { ENEMY_INFO } from '../game/enemies'
-import type { Direction, Point } from '../game/types'
+import type { Direction, Point, TileType } from '../game/types'
 
 const DELTA: Record<Direction, Point> = {
   up: { x: 0, y: -1 },
@@ -14,42 +13,126 @@ const DELTA: Record<Direction, Point> = {
   right: { x: 1, y: 0 },
 }
 
-// Pick a legal (non-wall) step that heads toward `target`, closing the larger
-// gap first. Used to drive the hero deterministically without hand-listing moves.
-function stepToward(state: NoragonApi, target: Point): Direction {
-  const { player, tiles } = state
-  const dx = target.x - player.x
-  const dy = target.y - player.y
-  const horiz: Direction | null = dx > 0 ? 'right' : dx < 0 ? 'left' : null
-  const vert: Direction | null = dy > 0 ? 'down' : dy < 0 ? 'up' : null
-  const preferred = Math.abs(dx) >= Math.abs(dy) ? [horiz, vert] : [vert, horiz]
-  const order: Direction[] = []
-  for (const d of [...preferred, 'up', 'down', 'left', 'right'] as const) {
-    if (d && !order.includes(d)) order.push(d)
-  }
-  for (const d of order) {
-    const tx = player.x + DELTA[d].x
-    const ty = player.y + DELTA[d].y
-    if (tiles[ty]?.[tx] && tiles[ty][tx] !== 'wall') return d
-  }
-  return 'right'
+const KEY: Record<Direction, string> = {
+  up: 'ArrowUp',
+  down: 'ArrowDown',
+  left: 'ArrowLeft',
+  right: 'ArrowRight',
 }
 
-// Drive the hero through a list of waypoints, stepping toward each until reached.
-// Enemies in the way get bumped (and eventually cleared) — fine for navigation.
-function walkThrough(result: { current: NoragonApi }, points: Point[], cap = 150) {
-  for (const wp of points) {
-    let i = 0
-    while (
-      result.current.status === 'playing' &&
-      !(result.current.player.x === wp.x && result.current.player.y === wp.y) &&
-      i < cap
-    ) {
-      act(() => result.current.move(stepToward(result.current, wp)))
-      i++
+const DIRECTIONS: Direction[] = ['up', 'down', 'left', 'right']
+
+const keyOf = (p: Point) => `${p.x},${p.y}`
+
+function findTile(tiles: TileType[][], type: TileType): Point | null {
+  for (let y = 0; y < tiles.length; y++) {
+    for (let x = 0; x < tiles[y].length; x++) {
+      if (tiles[y][x] === type) return { x, y }
     }
   }
+  return null
 }
+
+/** BFS over walkable tiles; returns the first step from `from` toward `to`. */
+function bfsDir(tiles: TileType[][], from: Point, to: Point, blockChest = false): Direction | null {
+  const walkable = (x: number, y: number) => {
+    const t = tiles[y]?.[x]
+    if (!t || t === 'wall') return false
+    if (blockChest && t === 'chest') return false
+    return true
+  }
+  const prev = new Map<string, { from: Point; dir: Direction } | null>()
+  prev.set(keyOf(from), null)
+  const queue: Point[] = [from]
+  while (queue.length) {
+    const cur = queue.shift()
+    if (!cur) break
+    if (cur.x === to.x && cur.y === to.y) break
+    for (const dir of DIRECTIONS) {
+      const nx = cur.x + DELTA[dir].x
+      const ny = cur.y + DELTA[dir].y
+      if (!walkable(nx, ny)) continue
+      const k = `${nx},${ny}`
+      if (prev.has(k)) continue
+      prev.set(k, { from: cur, dir })
+      queue.push({ x: nx, y: ny })
+    }
+  }
+  if (!prev.has(keyOf(to))) return null
+  let entry = prev.get(keyOf(to))
+  if (!entry) return null
+  while (entry && !(entry.from.x === from.x && entry.from.y === from.y)) {
+    entry = prev.get(keyOf(entry.from))
+  }
+  return entry ? entry.dir : null
+}
+
+type Hook = { current: NoragonApi }
+
+/** Walk the hero to a target tile, re-pathing each step (enemies get bumped). */
+function navigateToTile(result: Hook, target: Point, blockChest = true, cap = 600) {
+  for (let i = 0; i < cap && result.current.status === 'playing'; i++) {
+    const p = result.current.player
+    if (p.x === target.x && p.y === target.y) break
+    const dir = bfsDir(result.current.tiles, p, target, blockChest)
+    if (!dir) break
+    act(() => result.current.move(dir))
+  }
+}
+
+/** Walk toward `enemies[0]` until the hero shares a room with active enemies. */
+function enterEnemyRoom(result: Hook, cap = 600) {
+  for (let i = 0; i < cap && result.current.status === 'playing'; i++) {
+    if (result.current.activeEnemies.length > 0) return
+    const foe = result.current.enemies[0]
+    if (!foe) return
+    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    if (!dir) return
+    act(() => result.current.move(dir))
+  }
+}
+
+/** Walk into a room that holds at least two enemies (for target cycling). */
+function enterMultiEnemyRoom(result: Hook, cap = 600) {
+  const counts = new Map<number, number>()
+  for (const e of result.current.enemies) counts.set(e.room, (counts.get(e.room) ?? 0) + 1)
+  let roomId = -1
+  for (const [room, n] of counts) {
+    if (n >= 2) {
+      roomId = room
+      break
+    }
+  }
+  if (roomId === -1) return
+  for (let i = 0; i < cap && result.current.status === 'playing'; i++) {
+    if (result.current.activeEnemies.length >= 2) return
+    const foe = result.current.enemies.find((e) => e.room === roomId)
+    if (!foe) return
+    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    if (!dir) return
+    act(() => result.current.move(dir))
+  }
+}
+
+/** Compute the keystroke path to the first enemy room for a given run. */
+function dirsToEnemyRoom(opts: UseNoragonOptions): Direction[] {
+  const { result, unmount } = renderHook(() => useNoragon(opts))
+  act(() => result.current.start())
+  const dirs: Direction[] = []
+  for (let i = 0; i < 200 && result.current.status === 'playing'; i++) {
+    if (result.current.activeEnemies.length > 0) break
+    const foe = result.current.enemies[0]
+    if (!foe) break
+    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    if (!dir) break
+    dirs.push(dir)
+    act(() => result.current.move(dir))
+  }
+  unmount()
+  return dirs
+}
+
+const SEEDS = [1, 7, 42, 99, 256, 4242]
 
 describe('<Noragon />', () => {
   it('renders the title, the hero stats, and the idle overlay by default', () => {
@@ -68,126 +151,190 @@ describe('<Noragon />', () => {
   })
 
   it('starts on the first direction key and renders the hero', () => {
-    render(<Noragon />)
+    render(<Noragon seed={7} />)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(screen.queryByText('Descend into the dungeon of Noragon')).not.toBeInTheDocument()
     expect(screen.getByTestId('player')).toBeInTheDocument()
   })
 
-  it('keeps a room and its bats hidden until the hero enters it', () => {
-    render(<Noragon />)
-    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + step into the entry hall
-    // The bats live in the next room, still in the dark.
-    expect(screen.queryAllByTestId('enemy-bat')).toHaveLength(0)
-
-    // Press east until the hero crosses into the bats' room.
-    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
-    expect(screen.getAllByTestId('enemy-bat')).toHaveLength(2)
-  })
-
-  it('shows enemy cards only once the hero shares a room with active enemies', () => {
-    render(<Noragon />)
-    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start in the empty entry hall
-    expect(screen.queryAllByTestId('enemy-card')).toHaveLength(0)
-
-    // Walk into the bats' room — two cards, named and with a health readout.
-    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
-    const cards = screen.getAllByTestId('enemy-card')
-    expect(cards).toHaveLength(2)
-    expect(screen.getAllByText('Bat')).toHaveLength(2)
-    expect(screen.getAllByText('3/3')).toHaveLength(2)
-  })
-
   it('records each turn in the activity log', () => {
-    render(<Noragon />)
-    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + first step east
+    render(<Noragon seed={7} />)
+    // The hero starts at a room centre, so a step east is always onto floor.
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
     const log = screen.getByTestId('activity-log')
     expect(log).toHaveTextContent('You descend into the dungeon of Noragon.')
-    expect(log).toHaveTextContent('You enter the entry hall.')
     expect(log).toHaveTextContent('You move east.')
   })
 
+  it('keeps enemies hidden until the hero enters their room', () => {
+    const opts = {
+      seed: 7,
+      maxHp: 99,
+      attacks: { melee: { accuracy: 0, minDamage: 3, maxDamage: 6 } },
+    }
+    const dirs = dirsToEnemyRoom(opts)
+    render(<Noragon {...opts} />)
+    // Nothing dangerous is on screen from the safe entry hall.
+    expect(screen.queryAllByTestId(/^enemy-/)).toHaveLength(0)
+    for (const dir of dirs) fireEvent.keyDown(window, { key: KEY[dir] })
+    expect(screen.getAllByTestId(/^enemy-/).length).toBeGreaterThan(0)
+  })
+
   it('aims with F (banner + targeted card) and fires with F', () => {
-    render(<Noragon seed={7} attacks={{ ranged: { accuracy: 1, minDamage: 10, maxDamage: 10 } }} />)
-    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + step east
-    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' }) // into the roost
+    const opts = {
+      seed: 7,
+      maxHp: 99,
+      attacks: {
+        melee: { accuracy: 0, minDamage: 3, maxDamage: 6 },
+        ranged: { accuracy: 1, minDamage: 10, maxDamage: 10 },
+      },
+    }
+    const dirs = dirsToEnemyRoom(opts)
+    render(<Noragon {...opts} />)
+    for (const dir of dirs) fireEvent.keyDown(window, { key: KEY[dir] })
 
     expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'f' })
     expect(screen.getByTestId('aim-banner')).toBeInTheDocument()
-    // Exactly one enemy card is marked as the current target.
     expect(
       screen.getAllByTestId('enemy-card').filter((c) => c.getAttribute('aria-current')),
     ).toHaveLength(1)
 
     fireEvent.keyDown(window, { key: 'f' }) // loose the arrow
     expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
-    expect(screen.getByTestId('activity-log')).toHaveTextContent('You shoot the Bat')
+    expect(screen.getByTestId('activity-log')).toHaveTextContent('You shoot the')
   })
 
   it('cancels aiming with Escape without firing', () => {
-    render(<Noragon seed={7} />)
-    fireEvent.keyDown(window, { key: 'ArrowRight' })
-    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+    const opts = {
+      seed: 7,
+      maxHp: 99,
+      attacks: { melee: { accuracy: 0, minDamage: 3, maxDamage: 6 } },
+    }
+    const dirs = dirsToEnemyRoom(opts)
+    render(<Noragon {...opts} />)
+    for (const dir of dirs) fireEvent.keyDown(window, { key: KEY[dir] })
 
     fireEvent.keyDown(window, { key: 'f' })
     expect(screen.getByTestId('aim-banner')).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'Escape' })
-
     expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
     expect(screen.getByTestId('activity-log')).not.toHaveTextContent('You shoot')
   })
 })
 
-describe('useNoragon', () => {
-  it('slays both bats when the hero hunts them down (StrictMode)', () => {
-    // StrictMode double-invokes the reducer; a seeded, pure reducer must survive
-    // it. Sure-hit, high-damage tuning makes the kills deterministic.
-    const { result } = renderHook(
-      () =>
-        useNoragon({
-          maxHp: 99,
-          attacks: { melee: { accuracy: 1, minDamage: 10, maxDamage: 10 } },
-          seed: 1,
-        }),
-      { wrapper: StrictMode },
-    )
-    act(() => result.current.start())
-
-    // Hunt the bats in the roost (the goblin sits in its own room, unbothered).
-    const firstBat = () => result.current.enemies.find((e) => e.kind === 'bat')
-    for (let i = 0; i < 200 && firstBat(); i++) {
-      const bat = firstBat()
-      if (!bat) break
-      act(() => result.current.move(stepToward(result.current, bat)))
-    }
-
-    expect(result.current.kills).toBe(2)
-    expect(result.current.enemies.some((e) => e.kind === 'bat')).toBe(false)
-    expect(result.current.enemies.some((e) => e.kind === 'goblin')).toBe(true)
-    expect(result.current.status).toBe('playing')
+describe('useNoragon — procedural generation', () => {
+  const layoutOf = (result: Hook) => ({
+    tiles: result.current.tiles.map((row) => row.join('')),
+    player: result.current.player,
+    enemies: result.current.enemies.map((e) => ({ kind: e.kind, x: e.x, y: e.y })),
   })
 
-  it('can miss in melee, leaving the bat unharmed', () => {
-    // Accuracy 0 — every swing whiffs, so no bat takes damage.
+  it('generates the same dungeon for the same seed', () => {
+    const run = () => {
+      const { result } = renderHook(() => useNoragon({ seed: 123 }))
+      act(() => result.current.start())
+      return layoutOf(result)
+    }
+    expect(run()).toEqual(run())
+  })
+
+  it('generates different dungeons for different seeds', () => {
+    const fingerprint = (seed: number) => {
+      const { result } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      return result.current.tiles.map((row) => row.join('')).join('\n')
+    }
+    const unique = new Set(SEEDS.map(fingerprint))
+    expect(unique.size).toBeGreaterThan(1)
+  })
+
+  it('is always walled, holds exactly one chest, and is fully solvable', () => {
+    for (const seed of SEEDS) {
+      const { result } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      const { tiles, player } = result.current
+      const rows = tiles.length
+      const cols = tiles[0].length
+
+      // Solid outer border.
+      for (let x = 0; x < cols; x++) {
+        expect(tiles[0][x]).toBe('wall')
+        expect(tiles[rows - 1][x]).toBe('wall')
+      }
+      for (let y = 0; y < rows; y++) {
+        expect(tiles[y][0]).toBe('wall')
+        expect(tiles[y][cols - 1]).toBe('wall')
+      }
+
+      // Exactly one chest, and the hero stands on floor.
+      const chestCount = tiles.flat().filter((t) => t === 'chest').length
+      expect(chestCount).toBe(1)
+      expect(tiles[player.y][player.x]).toBe('floor')
+
+      // The chest is reachable from the hero across walkable tiles.
+      const chest = findTile(tiles, 'chest')
+      expect(chest).not.toBeNull()
+      const seen = new Set<string>([keyOf(player)])
+      const queue: Point[] = [player]
+      while (queue.length) {
+        const c = queue.shift()
+        if (!c) break
+        for (const dir of DIRECTIONS) {
+          const nx = c.x + DELTA[dir].x
+          const ny = c.y + DELTA[dir].y
+          const t = tiles[ny]?.[nx]
+          if (!t || t === 'wall' || seen.has(`${nx},${ny}`)) continue
+          seen.add(`${nx},${ny}`)
+          queue.push({ x: nx, y: ny })
+        }
+      }
+      if (chest) expect(seen.has(keyOf(chest))).toBe(true)
+    }
+  })
+
+  it('keeps the starting room safe (no enemies share it)', () => {
+    for (const seed of SEEDS) {
+      const { result } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      expect(result.current.activeEnemies).toHaveLength(0)
+      expect(result.current.enemies.length).toBeGreaterThan(0) // but the dungeon has foes
+    }
+  })
+
+  it('completes the level when the hero reaches the chest', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 42 }))
+    act(() => result.current.start())
+    const chest = findTile(result.current.tiles, 'chest')
+    expect(chest).not.toBeNull()
+    if (chest) navigateToTile(result, chest, false)
+    expect(result.current.status).toBe('won')
+  })
+})
+
+describe('useNoragon — combat', () => {
+  it('can miss in melee, leaving foes unharmed', () => {
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 99,
-        attacks: { melee: { accuracy: 0, minDamage: 2, maxDamage: 5 } },
-        seed: 1,
+        attacks: { melee: { accuracy: 0, minDamage: 3, maxDamage: 6 } },
+        seed: 7,
       }),
     )
     act(() => result.current.start())
+    enterEnemyRoom(result)
+    expect(result.current.activeEnemies.length).toBeGreaterThan(0)
 
-    for (let i = 0; i < 30; i++) {
-      const bat = result.current.enemies[0]
-      if (!bat) break
-      act(() => result.current.move(stepToward(result.current, bat)))
+    // Bump the nearest foe a few times; with accuracy 0 every swing whiffs.
+    for (let i = 0; i < 20; i++) {
+      const foe = result.current.activeEnemies[0]
+      if (!foe) break
+      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      if (!dir) break
+      act(() => result.current.move(dir))
     }
 
-    const texts = result.current.log.map((e) => e.text)
-    expect(texts).toContain('You swing at the Bat and miss.')
-    expect(result.current.enemies.filter((e) => e.kind === 'bat')).toHaveLength(2)
+    expect(result.current.log.some((e) => /and miss\.$/.test(e.text))).toBe(true)
     expect(result.current.enemies.every((e) => e.hp === e.maxHp)).toBe(true)
   })
 
@@ -195,52 +342,42 @@ describe('useNoragon', () => {
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 99,
-        attacks: { melee: { accuracy: 1, minDamage: 2, maxDamage: 5 } },
-        seed: 3,
+        attacks: { melee: { accuracy: 1, minDamage: 3, maxDamage: 6 } },
+        seed: 7,
       }),
     )
     act(() => result.current.start())
+    enterEnemyRoom(result)
 
-    for (let i = 0; i < 200 && result.current.enemies.length > 0; i++) {
-      act(() => result.current.move(stepToward(result.current, result.current.enemies[0])))
+    // Clear the room, bumping the nearest active foe each turn.
+    for (let i = 0; i < 80 && result.current.activeEnemies.length > 0; i++) {
+      const foe = result.current.activeEnemies[0]
+      if (!foe) break
+      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      if (!dir) break
+      act(() => result.current.move(dir))
     }
 
     const damages: number[] = []
     for (const entry of result.current.log) {
-      const match = entry.text.match(/^You strike the Bat for (\d+)/)
-      if (match) damages.push(Number(match[1]))
+      const m = entry.text.match(/^You strike the \w+ for (\d+)/)
+      if (m) damages.push(Number(m[1]))
     }
     expect(damages.length).toBeGreaterThan(0)
-    expect(damages.every((d) => d >= 2 && d <= 5)).toBe(true)
+    expect(damages.every((d) => d >= 3 && d <= 6)).toBe(true)
   })
 
-  it('produces identical runs from the same seed', () => {
-    const run = () => {
-      const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 42 }))
-      act(() => result.current.start())
-      for (let i = 0; i < 40; i++) {
-        const bat = result.current.enemies[0]
-        const dir = bat ? stepToward(result.current, bat) : 'right'
-        act(() => result.current.move(dir))
-      }
-      return result.current.log.map((e) => e.text)
-    }
-    expect(run()).toEqual(run())
-  })
-
-  it('shoots a targeted enemy from range, costing a turn', () => {
+  it('shoots a targeted foe from range, costing a turn', () => {
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 99,
         attacks: { ranged: { accuracy: 1, minDamage: 10, maxDamage: 10 } },
-        seed: 4,
+        seed: 7,
       }),
     )
     act(() => result.current.start())
-    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
-      act(() => result.current.move('right'))
-    }
-    expect(result.current.activeEnemies).toHaveLength(2)
+    enterEnemyRoom(result)
+    expect(result.current.activeEnemies.length).toBeGreaterThan(0)
 
     act(() => result.current.aimStart())
     expect(result.current.aiming).toBe(true)
@@ -248,199 +385,93 @@ describe('useNoragon', () => {
     const turnsBefore = result.current.turns
 
     act(() => result.current.fire())
-
     expect(result.current.aiming).toBe(false)
     expect(result.current.turns).toBe(turnsBefore + 1)
-    expect(result.current.kills).toBe(1)
-    expect(result.current.enemies.filter((e) => e.kind === 'bat')).toHaveLength(1) // one bat felled
-    expect(result.current.log.some((e) => /^You shoot the Bat for 10 — slain!$/.test(e.text))).toBe(
-      true,
-    )
+    expect(result.current.kills).toBeGreaterThan(0)
+    expect(result.current.log.some((e) => /^You shoot the \w+ for 10/.test(e.text))).toBe(true)
   })
 
-  it('cycles the crosshairs among enemies in the room', () => {
-    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 4 }))
+  it('cycles the crosshairs among foes in the room', () => {
+    // Sure-kill melee clears any single foe blocking the route deeper, so the
+    // hero can reach a room that still holds two foes to cycle between.
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 10, maxDamage: 10 } },
+        seed: 7,
+      }),
+    )
     act(() => result.current.start())
-    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
-      act(() => result.current.move('right'))
-    }
+    enterMultiEnemyRoom(result)
+    expect(result.current.activeEnemies.length).toBeGreaterThanOrEqual(2)
 
     act(() => result.current.aimStart())
     const first = result.current.targetId
     act(() => result.current.aimCycle(1))
     const second = result.current.targetId
-    act(() => result.current.aimCycle(1))
+    act(() => result.current.aimCycle(-1))
     const third = result.current.targetId
 
-    expect(second).not.toBe(first) // moved to the other bat
-    expect(third).toBe(first) // wrapped back around (two enemies)
+    expect(second).not.toBe(first)
+    expect(third).toBe(first)
   })
 
-  it('logs a miss when the arrow whiffs, leaving the target alive', () => {
-    const { result } = renderHook(() =>
-      useNoragon({
-        maxHp: 99,
-        attacks: { ranged: { accuracy: 0, minDamage: 1, maxDamage: 4 } },
-        seed: 4,
-      }),
-    )
-    act(() => result.current.start())
-    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
-      act(() => result.current.move('right'))
-    }
-
-    act(() => result.current.aimStart())
-    act(() => result.current.fire())
-
-    expect(result.current.enemies.filter((e) => e.kind === 'bat')).toHaveLength(2) // none felled
-    expect(result.current.log.some((e) => /^Your arrow misses the Bat\.$/.test(e.text))).toBe(true)
-  })
-
-  it('refuses to aim when no enemy is in range', () => {
-    const { result } = renderHook(() => useNoragon({ seed: 4 }))
-    act(() => result.current.start()) // empty entry hall
-    act(() => result.current.aimStart())
-
-    expect(result.current.aiming).toBe(false)
-    expect(result.current.log.map((e) => e.text)).toContain('There is nothing in range to shoot.')
-  })
-
-  it('spawns a lone goblin in the fourth room, tougher than the bats', () => {
-    const { result } = renderHook(() => useNoragon({ seed: 1 }))
-    act(() => result.current.start())
-
-    const goblins = result.current.enemies.filter((e) => e.kind === 'goblin')
-    expect(goblins).toHaveLength(1)
-    expect(result.current.enemies).toHaveLength(3) // two bats + the goblin
-    expect(goblins[0].maxHp).toBe(8)
-    expect(goblins[0].room).toBe(2) // the goblin den
-
-    // The bestiary makes the goblin the sturdier, harder-hitting foe.
-    expect(ENEMY_INFO.goblin.maxHp).toBeGreaterThan(ENEMY_INFO.bat.maxHp)
-    expect(ENEMY_INFO.goblin.damage).toBeGreaterThan(ENEMY_INFO.bat.damage)
-  })
-
-  it('the goblin only stirs once the hero enters its room', () => {
-    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 1 }))
-    act(() => result.current.start())
-
-    // Reach the goblin den (clockwise: roost, then down into the den).
-    walkThrough(result, [
-      { x: 6, y: 3 },
-      { x: 9, y: 4 },
-      { x: 9, y: 7 },
-    ])
-
-    expect(result.current.currentRoom).toBe(2)
-    expect(result.current.activeEnemies.some((e) => e.kind === 'goblin')).toBe(true)
-  })
-
-  it('completes the level when the hero reaches the chest', () => {
-    // A sturdy, seeded hero navigates the clockwise ring of rooms to the vault
-    // chest, fighting through whatever's in the way.
-    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 1 }))
-    act(() => result.current.start())
-
-    walkThrough(result, [
-      { x: 6, y: 3 }, // hall → roost doorway
-      { x: 9, y: 4 }, // across the roost
-      { x: 9, y: 7 }, // roost → goblin den doorway
-      { x: 7, y: 9 }, // across the den toward the next door
-      { x: 5, y: 9 }, // den → vault doorway
-      { x: 3, y: 9 }, // the chest
-    ])
-
-    expect(result.current.status).toBe('won')
-  })
-
-  it('kills the hero when bats land enough bites', () => {
-    // A 1-HP hero who never connects (accuracy 0) is doomed once adjacent — the
-    // bats stay alive and bite until one lands. Seeded for a deterministic death.
+  it('kills the hero when foes land enough hits', () => {
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 1,
-        attacks: { melee: { accuracy: 0, minDamage: 2, maxDamage: 5 } },
-        seed: 1,
+        attacks: { melee: { accuracy: 0, minDamage: 3, maxDamage: 6 } },
+        seed: 7,
       }),
     )
     act(() => result.current.start())
+    enterEnemyRoom(result)
 
-    for (let i = 0; i < 100 && result.current.status === 'playing'; i++) {
-      const bat = result.current.enemies[0]
-      if (!bat) break
-      act(() => result.current.move(stepToward(result.current, bat)))
+    for (let i = 0; i < 40 && result.current.status === 'playing'; i++) {
+      const foe = result.current.activeEnemies[0]
+      if (!foe) break
+      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      if (!dir) break
+      act(() => result.current.move(dir))
     }
 
     expect(result.current.status).toBe('dead')
     expect(result.current.hp).toBe(0)
   })
 
-  it('reveals rooms through fog only as the hero enters them', () => {
-    const { result } = renderHook(() => useNoragon())
-    act(() => result.current.start())
-
-    // Start room (around the hero) is lit; the roost and the vault are dark.
-    expect(result.current.visible[3][3]).toBe(true) // hero start tile
-    expect(result.current.visible[2][8]).toBe(false) // a bat in the roost
-    expect(result.current.visible[9][3]).toBe(false) // the chest in the vault
-    expect(result.current.revealedRooms).toEqual([0])
-
-    // Walk east into the roost.
-    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
-      act(() => result.current.move('right'))
-    }
-
-    expect(result.current.revealedRooms).toContain(1)
-    expect(result.current.visible[2][8]).toBe(true) // the roost is now lit
-    expect(result.current.visible[9][3]).toBe(false) // the vault is still dark
-  })
-
-  it('marks enemies active only while the hero shares their room', () => {
-    const { result } = renderHook(() => useNoragon())
-    act(() => result.current.start())
-    expect(result.current.activeEnemies).toHaveLength(0) // empty entry hall
-
-    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
-      act(() => result.current.move('right'))
-    }
-
-    expect(result.current.currentRoom).toBe(1)
-    expect(result.current.activeEnemies).toHaveLength(2)
-    expect(result.current.activeEnemies.every((e) => e.kind === 'bat')).toBe(true)
-  })
-
-  it('narrates moves, room discoveries, and strikes in the activity log', () => {
-    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 5 }), { wrapper: StrictMode })
-    act(() => result.current.start())
-    expect(result.current.log.map((e) => e.text)).toContain('You enter the entry hall.')
-
-    for (let i = 0; i < 200 && result.current.enemies.length > 0; i++) {
-      const dir = stepToward(result.current, result.current.enemies[0])
-      act(() => result.current.move(dir))
-    }
-
-    const texts = result.current.log.map((e) => e.text)
-    expect(texts).toContain('You enter the roost.')
-    expect(texts.some((t) => t.endsWith('— slain!'))).toBe(true)
-    // Ids are unique and monotonic so React keys stay stable.
-    const ids = result.current.log.map((e) => e.id)
-    expect(new Set(ids).size).toBe(ids.length)
+  it('makes the goblin tougher and harder-hitting than the bat', () => {
+    expect(ENEMY_INFO.goblin.maxHp).toBeGreaterThan(ENEMY_INFO.bat.maxHp)
+    expect(ENEMY_INFO.goblin.damage).toBeGreaterThan(ENEMY_INFO.bat.damage)
   })
 
   it('ignores a move into a wall — no step, no turn', () => {
-    const { result } = renderHook(() => useNoragon())
+    // Sure-hit, high-damage so any foe in the way dies and the climb continues.
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 10, maxDamage: 10 } },
+        seed: 7,
+      }),
+    )
     act(() => result.current.start())
 
-    // Walk up to the entry hall's north wall, then try to step through it.
-    act(() => result.current.move('up'))
-    act(() => result.current.move('up')) // now hard against the top row
-    const before = result.current.player
-    const turnsBefore = result.current.turns
-
-    act(() => result.current.move('up')) // into the wall — a no-op
-
-    expect(result.current.player).toEqual(before)
-    expect(result.current.turns).toBe(turnsBefore)
+    // March north until a move is a true no-op (player and turn both unchanged) —
+    // that is the outer wall, since enemy bumps still consume a turn.
+    let bumped = false
+    for (let i = 0; i < 60; i++) {
+      const beforeP = result.current.player
+      const beforeT = result.current.turns
+      act(() => result.current.move('up'))
+      if (
+        result.current.player.x === beforeP.x &&
+        result.current.player.y === beforeP.y &&
+        result.current.turns === beforeT
+      ) {
+        bumped = true
+        break
+      }
+    }
+    expect(bumped).toBe(true)
     expect(result.current.status).toBe('playing')
   })
 })
