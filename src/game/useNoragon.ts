@@ -58,12 +58,24 @@ export interface NoragonApi {
   /** Per-tile fog-of-war mask (`visible[y][x]`): a tile is shown once a room it
    *  borders has been discovered. Undiscovered tiles render as fog. */
   visible: boolean[][]
+  /** Whether the hero is aiming a ranged attack. */
+  aiming: boolean
+  /** Id of the enemy in the crosshairs while aiming, else `null`. */
+  targetId: number | null
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
   reset: () => void
   /** Step the hero one tile. Bumping an enemy attacks it; a wall is ignored. */
   move: (dir: Direction) => void
+  /** Enter ranged-aiming mode, targeting the nearest enemy in the room. */
+  aimStart: () => void
+  /** While aiming, move the crosshairs to another enemy (`+1` next, `-1` prev). */
+  aimCycle: (delta: number) => void
+  /** Leave aiming mode without firing. */
+  aimCancel: () => void
+  /** Loose a ranged attack at the targeted enemy; costs the turn. */
+  fire: () => void
 }
 
 const DEFAULTS = { maxHp: 6 }
@@ -271,6 +283,10 @@ interface GameState extends HeroConfig {
   nextLogId: number
   /** Current PRNG state driving combat rolls; advanced purely each transition. */
   rngState: number
+  /** Whether the hero is in ranged-aiming mode (arrows cycle targets, not move). */
+  aiming: boolean
+  /** Id of the enemy currently in the crosshairs while aiming, else `null`. */
+  targetId: number | null
 }
 
 type GameAction =
@@ -278,6 +294,10 @@ type GameAction =
   | { type: 'reset'; seed: number }
   | { type: 'start'; seed: number }
   | { type: 'move'; dir: Direction }
+  | { type: 'aimStart' }
+  | { type: 'aimCycle'; delta: number }
+  | { type: 'aimCancel' }
+  | { type: 'fire' }
 
 function makeInitial(config: HeroConfig, seed: number): GameState {
   return {
@@ -293,6 +313,8 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
     log: [],
     nextLogId: 0,
     rngState: seed >>> 0,
+    aiming: false,
+    targetId: null,
   }
 }
 
@@ -334,6 +356,59 @@ function chaseStep(bat: Enemy, target: Point, occupied: Set<string>): Point {
     if (inRoom && !occupied.has(`${c.x},${c.y}`)) return c
   }
   return { x: bat.x, y: bat.y }
+}
+
+const manhattan = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+
+/** Enemies sharing the hero's current room, in stable id order. */
+function activeEnemiesOf(player: Point, enemies: Enemy[]): Enemy[] {
+  const room = roomAt(player.x, player.y)
+  return enemies.filter((e) => e.room === room).sort((a, b) => a.id - b.id)
+}
+
+/**
+ * Run the enemy phase: every bat sharing the hero's room either bites (if
+ * adjacent, rolling its accuracy) or chases one step. Mutates `messages` and
+ * draws from the shared `roll`; returns the bats' new positions and the hero's
+ * remaining hp. Used by both moving and firing so a turn always ends the same way.
+ */
+function runEnemyPhase(
+  player: Point,
+  enemies: Enemy[],
+  hp: number,
+  roll: () => number,
+  messages: string[],
+): { enemies: Enemy[]; hp: number } {
+  const room = roomAt(player.x, player.y)
+  const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
+  const moved: Enemy[] = []
+  let nextHp = hp
+
+  for (const bat of enemies) {
+    if (bat.room !== room) {
+      moved.push(bat)
+      continue
+    }
+    if (manhattan(bat, player) === 1) {
+      // Adjacent: the bat rolls to land its bite for a flat 1 damage.
+      const name = ENEMY_INFO[bat.kind].name
+      if (roll() < BAT_ACCURACY) {
+        nextHp -= 1
+        messages.push(`The ${name} bites you for 1.`)
+      } else {
+        messages.push(`The ${name} swoops at you but misses.`)
+      }
+      moved.push(bat)
+      continue
+    }
+    // Otherwise chase. Reserve the destination so two bats can't stack.
+    occupied.delete(`${bat.x},${bat.y}`)
+    const step = chaseStep(bat, player, occupied)
+    occupied.add(`${step.x},${step.y}`)
+    moved.push({ ...bat, x: step.x, y: step.y })
+  }
+
+  return { enemies: moved, hp: nextHp }
 }
 
 function reducer(state: GameState, action: GameAction): GameState {
@@ -418,49 +493,104 @@ function reducer(state: GameState, action: GameAction): GameState {
       // Light up the room the hero just stepped into (a no-op if already known).
       const revealedRooms = reveal(state.revealedRooms, roomAt(player.x, player.y))
 
-      // ---- Enemy phase: bats in the hero's room take one action each. -------
-      const room = roomAt(player.x, player.y)
-      let hp = state.hp
-      const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
-      const moved: Enemy[] = []
-
-      for (const bat of enemies) {
-        if (bat.room !== room) {
-          moved.push(bat)
-          continue
-        }
-        const manhattan = Math.abs(bat.x - player.x) + Math.abs(bat.y - player.y)
-        if (manhattan === 1) {
-          // Adjacent: the bat rolls to land its bite for a flat 1 damage.
-          const name = ENEMY_INFO[bat.kind].name
-          if (roll() < BAT_ACCURACY) {
-            hp -= 1
-            messages.push(`The ${name} bites you for 1.`)
-          } else {
-            messages.push(`The ${name} swoops at you but misses.`)
-          }
-          moved.push(bat)
-          continue
-        }
-        // Otherwise chase. Reserve the destination so two bats can't stack.
-        occupied.delete(`${bat.x},${bat.y}`)
-        const step = chaseStep(bat, player, occupied)
-        occupied.add(`${step.x},${step.y}`)
-        moved.push({ ...bat, x: step.x, y: step.y })
-      }
-
-      const status: GameStatus = hp <= 0 ? 'dead' : 'playing'
+      const phase = runEnemyPhase(player, enemies, state.hp, roll, messages)
+      const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
       return {
         ...state,
         player,
-        hp: Math.max(0, hp),
-        enemies: moved,
+        hp: Math.max(0, phase.hp),
+        enemies: phase.enemies,
         kills,
         status,
         turns: state.turns + 1,
         revealedRooms,
+        rngState,
+        // Stepping ends any aim that was somehow still open.
+        aiming: false,
+        targetId: null,
+        ...logLines(state.log, state.nextLogId, messages),
+      }
+    }
+    case 'aimStart': {
+      if (state.status !== 'playing') return state
+      const actives = activeEnemiesOf(state.player, state.enemies)
+      if (actives.length === 0) {
+        return {
+          ...state,
+          ...logLines(state.log, state.nextLogId, ['There is nothing in range to shoot.']),
+        }
+      }
+      // Auto-select the nearest enemy as the starting target.
+      let nearest = actives[0]
+      for (const e of actives) {
+        if (manhattan(e, state.player) < manhattan(nearest, state.player)) nearest = e
+      }
+      return { ...state, aiming: true, targetId: nearest.id }
+    }
+    case 'aimCycle': {
+      if (!state.aiming) return state
+      const actives = activeEnemiesOf(state.player, state.enemies)
+      if (actives.length === 0) return { ...state, aiming: false, targetId: null }
+      const current = actives.findIndex((e) => e.id === state.targetId)
+      const base = current === -1 ? 0 : current
+      const next = (base + action.delta + actives.length) % actives.length
+      return { ...state, targetId: actives[next].id }
+    }
+    case 'aimCancel':
+      if (!state.aiming) return state
+      return { ...state, aiming: false, targetId: null }
+    case 'fire': {
+      if (state.status !== 'playing' || !state.aiming) return state
+      const target = state.enemies.find((e) => e.id === state.targetId)
+      const room = roomAt(state.player.x, state.player.y)
+      // Target must still be a live enemy in the hero's room.
+      if (!target || target.room !== room) {
+        return { ...state, aiming: false, targetId: null }
+      }
+
+      let rngState = state.rngState
+      const roll = () => {
+        const r = nextRng(rngState)
+        rngState = r.state
+        return r.value
+      }
+      const messages: string[] = []
+      let enemies = state.enemies
+      let kills = state.kills
+
+      // The hero looses an arrow: resolve the ranged profile, then enemies act.
+      const name = ENEMY_INFO[target.kind].name
+      const { hit, damage } = resolveAttack(state.attacks.ranged, roll)
+      if (hit) {
+        enemies = state.enemies
+          .map((e) => (e.id === target.id ? { ...e, hp: e.hp - damage } : e))
+          .filter((e) => e.hp > 0)
+        const slain = enemies.length < state.enemies.length
+        kills = state.kills + (slain ? 1 : 0)
+        messages.push(
+          slain
+            ? `You shoot the ${name} for ${damage} — slain!`
+            : `You shoot the ${name} for ${damage}.`,
+        )
+      } else {
+        messages.push(`Your arrow misses the ${name}.`)
+      }
+
+      const phase = runEnemyPhase(state.player, enemies, state.hp, roll, messages)
+      const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
+      if (status === 'dead') messages.push('You collapse, slain in the dark.')
+
+      return {
+        ...state,
+        hp: Math.max(0, phase.hp),
+        enemies: phase.enemies,
+        kills,
+        status,
+        turns: state.turns + 1,
+        aiming: false,
+        targetId: null,
         rngState,
         ...logLines(state.log, state.nextLogId, messages),
       }
@@ -521,6 +651,10 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const start = useCallback(() => dispatch({ type: 'start', seed: makeSeed() }), [makeSeed])
   const reset = useCallback(() => dispatch({ type: 'reset', seed: makeSeed() }), [makeSeed])
   const move = useCallback((dir: Direction) => dispatch({ type: 'move', dir }), [])
+  const aimStart = useCallback(() => dispatch({ type: 'aimStart' }), [])
+  const aimCycle = useCallback((delta: number) => dispatch({ type: 'aimCycle', delta }), [])
+  const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
+  const fire = useCallback(() => dispatch({ type: 'fire' }), [])
 
   // Enemies are "active" only while the hero shares their room — the same rule
   // that governs whether they take turns. Those are the ones we surface as cards.
@@ -544,8 +678,14 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     log: state.log,
     revealedRooms: state.revealedRooms,
     visible: computeVisible(state.revealedRooms),
+    aiming: state.aiming,
+    targetId: state.targetId,
     start,
     reset,
     move,
+    aimStart,
+    aimCycle,
+    aimCancel,
+    fire,
   }
 }

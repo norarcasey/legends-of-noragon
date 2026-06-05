@@ -9,8 +9,9 @@ export default function App() {
         <p className="demo__lede">
           A turn-based top-down dungeon crawl. Move the hero <span className="demo__hero">☻</span>{' '}
           with the arrow keys (or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>). Bump a bat{' '}
-          <span className="demo__bat">𝕓</span> to slay it, clear the middle room, and step onto the
-          chest <span className="demo__chest">▣</span> to complete the level.
+          <span className="demo__bat">𝕓</span> to strike it in melee, or press <kbd>F</kbd> to take
+          aim and loose an arrow — then clear the middle room and step onto the chest{' '}
+          <span className="demo__chest">▣</span> to complete the level.
         </p>
       </header>
 

@@ -9,6 +9,10 @@ interface BoardProps {
   enemies: Enemy[]
   /** Fog-of-war mask (`visible[y][x]`); undiscovered tiles render as fog. */
   visible: boolean[][]
+  /** Whether the hero is aiming; when true the targeted enemy shows a reticle. */
+  aiming: boolean
+  /** Id of the targeted enemy while aiming, else `null`. */
+  targetId: number | null
 }
 
 const TILE_GLYPH: Record<TileType, string> = {
@@ -24,7 +28,16 @@ const TILE_GLYPH: Record<TileType, string> = {
  * are drawn on top of whatever tile they stand on, so the whole grid is a single
  * pass over `tiles` with the entities looked up per cell.
  */
-export function Board({ cols, rows, tiles, player, enemies, visible }: BoardProps) {
+export function Board({
+  cols,
+  rows,
+  tiles,
+  player,
+  enemies,
+  visible,
+  aiming,
+  targetId,
+}: BoardProps) {
   const gridStyle: CSSProperties = {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
@@ -52,6 +65,7 @@ export function Board({ cols, rows, tiles, player, enemies, visible }: BoardProp
           } else if (bat) {
             cls += ' noragon__tile--bat'
             glyph = '𝕓'
+            if (aiming && bat.id === targetId) cls += ' noragon__tile--target'
           }
           return (
             <div

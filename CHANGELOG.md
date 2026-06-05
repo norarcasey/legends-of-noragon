@@ -29,6 +29,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reproducible from a `seed` — omit it for a fresh random run each game.
 - Movement is pure roguelike (one move, one turn); the placeholder stamina stat
   was removed.
+- Ranged attacks with an aiming mode: press F to aim (nearest enemy auto-targeted,
+  shown with an on-board reticle and a highlighted enemy card), Tab/arrow keys to
+  switch targets, F/Enter to loose an arrow, Esc to cancel. Firing resolves the
+  hero's `ranged` profile and costs the turn like any other action; ammo is
+  unlimited for now. The hook exposes `aiming`, `targetId`, and
+  `aimStart`/`aimCycle`/`aimCancel`/`fire`, and the move and fire turns share one
+  enemy-phase resolver.
 - `useNoragon()` hook owning the whole game as a single pure reducer.
 - Framework-free types and a Vitest + React Testing Library suite (including a
   StrictMode regression test for the reducer).

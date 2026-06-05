@@ -22,9 +22,12 @@ The first dungeon is a hardcoded three-room run:
 
 1. **The entry hall** — empty. Find the doorway east.
 2. **The roost** — two bats (3 HP each). Bump into a bat to swing at it: the
-   hero lands a hit 80% of the time for a random 2–5 damage, so a kill may take
-   a couple of swings — and a swing can whiff. A bat that reaches you rolls its
-   own 60% chance to bite for 1. Enemies only stir once you enter their room.
+   hero lands a melee hit 80% of the time for a random 2–5 damage, so a kill may
+   take a couple of swings — and a swing can whiff. Or press **F** to take aim
+   (the nearest bat is auto-targeted; **Tab** or the arrow keys switch targets,
+   **F**/**Enter** looses an arrow, **Esc** cancels) and fight from range. A bat
+   that reaches you rolls its own 60% chance to bite for 1. Enemies only stir
+   once you enter their room.
 3. **The vault** — a chest (`▣`) and a stairway down (`>`). Step onto the chest
    to clear the level. Lose all your hit points first and you die in the dark.
 
@@ -67,10 +70,11 @@ const game = useNoragon({
   attacks: { melee: { accuracy: 0.8, minDamage: 2, maxDamage: 5 } },
 })
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
-// game.attacks.melee (and .ranged / .spell, reserved for later)
+// game.attacks.melee / .ranged (.spell reserved), game.aiming, game.targetId
 // game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
 // game.log (turn-by-turn LogEntry[])
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
+// game.aimStart(), game.aimCycle(+1 | -1), game.aimCancel(), game.fire()
 ```
 
 The whole level — the hero's step plus every enemy's response — is one pure
@@ -82,10 +86,10 @@ StrictMode and is trivial to drive headlessly in tests.
 This is the MVP: explore three hand-built rooms, fight bats, grab the chest.
 Planned, in roughly the order it was dreamed up:
 
-- **Ranged & spell attacks** — the `ranged` (bow/throw) and `spell` attack
-  profiles already exist in the model; this wires them to a targeting action.
+- **Spell attacks & ammo** — ranged bow/throw fire is wired up; next is the
+  `spell` profile (targeted the same way) and an arrow/quiver resource for ranged.
 - **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
-  enemy evasion, criticals, and per-weapon damage profiles.
+  enemy evasion, criticals, line-of-sight/cover, and per-weapon damage profiles.
 - **Loot & equipment** — the chest grants loot (or springs a trap); equip armor,
   weapon, and shield, drink potions, and fire a bow.
 - **Descending the stairs** — the stairway carries you to the next level.

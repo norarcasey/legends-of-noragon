@@ -4,14 +4,17 @@ import type { Enemy } from '../game/types'
 interface EnemyCardsProps {
   /** The active enemies to show cards for; nothing renders when empty. */
   enemies: Enemy[]
+  /** Id of the enemy currently targeted while aiming; its card is highlighted. */
+  targetId?: number | null
 }
 
 /**
  * A row of cards for the enemies sharing the hero's room — each showing the
  * creature's name, a short description, and a health bar. Mirrors the engine's
- * notion of "active": only enemies that can actually act appear here.
+ * notion of "active": only enemies that can actually act appear here. While
+ * aiming, the targeted enemy's card is highlighted.
  */
-export function EnemyCards({ enemies }: EnemyCardsProps) {
+export function EnemyCards({ enemies, targetId = null }: EnemyCardsProps) {
   if (enemies.length === 0) return null
 
   return (
@@ -19,8 +22,14 @@ export function EnemyCards({ enemies }: EnemyCardsProps) {
       {enemies.map((enemy) => {
         const info = ENEMY_INFO[enemy.kind]
         const pct = Math.max(0, Math.round((enemy.hp / enemy.maxHp) * 100))
+        const targeted = enemy.id === targetId
         return (
-          <li key={enemy.id} className="noragon__enemy-card" data-testid="enemy-card">
+          <li
+            key={enemy.id}
+            className={`noragon__enemy-card${targeted ? ' noragon__enemy-card--targeted' : ''}`}
+            data-testid="enemy-card"
+            aria-current={targeted ? 'true' : undefined}
+          >
             <div className="noragon__enemy-head">
               <span className="noragon__enemy-name">{info.name}</span>
               <span className="noragon__enemy-hp">

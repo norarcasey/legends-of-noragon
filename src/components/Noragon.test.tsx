@@ -89,6 +89,37 @@ describe('<Noragon />', () => {
     expect(log).toHaveTextContent('You enter the entry hall.')
     expect(log).toHaveTextContent('You move east.')
   })
+
+  it('aims with F (banner + targeted card) and fires with F', () => {
+    render(<Noragon seed={7} attacks={{ ranged: { accuracy: 1, minDamage: 10, maxDamage: 10 } }} />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // start + step east
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' }) // into the roost
+
+    expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'f' })
+    expect(screen.getByTestId('aim-banner')).toBeInTheDocument()
+    // Exactly one enemy card is marked as the current target.
+    expect(
+      screen.getAllByTestId('enemy-card').filter((c) => c.getAttribute('aria-current')),
+    ).toHaveLength(1)
+
+    fireEvent.keyDown(window, { key: 'f' }) // loose the arrow
+    expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
+    expect(screen.getByTestId('activity-log')).toHaveTextContent('You shoot the Bat')
+  })
+
+  it('cancels aiming with Escape without firing', () => {
+    render(<Noragon seed={7} />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+
+    fireEvent.keyDown(window, { key: 'f' })
+    expect(screen.getByTestId('aim-banner')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
+    expect(screen.getByTestId('activity-log')).not.toHaveTextContent('You shoot')
+  })
 })
 
 describe('useNoragon', () => {
@@ -177,6 +208,83 @@ describe('useNoragon', () => {
       return result.current.log.map((e) => e.text)
     }
     expect(run()).toEqual(run())
+  })
+
+  it('shoots a targeted enemy from range, costing a turn', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { ranged: { accuracy: 1, minDamage: 10, maxDamage: 10 } },
+        seed: 4,
+      }),
+    )
+    act(() => result.current.start())
+    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
+      act(() => result.current.move('right'))
+    }
+    expect(result.current.activeEnemies).toHaveLength(2)
+
+    act(() => result.current.aimStart())
+    expect(result.current.aiming).toBe(true)
+    expect(result.current.targetId).not.toBeNull()
+    const turnsBefore = result.current.turns
+
+    act(() => result.current.fire())
+
+    expect(result.current.aiming).toBe(false)
+    expect(result.current.turns).toBe(turnsBefore + 1)
+    expect(result.current.kills).toBe(1)
+    expect(result.current.enemies).toHaveLength(1)
+    expect(result.current.log.some((e) => /^You shoot the Bat for 10 — slain!$/.test(e.text))).toBe(
+      true,
+    )
+  })
+
+  it('cycles the crosshairs among enemies in the room', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 4 }))
+    act(() => result.current.start())
+    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
+      act(() => result.current.move('right'))
+    }
+
+    act(() => result.current.aimStart())
+    const first = result.current.targetId
+    act(() => result.current.aimCycle(1))
+    const second = result.current.targetId
+    act(() => result.current.aimCycle(1))
+    const third = result.current.targetId
+
+    expect(second).not.toBe(first) // moved to the other bat
+    expect(third).toBe(first) // wrapped back around (two enemies)
+  })
+
+  it('logs a miss when the arrow whiffs, leaving the target alive', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { ranged: { accuracy: 0, minDamage: 1, maxDamage: 4 } },
+        seed: 4,
+      }),
+    )
+    act(() => result.current.start())
+    for (let i = 0; i < 6 && result.current.currentRoom !== 1; i++) {
+      act(() => result.current.move('right'))
+    }
+
+    act(() => result.current.aimStart())
+    act(() => result.current.fire())
+
+    expect(result.current.enemies).toHaveLength(2)
+    expect(result.current.log.some((e) => /^Your arrow misses the Bat\.$/.test(e.text))).toBe(true)
+  })
+
+  it('refuses to aim when no enemy is in range', () => {
+    const { result } = renderHook(() => useNoragon({ seed: 4 }))
+    act(() => result.current.start()) // empty entry hall
+    act(() => result.current.aimStart())
+
+    expect(result.current.aiming).toBe(false)
+    expect(result.current.log.map((e) => e.text)).toContain('There is nothing in range to shoot.')
   })
 
   it('completes the level when the hero reaches the chest', () => {

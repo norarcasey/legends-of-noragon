@@ -43,12 +43,39 @@ export function Noragon({
 }: NoragonProps) {
   const game = useNoragon({ maxHp, attacks, seed })
   const melee = game.attacks.melee
-  const { status, start, move } = game
+  const { status, aiming, start, move, aimStart, aimCycle, aimCancel, fire } = game
 
   useEffect(() => {
     if (!enableKeyboard) return
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // ---- Aiming mode: arrows cycle targets, F/Enter fires, Esc cancels. ----
+      if (aiming) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          aimCancel()
+        } else if (e.key === 'f' || e.key === 'F' || e.key === 'Enter') {
+          e.preventDefault()
+          fire()
+        } else if (e.key === 'Tab') {
+          e.preventDefault()
+          aimCycle(e.shiftKey ? -1 : 1)
+        } else {
+          const dir = KEY_TO_DIRECTION[e.key]
+          if (!dir) return
+          e.preventDefault()
+          aimCycle(dir === 'up' || dir === 'left' ? -1 : 1)
+        }
+        return
+      }
+
+      // ---- Normal play: F starts aiming; directions move (and start). ----
+      if (status === 'playing' && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault()
+        aimStart()
+        return
+      }
+
       const dir = KEY_TO_DIRECTION[e.key]
       if (!dir) return
       e.preventDefault()
@@ -63,7 +90,7 @@ export function Noragon({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [enableKeyboard, status, start, move])
+  }, [enableKeyboard, status, aiming, start, move, aimStart, aimCycle, aimCancel, fire])
 
   const isOver = status === 'won' || status === 'dead'
 
@@ -106,7 +133,15 @@ export function Noragon({
           player={game.player}
           enemies={game.enemies}
           visible={game.visible}
+          aiming={aiming}
+          targetId={game.targetId}
         />
+
+        {aiming && (
+          <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
+            Aiming — <kbd>Tab</kbd>/arrows switch target · <kbd>F</kbd> fire · <kbd>Esc</kbd> cancel
+          </div>
+        )}
 
         {status !== 'playing' && (
           <div className="noragon__overlay" role="status">
@@ -121,13 +156,15 @@ export function Noragon({
               {isOver ? 'Delve again' : 'Enter'}
             </button>
             <p className="noragon__hint">
-              Move with the arrow keys or WASD — bump bats to slay them
+              Move with the arrow keys or WASD — bump bats to slay them, or press F to shoot
             </p>
           </div>
         )}
       </div>
 
-      {status === 'playing' && <EnemyCards enemies={game.activeEnemies} />}
+      {status === 'playing' && (
+        <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+      )}
 
       {status !== 'idle' && <ActivityLog entries={game.log} />}
     </section>
