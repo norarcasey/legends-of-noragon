@@ -55,9 +55,9 @@ describe('<Noragon />', () => {
   it('renders the title, the hero stats, and the idle overlay by default', () => {
     render(<Noragon />)
     expect(screen.getByRole('heading', { name: 'Legends of Noragon' })).toBeInTheDocument()
-    expect(screen.getByText('6/6')).toBeInTheDocument() // HP
+    expect(screen.getByText('12/12')).toBeInTheDocument() // HP
     expect(screen.getByText('80%')).toBeInTheDocument() // melee accuracy
-    expect(screen.getByText('2–5')).toBeInTheDocument() // damage range
+    expect(screen.getByText('3–6')).toBeInTheDocument() // damage range
     expect(screen.getByText('Descend into the dungeon of Noragon')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enter' })).toBeInTheDocument()
   })

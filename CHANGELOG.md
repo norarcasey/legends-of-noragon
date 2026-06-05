@@ -21,8 +21,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   strikes, bites, and the run's end, emitted by the reducer as part of each
   transition and exposed as a `log` of `LogEntry` items on the hook.
 - Melee combat with rolls: the hero attacks via a per-kind `AttackProfile`
-  (`accuracy` + `minDamage`/`maxDamage`); melee defaults to an 80% hit for 2–5
-  damage. `ranged` (bow/throw) and `spell` profiles are modeled and tuned now so
+  (`accuracy` + `minDamage`/`maxDamage`); the hero starts with 12 HP and melee
+  defaults to an 80% hit for 3–6 damage. `ranged` (bow/throw) and `spell` profiles are modeled and tuned now so
   adding them later is a data + targeting change, not a refactor. Bats have 3 HP
   and roll their own 60% chance to bite for 1. Randomness comes from a seeded
   PRNG carried in reducer state, so combat is pure (StrictMode-safe) and

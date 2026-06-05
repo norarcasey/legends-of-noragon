@@ -79,15 +79,15 @@ export interface NoragonApi {
   fire: () => void
 }
 
-const DEFAULTS = { maxHp: 6 }
+const DEFAULTS = { maxHp: 12 }
 
 /**
  * Default attack profiles. `melee` drives the current bump-to-attack; `ranged`
  * and `spell` are tuned and ready but not yet wired to a targeting action.
  */
 const DEFAULT_ATTACKS: AttackProfiles = {
-  melee: { accuracy: 0.8, minDamage: 2, maxDamage: 5 },
-  ranged: { accuracy: 0.6, minDamage: 1, maxDamage: 4 },
+  melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 },
+  ranged: { accuracy: 0.6, minDamage: 2, maxDamage: 4 },
   spell: { accuracy: 0.9, minDamage: 3, maxDamage: 6 },
 }
 

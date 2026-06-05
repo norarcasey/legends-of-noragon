@@ -23,7 +23,7 @@ top-left:
 
 1. **The entry hall** — empty. Find the doorway east.
 2. **The roost** — two bats (3 HP each). Bump into a bat to swing at it: the
-   hero lands a melee hit 80% of the time for a random 2–5 damage, so a kill may
+   hero lands a melee hit 80% of the time for a random 3–6 damage, so a kill may
    take a couple of swings — and a swing can whiff. Or press **F** to take aim
    (the nearest foe is auto-targeted; **Tab** or the arrow keys switch targets,
    **F**/**Enter** looses an arrow, **Esc** cancels) and fight from range. A bat
@@ -55,8 +55,8 @@ export function App() {
 
 | Prop             | Type                      | Default                | Description                                                                                                   |
 | ---------------- | ------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `maxHp`          | `number`                  | `6`                    | The hero's starting (and maximum) hit points.                                                                 |
-| `attacks`        | `Partial<AttackProfiles>` | melee `0.8` / `2`–`5`  | Override attack profiles; each kind is `{ accuracy, minDamage, maxDamage }`. Only `melee` affects play today. |
+| `maxHp`          | `number`                  | `12`                   | The hero's starting (and maximum) hit points.                                                                 |
+| `attacks`        | `Partial<AttackProfiles>` | melee `0.8` / `3`–`6`  | Override attack profiles; each kind is `{ accuracy, minDamage, maxDamage }`. Only `melee` affects play today. |
 | `seed`           | `number`                  | — (random)             | Fix the combat RNG for reproducible runs.                                                                     |
 | `enableKeyboard` | `boolean`                 | `true`                 | Move with the arrow keys / WASD.                                                                              |
 | `title`          | `string \| null`          | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it.                                                            |
@@ -70,8 +70,8 @@ The game logic lives in a framework-free hook if you want to build your own UI:
 import { useNoragon } from '@norarcasey/legends-of-noragon'
 
 const game = useNoragon({
-  maxHp: 6,
-  attacks: { melee: { accuracy: 0.8, minDamage: 2, maxDamage: 5 } },
+  maxHp: 12,
+  attacks: { melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 } },
 })
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
 // game.attacks.melee / .ranged (.spell reserved), game.aiming, game.targetId
