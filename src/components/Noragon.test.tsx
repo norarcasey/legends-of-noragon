@@ -399,13 +399,26 @@ describe('useNoragon — procedural generation', () => {
     }
   })
 
-  it('completes the level when the hero reaches the chest', () => {
-    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 42 }))
+  it('opening a chest grants treasure XP and consumes it', () => {
+    // Sure-kill so the hero can fight to the vault; accuracy 0.9 leaves XP from
+    // kills, but the chest's own XP shows up in the log and the tile is consumed.
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
     act(() => result.current.start())
+    clearDungeon(result) // also clears the vault guardians
+
     const chest = findTile(result.current.tiles, 'chest')
     expect(chest).not.toBeNull()
-    if (chest) navigateToTile(result, chest, false)
-    expect(result.current.status).toBe('won')
+    if (chest) navigateToTile(result, chest, false) // step onto the chest
+
+    expect(findTile(result.current.tiles, 'chest')).toBeNull() // consumed
+    expect(result.current.log.some((e) => /treasure! \(\+\d+ XP\)/.test(e.text))).toBe(true)
+    expect(result.current.status).toBe('playing') // chests no longer end the run
   })
 })
 
@@ -653,5 +666,71 @@ describe('useNoragon — leveling', () => {
     expect(result.current.level).toBe(1)
     expect(result.current.xp).toBe(0)
     expect(result.current.maxHp).toBe(50)
+  })
+})
+
+describe('useNoragon — descending', () => {
+  it('taking the stairs goes deeper and carries the hero over', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    expect(result.current.depth).toBe(1)
+    clearDungeon(result) // fight through, leveling up on the way
+    const levelBefore = result.current.level
+    const killsBefore = result.current.kills
+    expect(levelBefore).toBeGreaterThan(1)
+
+    // Walk to the stairs and step down (stop the moment the depth changes).
+    for (
+      let i = 0;
+      i < 800 && result.current.depth === 1 && result.current.status === 'playing';
+      i++
+    ) {
+      const stairs = findTile(result.current.tiles, 'stairs')
+      if (!stairs) break
+      const dir = bfsDir(result.current.tiles, result.current.player, stairs, false)
+      if (!dir) break
+      act(() => result.current.move(dir))
+    }
+
+    expect(result.current.depth).toBe(2)
+    expect(result.current.status).toBe('playing')
+    expect(result.current.level).toBe(levelBefore) // progression carries over
+    expect(result.current.kills).toBe(killsBefore) // a fresh level's foes are new
+    expect(result.current.enemies.length).toBeGreaterThan(0) // and it's populated
+    expect(result.current.log.some((e) => /descend the stairs to depth 2/.test(e.text))).toBe(true)
+  })
+
+  it('restarts at depth 1 on a fresh delve', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    clearDungeon(result)
+    for (
+      let i = 0;
+      i < 800 && result.current.depth === 1 && result.current.status === 'playing';
+      i++
+    ) {
+      const stairs = findTile(result.current.tiles, 'stairs')
+      if (!stairs) break
+      const dir = bfsDir(result.current.tiles, result.current.player, stairs, false)
+      if (!dir) break
+      act(() => result.current.move(dir))
+    }
+    expect(result.current.depth).toBe(2)
+
+    act(() => result.current.start())
+    expect(result.current.depth).toBe(1)
+    expect(result.current.level).toBe(1)
   })
 })

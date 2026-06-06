@@ -40,6 +40,8 @@ export interface NoragonApi {
   /** The hero's attack profiles, one per kind, at the current level. Only `melee`
    *  is used in play today; `ranged`/`spell` are present for forthcoming modes. */
   attacks: AttackProfiles
+  /** How deep the run has gone (1 at the entrance, +1 per stairway descended). */
+  depth: number
   /** The hero's current character level (starts at 1). */
   level: number
   /** XP earned toward the next level. */
@@ -107,6 +109,8 @@ const LEVELING = {
   hpPerLevel: 4,
   damagePerLevel: 1,
   accuracyPerLevel: 0.02,
+  /** Treasure XP from a chest, multiplied by the current dungeon depth. */
+  chestXp: 12,
 }
 
 /** XP needed to advance from `level` to the next. */
@@ -277,15 +281,16 @@ function spawnEnemy(rooms: Room[], kind: EnemyKind, id: number, x: number, y: nu
 }
 
 /**
- * Build the dungeon for a run from `seed`: pick a grid size, optionally omit some
- * cells (keeping the rest connected), size each room, connect them with a random
- * spanning set of doors (plus a few loops), drop the chest in the farthest room,
- * and scatter enemies by depth — the start room stays safe and the vault is
- * guarded. Deterministic: the same seed always yields the same map.
+ * Build the dungeon for the given `depth` of a run from `seed`: pick a grid size,
+ * optionally omit some cells (keeping the rest connected), size each room, connect
+ * them with a random spanning set of doors (plus a few loops), drop the chest in
+ * the farthest room, and scatter enemies — tougher the deeper you go. The start
+ * room stays safe and the vault is guarded. Deterministic: the same `(seed, depth)`
+ * always yields the same map.
  */
-function generateDungeon(seed: number): Dungeon {
-  // A stream distinct from the combat RNG (which is seeded directly from `seed`).
-  const rng = makeRng((seed ^ 0x9e3779b9) >>> 0)
+function generateDungeon(seed: number, depth: number): Dungeon {
+  // A stream distinct from the combat RNG, varied per depth so each level differs.
+  const rng = makeRng((seed ^ 0x9e3779b9 ^ (depth * 0x85ebca6b)) >>> 0)
 
   // Variable map size: a 2–3 × 2–3 grid of room slots.
   const gridCols = 2 + rng.int(2)
@@ -507,11 +512,20 @@ function generateDungeon(seed: number): Dungeon {
   for (const cell of cells) {
     if (cell === startCell) continue
     if (cell === chestCell) {
-      placeIn(roomOf(cell), ['goblin', 'bat']) // guarded loot
+      // The vault guardian grows nastier the deeper the run.
+      placeIn(roomOf(cell), depth >= 3 ? ['goblin', 'goblin', 'bat'] : ['goblin', 'bat'])
       continue
     }
-    const d = dist.get(cell) ?? 1
-    const kinds: EnemyKind[] = d >= 3 ? ['bat', 'goblin'] : d === 2 ? ['bat', 'bat'] : ['bat']
+    // Threat = how far this room is from the entrance, plus how deep the run is.
+    const threat = (dist.get(cell) ?? 1) + (depth - 1)
+    const kinds: EnemyKind[] =
+      threat >= 4
+        ? ['goblin', 'goblin']
+        : threat >= 3
+          ? ['bat', 'goblin']
+          : threat >= 2
+            ? ['bat', 'bat']
+            : ['bat']
     placeIn(roomOf(cell), kinds)
   }
 
@@ -582,7 +596,11 @@ interface HeroConfig {
 }
 
 interface GameState extends HeroConfig {
-  /** The generated level for this run; spatial helpers read from it. */
+  /** The run's seed; deeper levels are generated from it + their depth. */
+  seed: number
+  /** How deep the run is — 1 at the entrance, +1 per stairway descended. */
+  depth: number
+  /** The generated level for the current depth; spatial helpers read from it. */
   dungeon: Dungeon
   /** The hero's base (level-1) profile; current `maxHp`/`attacks` derive from it. */
   base: HeroConfig
@@ -622,7 +640,8 @@ type GameAction =
   | { type: 'fire' }
 
 function makeInitial(config: HeroConfig, seed: number): GameState {
-  const dungeon = generateDungeon(seed)
+  const depth = 1
+  const dungeon = generateDungeon(seed, depth)
   const seen = blankSeen(dungeon)
   markLit(seen, dungeon, dungeon.playerStart)
   // Level 1 stats equal the base profile; fresh delves start at level 1.
@@ -630,6 +649,8 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
   return {
     maxHp: stats.maxHp,
     attacks: stats.attacks,
+    seed,
+    depth,
     base: config,
     level: 1,
     xp: 0,
@@ -654,6 +675,34 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
 /** Pull the hero's base profile back out so reset/start begins at level 1 again. */
 function configOf(state: GameState): HeroConfig {
   return state.base
+}
+
+/**
+ * Take the stairs down: generate the next, deeper level and drop the hero into
+ * it, carrying everything about the character (level, xp, hp, stats, kills) and
+ * the combat RNG, while resetting the per-level world (map, foes, fog). Pure.
+ */
+function descend(state: GameState, messages: string[]): GameState {
+  const depth = state.depth + 1
+  const dungeon = generateDungeon(state.seed, depth)
+  const seen = blankSeen(dungeon)
+  markLit(seen, dungeon, dungeon.playerStart)
+  const startRoom = roomAt(dungeon.rooms, dungeon.playerStart.x, dungeon.playerStart.y)
+  messages.push(`You descend the stairs to depth ${depth}.`)
+  if (startRoom !== null) messages.push(`You enter ${dungeon.rooms[startRoom].name}.`)
+  return {
+    ...state,
+    depth,
+    dungeon,
+    player: { ...dungeon.playerStart },
+    enemies: dungeon.enemies.map((e) => ({ ...e })),
+    revealedRooms: reveal([], startRoom),
+    seen,
+    aiming: false,
+    targetId: null,
+    turns: state.turns + 1,
+    ...logLines(state.log, state.nextLogId, messages),
+  }
 }
 
 /** Append messages to the log, minting a stable id for each. Pure. */
@@ -777,12 +826,14 @@ function reducer(state: GameState, action: GameAction): GameState {
       let maxHp = state.maxHp
       let attacks = state.attacks
       let hp = state.hp
+      // The dungeon can change this turn (opening a chest consumes its tile).
+      let dungeon = state.dungeon
       const messages: string[] = []
 
       // Re-light the torch radius around wherever the hero ends up this turn.
       const litSeen = (p: Point): boolean[][] => {
         const s = state.seen.map((row) => [...row])
-        markLit(s, state.dungeon, p)
+        markLit(s, dungeon, p)
         return s
       }
 
@@ -824,43 +875,45 @@ function reducer(state: GameState, action: GameAction): GameState {
         // Bumping a wall is not a turn — nothing happens, and nothing is logged.
         return state
       } else {
+        const tile = tileAt(state.dungeon, target.x, target.y)
+        // The stairs end this level immediately — descend, carrying the hero.
+        if (tile === 'stairs') {
+          messages.push(`You move ${DIR_NAME[action.dir]}.`)
+          return descend(state, messages)
+        }
         player = target
         messages.push(`You move ${DIR_NAME[action.dir]}.`)
-        // Stepping onto the chest completes the level before enemies act.
-        if (tileAt(state.dungeon, target.x, target.y) === 'chest') {
-          messages.push('You reach the chest. The level is cleared!')
-          return {
-            ...state,
-            player,
-            status: 'won',
-            turns: state.turns + 1,
-            revealedRooms: reveal(
-              state.revealedRooms,
-              roomAt(state.dungeon.rooms, player.x, player.y),
-            ),
-            seen: litSeen(player),
-            ...logLines(state.log, state.nextLogId, messages),
-          }
+        // A chest is treasure: claim the XP and consume it (it becomes floor).
+        if (tile === 'chest') {
+          const gained = LEVELING.chestXp * state.depth
+          messages.push(`You pry open the chest — treasure! (+${gained} XP)`)
+          const lv = applyXp(state.base, level, xp, hp, gained, messages)
+          level = lv.level
+          xp = lv.xp
+          maxHp = lv.maxHp
+          attacks = lv.attacks
+          hp = lv.hp
+          const tiles = dungeon.tiles.map((row) => [...row])
+          tiles[player.y][player.x] = 'floor'
+          dungeon = { ...dungeon, tiles }
         }
         // Announce crossing into a room the hero hasn't been in before.
-        const steppedInto = roomAt(state.dungeon.rooms, player.x, player.y)
+        const steppedInto = roomAt(dungeon.rooms, player.x, player.y)
         if (steppedInto !== null && !state.revealedRooms.includes(steppedInto)) {
-          messages.push(`You enter ${state.dungeon.rooms[steppedInto].name}.`)
+          messages.push(`You enter ${dungeon.rooms[steppedInto].name}.`)
         }
       }
 
       // Light up the room the hero just stepped into (a no-op if already known).
-      const revealedRooms = reveal(
-        state.revealedRooms,
-        roomAt(state.dungeon.rooms, player.x, player.y),
-      )
+      const revealedRooms = reveal(state.revealedRooms, roomAt(dungeon.rooms, player.x, player.y))
 
-      const phase = runEnemyPhase(state.dungeon, player, enemies, hp, roll, messages)
+      const phase = runEnemyPhase(dungeon, player, enemies, hp, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
       return {
         ...state,
+        dungeon,
         player,
         hp: Math.max(0, phase.hp),
         maxHp,
@@ -1064,6 +1117,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     hp: state.hp,
     maxHp: state.maxHp,
     attacks: state.attacks,
+    depth: state.depth,
     level: state.level,
     xp: state.xp,
     xpToNext: xpToNext(state.level),

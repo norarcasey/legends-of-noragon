@@ -23,10 +23,11 @@ winding corridors, built from the run's seed. No two runs are alike: the **map
 size** varies (2×2 up to 3×3 rooms), the **footprint is irregular** (some cells
 are missing, giving L-shapes and notches), **room sizes vary** (cramped closets
 next to open halls), and the rooms are linked by **corridors** that twist through
-the dark between them. You start safe in **the entry hall**; the **chest** (`▣`,
-the win tile) waits in the farthest room, which is guarded. Find a route through
-the rooms, fight or dodge what's in the way, and step onto the chest to clear the
-level. Lose all your hit points first and you die in the dark.
+the dark between them. You start safe in **the entry hall**; the farthest room (a
+guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
+(`>`). A run is an **endless descent**: clear or sneak through each level, take
+the stairs to a deeper, tougher one, and see how far down you can get before you
+die.
 
 Combat:
 
@@ -39,10 +40,13 @@ Combat:
 - Foes roll their own chance to hit back. **Bats** (3 HP) bite for 1; **Goblins**
   (8 HP) are sturdier and hit for 2. Deeper rooms hold more — and tougher — foes.
 
-Slaying foes earns **XP** (goblins give more than bats). Fill the bar and you
-**level up**: your max HP rises and you're **fully healed**, and every attack gets
-stronger and more accurate. Each fresh delve starts back at level 1 (progression
-will carry between levels once stairs are in).
+Slaying foes earns **XP** (goblins give more than bats; chests give a treasure
+chunk that scales with depth). Fill the bar and you **level up**: your max HP
+rises and you're **fully healed**, and every attack gets stronger and more
+accurate. Your level, XP, and HP **carry with you down the stairs** — only a
+fresh delve (after death) starts back at depth 1, level 1. Deeper levels field
+more, tougher foes, so descending is a gamble between growing stronger and
+getting overwhelmed.
 
 Enemies only stir once you enter their room, and each room is shrouded in
 **fog of war** until you step inside, at which point it stays lit for the rest of
@@ -87,7 +91,7 @@ const game = useNoragon({
   attacks: { melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 } },
 })
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
-// game.level, game.xp, game.xpToNext, game.maxHp, game.attacks (current, leveled)
+// game.depth, game.level, game.xp, game.xpToNext, game.maxHp, game.attacks
 // game.attacks.melee / .ranged (.spell reserved), game.aiming, game.targetId
 // game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
 // game.log (turn-by-turn LogEntry[])
@@ -110,7 +114,8 @@ guarded chest. Planned next, in roughly the order it was dreamed up:
   enemy evasion, criticals, line-of-sight/cover, and per-weapon damage profiles.
 - **Loot & equipment** — the chest grants loot (or springs a trap); equip armor,
   weapon, and shield, drink potions, and fire a bow.
-- **Descending the stairs** — carry the run into a fresh, deeper generated level.
+- **Run depth & payoff** — a boss/▼victory at a target depth, rest/heal sites,
+  and run summaries, building on the endless-descent loop.
 - **Richer generation** — building on variable size / irregular footprint /
   varied rooms / winding corridors: locked doors and keys, interior cover
   (pillars), and themed rooms.

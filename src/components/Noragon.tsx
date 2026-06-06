@@ -92,7 +92,7 @@ export function Noragon({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [enableKeyboard, status, aiming, start, move, aimStart, aimCycle, aimCancel, fire])
 
-  const isOver = status === 'won' || status === 'dead'
+  const isOver = status === 'dead'
 
   return (
     <section
@@ -125,15 +125,14 @@ export function Noragon({
               {status === 'idle' && (
                 <p className="noragon__message">Descend into the dungeon of Noragon</p>
               )}
-              {status === 'won' && (
-                <p className="noragon__message">You reached the chest — level cleared! 🗝️</p>
+              {status === 'dead' && (
+                <p className="noragon__message">You died at depth {game.depth}. 💀</p>
               )}
-              {status === 'dead' && <p className="noragon__message">You died in the dark. 💀</p>}
               <button type="button" className="noragon__button" onClick={start}>
                 {isOver ? 'Delve again' : 'Enter'}
               </button>
               <p className="noragon__hint">
-                Move with the arrow keys or WASD — bump foes to strike, or press F to shoot
+                Arrow keys / WASD to move, F to shoot — take the stairs to descend
               </p>
             </div>
           )}
@@ -141,6 +140,10 @@ export function Noragon({
 
         <aside className="noragon__panel">
           <dl className="noragon__stats" aria-live="polite">
+            <div className="noragon__stat">
+              <dt>Depth</dt>
+              <dd>{game.depth}</dd>
+            </div>
             <div className="noragon__stat">
               <dt>Level</dt>
               <dd>{game.level}</dd>

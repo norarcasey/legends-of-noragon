@@ -81,10 +81,10 @@ export interface Enemy {
 }
 
 /**
- * Lifecycle of a single level:
+ * Lifecycle of a run:
  *  - `idle`    — dungeon is laid out, waiting for the player to begin.
- *  - `playing` — the hero is exploring; each move advances a turn.
- *  - `won`     — the hero reached the chest and completed the level.
- *  - `dead`    — the hero ran out of hit points.
+ *  - `playing` — the hero is exploring/descending; each move advances a turn.
+ *  - `dead`    — the hero ran out of hit points. A run is an endless descent, so
+ *                death is the only end; reaching the stairs goes deeper.
  */
-export type GameStatus = 'idle' | 'playing' | 'won' | 'dead'
+export type GameStatus = 'idle' | 'playing' | 'dead'

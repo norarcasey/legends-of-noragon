@@ -22,6 +22,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Activity log: a scrolling, turn-by-turn record of moves, room discoveries,
   strikes, bites, and the run's end, emitted by the reducer as part of each
   transition and exposed as a `log` of `LogEntry` items on the hook.
+- Multi-level runs: the stairs (`>`) now descend to a freshly generated, deeper
+  level instead of being inert, and the run is an endless descent (the `won`
+  status is gone — death is the only end). The hero's depth, level, XP, HP, and
+  stats carry down the stairs, and the combat RNG continues, so a fixed `seed`
+  reproduces a whole multi-level run; each depth's map comes from a depth-derived
+  seed. Difficulty scales with depth (more, tougher foes). The chest is now
+  treasure — opening it grants depth-scaled XP and consumes the tile — rather
+  than ending the level. New `depth` on the hook/API and in the header.
 - Character leveling: slaying foes grants XP (per-kind, from the bestiary —
   goblins give more than bats). Crossing the XP threshold for the level levels the
   hero up, which raises max HP and **fully heals**, and makes every attack

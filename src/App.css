@@ -46,6 +46,11 @@
   color: #d4a017;
 }
 
+.demo__stairs {
+  color: #5a6172;
+  font-weight: 700;
+}
+
 .demo__credit {
   margin-top: 2rem;
   text-align: center;
