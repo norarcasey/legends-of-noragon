@@ -18,13 +18,14 @@ npm run build:lib  # build the embeddable component library
 
 ## How to play
 
-Every run is a **procedurally generated dungeon** — a grid of rooms joined by
-random doorways, built from the run's seed. No two runs are alike: the **map size**
-varies (2×2 up to 3×3 rooms), the **footprint is irregular** (some cells are
-missing, giving L-shapes and notches), and **room sizes vary** (cramped closets
-next to open halls). You start safe in **the entry hall**; the **chest** (`▣`, the
-win tile) waits in the farthest room, which is guarded. Find a route through the
-rooms, fight or dodge what's in the way, and step onto the chest to clear the
+Every run is a **procedurally generated dungeon** — rooms joined by doorways and
+winding corridors, built from the run's seed. No two runs are alike: the **map
+size** varies (2×2 up to 3×3 rooms), the **footprint is irregular** (some cells
+are missing, giving L-shapes and notches), **room sizes vary** (cramped closets
+next to open halls), and the rooms are linked by **corridors** that twist through
+the dark between them. You start safe in **the entry hall**; the **chest** (`▣`,
+the win tile) waits in the farthest room, which is guarded. Find a route through
+the rooms, fight or dodge what's in the way, and step onto the chest to clear the
 level. Lose all your hit points first and you die in the dark.
 
 Combat:
@@ -40,9 +41,10 @@ Combat:
 
 Enemies only stir once you enter their room, and each room is shrouded in
 **fog of war** until you step inside, at which point it stays lit for the rest of
-the level. Standing in a doorway peeks into the room beyond — so you can see what
-(and who) is waiting before you commit. Pass a `seed` to replay the exact same
-dungeon and combat.
+the level. Corridors are dark too — your torch lights them as you walk, and the
+trail you've explored stays visible. Standing in a doorway peeks into the room
+beyond — so you can see what (and who) is waiting before you commit. Pass a
+`seed` to replay the exact same dungeon and combat.
 
 ## Embedding the component
 
@@ -103,9 +105,9 @@ guarded chest. Planned next, in roughly the order it was dreamed up:
 - **Loot & equipment** — the chest grants loot (or springs a trap); equip armor,
   weapon, and shield, drink potions, and fire a bow.
 - **Descending the stairs** — carry the run into a fresh, deeper generated level.
-- **Richer generation** — building on variable map size / irregular footprint /
-  varied room sizes: winding corridors (a walkable non-room tile), locked doors
-  and keys, and interior cover.
+- **Richer generation** — building on variable size / irregular footprint /
+  varied rooms / winding corridors: locked doors and keys, interior cover
+  (pillars), and themed rooms.
 - **More monsters & boss fights** — beyond bats and goblins.
 - **Sprites/SVGs** — replacing the block tiles with real art.
 

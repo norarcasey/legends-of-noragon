@@ -293,6 +293,34 @@ describe('useNoragon — procedural generation', () => {
     }
   })
 
+  it('carves corridors connecting the rooms', () => {
+    for (const seed of SEEDS) {
+      const { result } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      const corridors = result.current.tiles.flat().filter((t) => t === 'corridor').length
+      expect(corridors).toBeGreaterThan(0)
+    }
+  })
+
+  it('lights corridors with the torch trail as the hero explores', () => {
+    const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 7 }))
+    act(() => result.current.start())
+    const chest = findTile(result.current.tiles, 'chest')
+    expect(chest).not.toBeNull()
+    if (chest) navigateToTile(result, chest, false)
+
+    // Having walked the passages to the vault, some corridor tiles are now lit
+    // (no room reveals a corridor — only the torch trail does).
+    const { tiles, visible } = result.current
+    let litCorridors = 0
+    for (let y = 0; y < tiles.length; y++) {
+      for (let x = 0; x < tiles[y].length; x++) {
+        if (tiles[y][x] === 'corridor' && visible[y][x]) litCorridors++
+      }
+    }
+    expect(litCorridors).toBeGreaterThan(0)
+  })
+
   it('reveals the room ahead while the hero stands in a doorway', () => {
     const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 7 }))
     act(() => result.current.start())

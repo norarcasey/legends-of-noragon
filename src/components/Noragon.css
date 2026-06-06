@@ -4,6 +4,7 @@
   --noragon-wall-edge: #2c3243;
   --noragon-floor: #12141d;
   --noragon-floor-line: #181b26;
+  --noragon-corridor: #0d0f17;
   --noragon-door: #6b4f2a;
   --noragon-chest: #d4a017;
   --noragon-stairs: #5a6172;
@@ -135,6 +136,11 @@
 .noragon__tile--wall {
   background: var(--noragon-wall);
   box-shadow: inset 0 0 0 1px var(--noragon-wall-edge);
+}
+
+.noragon__tile--corridor {
+  background: var(--noragon-corridor);
+  box-shadow: inset 0 0 0 1px var(--noragon-floor-line);
 }
 
 .noragon__tile--door {

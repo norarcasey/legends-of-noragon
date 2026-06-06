@@ -147,8 +147,8 @@ const DIR_NAME: Record<Direction, string> = {
 // they connect through; because any span ≥ MIN_ROOM (3) inside a 5-wide slot
 // always covers the slot centre, adjacent rooms overlap and a single-tile door
 // always lands floor-to-floor — no corridors required.
-const CELL = 6
-const MAX_ROOM = 5
+const CELL = 7
+const MAX_ROOM = 4
 const MIN_ROOM = 3
 /** Never shrink an irregular footprint below this many rooms. */
 const MIN_CELLS = 4
@@ -320,14 +320,10 @@ function generateDungeon(seed: number): Dungeon {
     if ((dist.get(c) ?? 0) > (dist.get(chestCell) ?? 0)) chestCell = c
   }
 
-  // Size and record each room. A room is anchored to the slot edge on any side it
-  // connects through (so its single-tile door lands on floor); free sides shrink.
-  const span = (lo: number, lowConn: boolean, highConn: boolean): [number, number] => {
-    const hi = lo + MAX_ROOM - 1
-    if (lowConn && highConn) return [lo, hi]
+  // Size and record each room: a random size, freely placed within its slot.
+  // Connections are corridors (carved below), so rooms needn't touch any wall.
+  const axis = (lo: number): [number, number] => {
     const size = MIN_ROOM + rng.int(MAX_ROOM - MIN_ROOM + 1)
-    if (lowConn) return [lo, lo + size - 1]
-    if (highConn) return [hi - size + 1, hi]
     const off = rng.int(MAX_ROOM - size + 1)
     return [lo + off, lo + off + size - 1]
   }
@@ -336,19 +332,8 @@ function generateDungeon(seed: number): Dungeon {
   let nameIdx = 0
   for (const cell of cells) {
     const s = slotOf(cell)
-    const linked = links.get(cell) ?? new Set<number>()
-    let w = false
-    let e = false
-    let n = false
-    let sth = false
-    for (const other of linked) {
-      if (other === cell - 1) w = true
-      else if (other === cell + 1) e = true
-      else if (other === cell - gridCols) n = true
-      else if (other === cell + gridCols) sth = true
-    }
-    const [x0, x1] = span(s.x0, w, e)
-    const [y0, y1] = span(s.y0, n, sth)
+    const [x0, x1] = axis(s.x0)
+    const [y0, y1] = axis(s.y0)
     const name =
       cell === startCell
         ? 'the entry hall'
@@ -372,31 +357,48 @@ function generateDungeon(seed: number): Dungeon {
     }
   }
 
-  // Carve a door for each link, on the shared wall within the rooms' overlap.
+  const center = (room: Room): Point => ({
+    x: Math.floor((room.x0 + room.x1) / 2),
+    y: Math.floor((room.y0 + room.y1) / 2),
+  })
+
+  // Carve a corridor for each link: an L of passage tiles between the two rooms,
+  // with a door where it meets each room. Only wall tiles become corridor, so it
+  // never cuts through a room's floor. `carve` leaves room floor and doors alone.
   const roomOf = (cell: number) => rooms[cellToRoom.get(cell) ?? 0]
+  const carve = (x: number, y: number) => {
+    if (tiles[y][x] === 'wall') tiles[y][x] = 'corridor'
+  }
   for (const c of cells) {
     for (const other of links.get(c) ?? []) {
       if (other <= c) continue
       const ra = roomOf(c)
       const rb = roomOf(other)
       if (gyOf(c) === gyOf(other)) {
-        const col = Math.min(ra.x1, rb.x1) + 1
-        const lo = Math.max(ra.y0, rb.y0)
-        const hi = Math.min(ra.y1, rb.y1)
-        tiles[lo + rng.int(hi - lo + 1)][col] = 'door'
+        // Horizontal link: run out of A's right side, jog vertically, into B's left.
+        const ay = center(ra).y
+        const by = center(rb).y
+        const ax = ra.x1 + 1
+        const bx = rb.x0 - 1
+        for (let x = ax; x <= bx; x++) carve(x, ay)
+        const [ylo, yhi] = ay <= by ? [ay, by] : [by, ay]
+        for (let y = ylo; y <= yhi; y++) carve(bx, y)
+        tiles[ay][ax] = 'door'
+        tiles[by][bx] = 'door'
       } else {
-        const row = Math.min(ra.y1, rb.y1) + 1
-        const lo = Math.max(ra.x0, rb.x0)
-        const hi = Math.min(ra.x1, rb.x1)
-        tiles[row][lo + rng.int(hi - lo + 1)] = 'door'
+        // Vertical link: run out of A's bottom, jog horizontally, into B's top.
+        const ax = center(ra).x
+        const bx = center(rb).x
+        const ay = ra.y1 + 1
+        const by = rb.y0 - 1
+        for (let y = ay; y <= by; y++) carve(ax, y)
+        const [xlo, xhi] = ax <= bx ? [ax, bx] : [bx, ax]
+        for (let x = xlo; x <= xhi; x++) carve(x, by)
+        tiles[ay][ax] = 'door'
+        tiles[by][bx] = 'door'
       }
     }
   }
-
-  const center = (room: Room): Point => ({
-    x: Math.floor((room.x0 + room.x1) / 2),
-    y: Math.floor((room.y0 + room.y1) / 2),
-  })
   const playerStart = center(roomOf(startCell))
 
   // Place the chest (the win tile) and an inert stairway beside it.
@@ -474,6 +476,21 @@ function roomsByDoor(dungeon: Dungeon, p: Point): number[] {
   return out
 }
 
+/** A fresh all-dark "seen" map sized to the dungeon. */
+function blankSeen(dungeon: Dungeon): boolean[][] {
+  return dungeon.tiles.map((row) => row.map(() => false))
+}
+
+/** Light the hero's tile and its orthogonal neighbours — a one-step torch radius
+ *  so corridors (which no room reveals) light up as the hero walks them. Mutates. */
+function markLit(seen: boolean[][], dungeon: Dungeon, p: Point): void {
+  for (const d of [{ x: 0, y: 0 }, ...Object.values(DELTA)]) {
+    const x = p.x + d.x
+    const y = p.y + d.y
+    if (y >= 0 && y < dungeon.rows && x >= 0 && x < dungeon.cols) seen[y][x] = true
+  }
+}
+
 // The whole level lives in one reducer, so each turn — the hero's step plus
 // every enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
@@ -503,6 +520,9 @@ interface GameState extends HeroConfig {
   aiming: boolean
   /** Id of the enemy currently in the crosshairs while aiming, else `null`. */
   targetId: number | null
+  /** Tiles the hero's torch has lit (`seen[y][x]`); keeps explored corridors
+   *  visible even though no room reveals them. */
+  seen: boolean[][]
 }
 
 type GameAction =
@@ -517,6 +537,8 @@ type GameAction =
 
 function makeInitial(config: HeroConfig, seed: number): GameState {
   const dungeon = generateDungeon(seed)
+  const seen = blankSeen(dungeon)
+  markLit(seen, dungeon, dungeon.playerStart)
   return {
     ...config,
     dungeon,
@@ -533,6 +555,7 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
     rngState: seed >>> 0,
     aiming: false,
     targetId: null,
+    seen,
   }
 }
 
@@ -658,6 +681,13 @@ function reducer(state: GameState, action: GameAction): GameState {
       let kills = state.kills
       const messages: string[] = []
 
+      // Re-light the torch radius around wherever the hero ends up this turn.
+      const litSeen = (p: Point): boolean[][] => {
+        const s = state.seen.map((row) => [...row])
+        markLit(s, state.dungeon, p)
+        return s
+      }
+
       // All combat randomness flows through this one advancing seed, so the
       // whole turn stays a pure function of (state, action).
       let rngState = state.rngState
@@ -703,6 +733,7 @@ function reducer(state: GameState, action: GameAction): GameState {
               state.revealedRooms,
               roomAt(state.dungeon.rooms, player.x, player.y),
             ),
+            seen: litSeen(player),
             ...logLines(state.log, state.nextLogId, messages),
           }
         }
@@ -733,6 +764,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         turns: state.turns + 1,
         revealedRooms,
         rngState,
+        seen: litSeen(player),
         // Stepping ends any aim that was somehow still open.
         aiming: false,
         targetId: null,
@@ -887,6 +919,18 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const currentRoom = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
   const activeEnemies = state.enemies.filter((e) => e.room === currentRoom)
 
+  // Fog: revealed rooms (plus a doorway peek) lit permanently, with the torch
+  // trail overlaid so explored corridors stay visible.
+  const visible = computeVisible(state.dungeon, [
+    ...state.revealedRooms,
+    ...roomsByDoor(state.dungeon, state.player),
+  ])
+  for (let y = 0; y < state.dungeon.rows; y++) {
+    for (let x = 0; x < state.dungeon.cols; x++) {
+      if (state.seen[y][x]) visible[y][x] = true
+    }
+  }
+
   return {
     cols: state.dungeon.cols,
     rows: state.dungeon.rows,
@@ -903,12 +947,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     currentRoom,
     log: state.log,
     revealedRooms: state.revealedRooms,
-    // Standing in a doorway also lights up the room ahead (view only — it isn't
-    // counted as "entered" until the hero actually steps inside).
-    visible: computeVisible(state.dungeon, [
-      ...state.revealedRooms,
-      ...roomsByDoor(state.dungeon, state.player),
-    ]),
+    visible,
     aiming: state.aiming,
     targetId: state.targetId,
     start,

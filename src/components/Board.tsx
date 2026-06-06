@@ -19,6 +19,7 @@ interface BoardProps {
 const TILE_GLYPH: Record<TileType, string> = {
   wall: '',
   floor: '',
+  corridor: '',
   door: '',
   chest: '▣',
   stairs: '>',

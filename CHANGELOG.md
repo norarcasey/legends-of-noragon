@@ -45,8 +45,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   than a module-level constant.
 - Richer generation: the grid size varies per seed (2×2–3×3), the footprint is
   irregular (cells may be omitted while the rest stay connected), and rooms vary
-  in size (anchored to the slot edge on connected sides so single-tile doors
-  always line up — no corridors needed yet).
+  in size and position within their slots.
+- Corridors: rooms are now joined by carved L-shaped corridors (a new walkable
+  `corridor` tile) with a `door` at each room mouth, instead of only wall-to-wall
+  doors. Corridors aren't part of any room, so a torch-trail `seen` map lights
+  them as the hero walks and keeps explored passages visible; the room-based fog
+  is overlaid on top. Every generated level is still fully solvable.
 - A fourth room and a tougher foe: the dungeon is now a 2×2 clockwise ring —
   entry hall, roost (2 bats), goblin den (1 Goblin: 8 HP, hits for 2 at 70%),
   and the vault with the chest. Enemy combat stats (hp, accuracy, damage, glyph,

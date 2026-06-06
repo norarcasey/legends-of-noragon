@@ -12,15 +12,15 @@ export interface Point {
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
 /**
- * The kinds of tile the hardcoded dungeon is built from. Future procedurally
- * generated levels will reuse the same vocabulary.
- *  - `wall`   — impassable.
- *  - `floor`  — walkable.
- *  - `door`   — walkable; connects two rooms.
- *  - `chest`  — walkable; stepping onto it completes the level (loot/trap later).
- *  - `stairs` — walkable; the way down to the next level (inert in the MVP).
+ * The kinds of tile a dungeon is built from.
+ *  - `wall`     — impassable.
+ *  - `floor`    — walkable room interior.
+ *  - `corridor` — walkable passage between rooms (not part of any room).
+ *  - `door`     — walkable; the threshold where a corridor meets a room.
+ *  - `chest`    — walkable; stepping onto it completes the level (loot/trap later).
+ *  - `stairs`   — walkable; the way down to the next level (inert in the MVP).
  */
-export type TileType = 'wall' | 'floor' | 'door' | 'chest' | 'stairs'
+export type TileType = 'wall' | 'floor' | 'corridor' | 'door' | 'chest' | 'stairs'
 
 /**
  * A rectangular room, in inclusive interior tile coordinates. Enemies only act
