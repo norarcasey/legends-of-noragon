@@ -302,6 +302,24 @@ describe('useNoragon — procedural generation', () => {
     }
   })
 
+  it('joins corridors to rooms only through doors (no double entryways)', () => {
+    for (const seed of SEEDS) {
+      const { result } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      const tiles = result.current.tiles
+      // A corridor tile must never sit directly against room floor — the only
+      // bridge between a corridor and a room is a single `door` tile.
+      for (let y = 0; y < tiles.length; y++) {
+        for (let x = 0; x < tiles[y].length; x++) {
+          if (tiles[y][x] !== 'corridor') continue
+          for (const dir of DIRECTIONS) {
+            expect(tiles[y + DELTA[dir].y]?.[x + DELTA[dir].x]).not.toBe('floor')
+          }
+        }
+      }
+    }
+  })
+
   it('lights corridors with the torch trail as the hero explores', () => {
     const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 7 }))
     act(() => result.current.start())

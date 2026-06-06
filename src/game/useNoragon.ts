@@ -375,25 +375,31 @@ function generateDungeon(seed: number): Dungeon {
       const ra = roomOf(c)
       const rb = roomOf(other)
       if (gyOf(c) === gyOf(other)) {
-        // Horizontal link: run out of A's right side, jog vertically, into B's left.
+        // Horizontal link: out A's right mouth, jog vertically in the GAP between
+        // the rooms (never along a room's wall), then into B's left mouth.
         const ay = center(ra).y
         const by = center(rb).y
         const ax = ra.x1 + 1
         const bx = rb.x0 - 1
-        for (let x = ax; x <= bx; x++) carve(x, ay)
+        const mx = ax + 1 + rng.int(bx - ax - 1) // strictly between the two mouths
+        for (let x = ax; x <= mx; x++) carve(x, ay)
         const [ylo, yhi] = ay <= by ? [ay, by] : [by, ay]
-        for (let y = ylo; y <= yhi; y++) carve(bx, y)
+        for (let y = ylo; y <= yhi; y++) carve(mx, y)
+        for (let x = mx; x <= bx; x++) carve(x, by)
         tiles[ay][ax] = 'door'
         tiles[by][bx] = 'door'
       } else {
-        // Vertical link: run out of A's bottom, jog horizontally, into B's top.
+        // Vertical link: out A's bottom mouth, jog horizontally in the GAP, then
+        // into B's top mouth.
         const ax = center(ra).x
         const bx = center(rb).x
         const ay = ra.y1 + 1
         const by = rb.y0 - 1
-        for (let y = ay; y <= by; y++) carve(ax, y)
+        const my = ay + 1 + rng.int(by - ay - 1) // strictly between the two mouths
+        for (let y = ay; y <= my; y++) carve(ax, y)
         const [xlo, xhi] = ax <= bx ? [ax, bx] : [bx, ax]
-        for (let x = xlo; x <= xhi; x++) carve(x, by)
+        for (let x = xlo; x <= xhi; x++) carve(x, my)
+        for (let y = my; y <= by; y++) carve(bx, y)
         tiles[ay][ax] = 'door'
         tiles[by][bx] = 'door'
       }
