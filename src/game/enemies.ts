@@ -1,8 +1,8 @@
 // The bestiary: the kinds of enemy the dungeon can hold, their flavor, and their
 // combat stats. Framework-free so the engine and the React layer can share it.
 
-/** Every enemy kind the game knows about. */
-export type EnemyKind = 'bat' | 'goblin'
+/** Every enemy kind the game knows about, roughly weakest → strongest. */
+export type EnemyKind = 'bat' | 'spider' | 'goblin' | 'orc' | 'troll'
 
 /** Everything that defines an enemy kind: how it reads and how it fights. */
 export interface EnemyInfo {
@@ -34,6 +34,17 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     verb: 'bites',
     xp: 4,
   },
+  spider: {
+    name: 'Spider',
+    description:
+      'A skittering cave-spider — fragile, but its fangs strike fast and find their mark.',
+    glyph: '𝕤',
+    maxHp: 2,
+    accuracy: 0.75,
+    damage: 2,
+    verb: 'bites',
+    xp: 6,
+  },
   goblin: {
     name: 'Goblin',
     description:
@@ -44,5 +55,27 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 2,
     verb: 'slashes',
     xp: 12,
+  },
+  orc: {
+    name: 'Orc',
+    description:
+      'A brutish marauder swinging a heavy cleaver — it soaks blows and hits a good deal harder.',
+    glyph: '𝕠',
+    maxHp: 12,
+    accuracy: 0.7,
+    damage: 3,
+    verb: 'cleaves',
+    xp: 18,
+  },
+  troll: {
+    name: 'Troll',
+    description:
+      'A lumbering troll with immense hit points and a crushing slam. Soften it from afar first.',
+    glyph: '𝕥',
+    maxHp: 20,
+    accuracy: 0.6,
+    damage: 5,
+    verb: 'smashes',
+    xp: 40,
   },
 }

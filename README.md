@@ -37,8 +37,11 @@ Combat:
 - **Ranged** — press **F** to take aim (the nearest foe is auto-targeted; **Tab**
   or the arrow keys switch targets, **F**/**Enter** looses an arrow, **Esc**
   cancels) and soften foes from a distance.
-- Foes roll their own chance to hit back. **Bats** (3 HP) bite for 1; **Goblins**
-  (8 HP) are sturdier and hit for 2. Deeper rooms hold more — and tougher — foes.
+- Foes roll their own chance to hit back, and the bestiary climbs from fodder to
+  horror: **Bats** (3 HP) and **Spiders** (fragile but fast and accurate) early,
+  then **Goblins** (8 HP) and **Orcs** (12 HP, hit for 3), up to lumbering
+  **Trolls** (20 HP, slam for 5) deep down. Rooms farther from the entrance — and
+  deeper levels — hold more and tougher foes, and the vault is always guarded.
 
 Slaying foes earns **XP** (goblins give more than bats; chests give a treasure
 chunk that scales with depth). Fill the bar and you **level up**: your max HP
@@ -119,7 +122,8 @@ guarded chest. Planned next, in roughly the order it was dreamed up:
 - **Richer generation** — building on variable size / irregular footprint /
   varied rooms / winding corridors: locked doors and keys, interior cover
   (pillars), and themed rooms.
-- **More monsters & boss fights** — beyond bats and goblins.
+- **More monsters & boss fights** — beyond bats, spiders, goblins, orcs, and
+  trolls; special abilities (poison, pack tactics) and a depth boss.
 - **Sprites/SVGs** — replacing the block tiles with real art.
 
 ## License

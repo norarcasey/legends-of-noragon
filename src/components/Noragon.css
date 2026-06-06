@@ -10,7 +10,10 @@
   --noragon-stairs: #5a6172;
   --noragon-player: #4fc3f7;
   --noragon-bat: #b39ddb;
+  --noragon-spider: #e57373;
   --noragon-goblin: #7cb342;
+  --noragon-orc: #c0a16b;
+  --noragon-troll: #4db6ac;
   --noragon-accent: #d4a017;
   --noragon-text: #e6e9f0;
 
@@ -171,8 +174,20 @@
   color: var(--noragon-bat);
 }
 
+.noragon__tile--spider {
+  color: var(--noragon-spider);
+}
+
 .noragon__tile--goblin {
   color: var(--noragon-goblin);
+}
+
+.noragon__tile--orc {
+  color: var(--noragon-orc);
+}
+
+.noragon__tile--troll {
+  color: var(--noragon-troll);
 }
 
 .noragon__tile--target {
@@ -208,8 +223,20 @@
   --card-accent: var(--noragon-bat);
 }
 
+.noragon__enemy-card--spider {
+  --card-accent: var(--noragon-spider);
+}
+
 .noragon__enemy-card--goblin {
   --card-accent: var(--noragon-goblin);
+}
+
+.noragon__enemy-card--orc {
+  --card-accent: var(--noragon-orc);
+}
+
+.noragon__enemy-card--troll {
+  --card-accent: var(--noragon-troll);
 }
 
 .noragon__enemy-card--targeted {

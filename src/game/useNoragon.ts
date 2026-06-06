@@ -509,24 +509,33 @@ function generateDungeon(seed: number, depth: number): Dungeon {
       enemies.push(spawnEnemy(rooms, kind, enemyId++, spot.x, spot.y))
     }
   }
+  // Foes come from a pool that escalates with threat = a room's distance from the
+  // entrance plus how deep the run is, with more of them the deeper you go.
+  const rollKinds = (threat: number): EnemyKind[] => {
+    const pool: EnemyKind[] =
+      threat >= 4
+        ? ['goblin', 'orc', 'troll']
+        : threat >= 3
+          ? ['spider', 'goblin', 'orc']
+          : threat >= 2
+            ? ['bat', 'spider', 'goblin']
+            : ['bat', 'spider']
+    const count = threat >= 4 ? 3 : threat >= 2 ? 2 : 1
+    const kinds: EnemyKind[] = []
+    for (let i = 0; i < count; i++) kinds.push(pool[rng.int(pool.length)])
+    return kinds
+  }
   for (const cell of cells) {
     if (cell === startCell) continue
     if (cell === chestCell) {
       // The vault guardian grows nastier the deeper the run.
-      placeIn(roomOf(cell), depth >= 3 ? ['goblin', 'goblin', 'bat'] : ['goblin', 'bat'])
+      placeIn(
+        roomOf(cell),
+        depth >= 4 ? ['troll', 'orc'] : depth >= 2 ? ['orc', 'goblin'] : ['goblin', 'bat'],
+      )
       continue
     }
-    // Threat = how far this room is from the entrance, plus how deep the run is.
-    const threat = (dist.get(cell) ?? 1) + (depth - 1)
-    const kinds: EnemyKind[] =
-      threat >= 4
-        ? ['goblin', 'goblin']
-        : threat >= 3
-          ? ['bat', 'goblin']
-          : threat >= 2
-            ? ['bat', 'bat']
-            : ['bat']
-    placeIn(roomOf(cell), kinds)
+    placeIn(roomOf(cell), rollKinds((dist.get(cell) ?? 1) + (depth - 1)))
   }
 
   return { cols, rows, tiles, rooms, playerStart, enemies }

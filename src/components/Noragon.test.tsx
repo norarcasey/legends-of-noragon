@@ -129,6 +129,26 @@ function clearDungeon(result: Hook, cap = 3000) {
   }
 }
 
+/** Clear each level and take the stairs until the run reaches `target` depth. */
+function descendToDepth(result: Hook, target: number, cap = 25) {
+  for (
+    let d = 0;
+    d < cap && result.current.depth < target && result.current.status === 'playing';
+    d++
+  ) {
+    clearDungeon(result)
+    for (let i = 0; i < 1000 && result.current.status === 'playing'; i++) {
+      const startDepth = result.current.depth
+      const stairs = findTile(result.current.tiles, 'stairs')
+      if (!stairs) break
+      const dir = bfsDir(result.current.tiles, result.current.player, stairs, false)
+      if (!dir) break
+      act(() => result.current.move(dir))
+      if (result.current.depth !== startDepth) break
+    }
+  }
+}
+
 /** Compute the keystroke path to the first enemy room for a given run. */
 function dirsToEnemyRoom(opts: UseNoragonOptions): Direction[] {
   const { result, unmount } = renderHook(() => useNoragon(opts))
@@ -549,9 +569,19 @@ describe('useNoragon — combat', () => {
     expect(result.current.hp).toBe(0)
   })
 
-  it('makes the goblin tougher and harder-hitting than the bat', () => {
-    expect(ENEMY_INFO.goblin.maxHp).toBeGreaterThan(ENEMY_INFO.bat.maxHp)
-    expect(ENEMY_INFO.goblin.damage).toBeGreaterThan(ENEMY_INFO.bat.damage)
+  it('escalates the bestiary from bats up to trolls', () => {
+    const i = ENEMY_INFO
+    // Goblins out-muscle bats; orcs out-muscle goblins; trolls top them all.
+    expect(i.goblin.maxHp).toBeGreaterThan(i.bat.maxHp)
+    expect(i.orc.maxHp).toBeGreaterThan(i.goblin.maxHp)
+    expect(i.troll.maxHp).toBeGreaterThan(i.orc.maxHp)
+    expect(i.troll.damage).toBeGreaterThan(i.orc.damage)
+    expect(i.orc.damage).toBeGreaterThan(i.goblin.damage)
+    // Tougher foes are worth more XP than the humble bat.
+    for (const kind of ['spider', 'goblin', 'orc', 'troll'] as const) {
+      expect(i[kind].xp).toBeGreaterThan(i.bat.xp)
+    }
+    expect(i.troll.xp).toBeGreaterThan(i.orc.xp)
   })
 
   it('ignores a move into a wall — no step, no turn', () => {
@@ -732,5 +762,33 @@ describe('useNoragon — descending', () => {
     act(() => result.current.start())
     expect(result.current.depth).toBe(1)
     expect(result.current.level).toBe(1)
+  })
+})
+
+describe('useNoragon — new enemies', () => {
+  it('seeds spiders and orcs into the dungeon', () => {
+    const kinds = new Set<string>()
+    for (let seed = 1; seed <= 80; seed++) {
+      const { result, unmount } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      for (const e of result.current.enemies) kinds.add(e.kind)
+      unmount()
+    }
+    expect(kinds.has('spider')).toBe(true)
+    expect(kinds.has('orc')).toBe(true)
+  })
+
+  it('sends trolls to guard the deepest vaults', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 9999,
+        attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    descendToDepth(result, 4)
+    expect(result.current.depth).toBeGreaterThanOrEqual(4)
+    expect(result.current.enemies.some((e) => e.kind === 'troll')).toBe(true)
   })
 })

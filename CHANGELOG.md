@@ -22,6 +22,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Activity log: a scrolling, turn-by-turn record of moves, room discoveries,
   strikes, bites, and the run's end, emitted by the reducer as part of each
   transition and exposed as a `log` of `LogEntry` items on the hook.
+- Three new foes round out the bestiary: the **Spider** (fragile, fast, accurate),
+  the **Orc** (a tanky bruiser between goblin and troll), and the **Troll** (huge
+  HP, crushing damage, big XP). Placement draws from a threat-scaled pool — spiders
+  appear early, orcs/goblins in the mid rooms, and orcs/trolls deep down, with the
+  vault guardian escalating to a troll past depth 4. Each renders in its own colour
+  and glyph.
 - Multi-level runs: the stairs (`>`) now descend to a freshly generated, deeper
   level instead of being inert, and the run is an endless descent (the `won`
   status is gone — death is the only end). The hero's depth, level, XP, HP, and
