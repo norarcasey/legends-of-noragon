@@ -142,6 +142,16 @@ export function Noragon({
         <aside className="noragon__panel">
           <dl className="noragon__stats" aria-live="polite">
             <div className="noragon__stat">
+              <dt>Level</dt>
+              <dd>{game.level}</dd>
+            </div>
+            <div className="noragon__stat">
+              <dt>XP</dt>
+              <dd>
+                {game.xp}/{game.xpToNext}
+              </dd>
+            </div>
+            <div className="noragon__stat">
               <dt>HP</dt>
               <dd>
                 {game.hp}/{game.maxHp}

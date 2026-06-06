@@ -39,6 +39,11 @@ Combat:
 - Foes roll their own chance to hit back. **Bats** (3 HP) bite for 1; **Goblins**
   (8 HP) are sturdier and hit for 2. Deeper rooms hold more — and tougher — foes.
 
+Slaying foes earns **XP** (goblins give more than bats). Fill the bar and you
+**level up**: your max HP rises and you're **fully healed**, and every attack gets
+stronger and more accurate. Each fresh delve starts back at level 1 (progression
+will carry between levels once stairs are in).
+
 Enemies only stir once you enter their room, and each room is shrouded in
 **fog of war** until you step inside, at which point it stays lit for the rest of
 the level. Corridors are dark too — your torch lights them as you walk, and the
@@ -61,14 +66,14 @@ export function App() {
 
 ### Props
 
-| Prop             | Type                      | Default                | Description                                                                                                   |
-| ---------------- | ------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `maxHp`          | `number`                  | `12`                   | The hero's starting (and maximum) hit points.                                                                 |
-| `attacks`        | `Partial<AttackProfiles>` | melee `0.8` / `3`–`6`  | Override attack profiles; each kind is `{ accuracy, minDamage, maxDamage }`. Only `melee` affects play today. |
-| `seed`           | `number`                  | — (random)             | Fix the combat RNG for reproducible runs.                                                                     |
-| `enableKeyboard` | `boolean`                 | `true`                 | Move with the arrow keys / WASD.                                                                              |
-| `title`          | `string \| null`          | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it.                                                            |
-| `className`      | `string`                  | —                      | Extra class on the root element.                                                                              |
+| Prop             | Type                      | Default                | Description                                                                                                 |
+| ---------------- | ------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `maxHp`          | `number`                  | `12`                   | The hero's level-1 max hit points (grows as you level up).                                                  |
+| `attacks`        | `Partial<AttackProfiles>` | melee `0.8` / `3`–`6`  | The hero's level-1 attack profiles; each kind is `{ accuracy, minDamage, maxDamage }` and grows with level. |
+| `seed`           | `number`                  | — (random)             | Fix the combat RNG for reproducible runs.                                                                   |
+| `enableKeyboard` | `boolean`                 | `true`                 | Move with the arrow keys / WASD.                                                                            |
+| `title`          | `string \| null`          | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it.                                                          |
+| `className`      | `string`                  | —                      | Extra class on the root element.                                                                            |
 
 ### Headless engine
 
@@ -82,6 +87,7 @@ const game = useNoragon({
   attacks: { melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 } },
 })
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
+// game.level, game.xp, game.xpToNext, game.maxHp, game.attacks (current, leveled)
 // game.attacks.melee / .ranged (.spell reserved), game.aiming, game.targetId
 // game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
 // game.log (turn-by-turn LogEntry[])

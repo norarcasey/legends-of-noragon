@@ -37,9 +37,15 @@ export interface NoragonApi {
   hp: number
   /** Maximum hit points. */
   maxHp: number
-  /** The hero's attack profiles, one per kind. Only `melee` is used in play
-   *  today; `ranged`/`spell` are present for forthcoming attack modes. */
+  /** The hero's attack profiles, one per kind, at the current level. Only `melee`
+   *  is used in play today; `ranged`/`spell` are present for forthcoming modes. */
   attacks: AttackProfiles
+  /** The hero's current character level (starts at 1). */
+  level: number
+  /** XP earned toward the next level. */
+  xp: number
+  /** XP required to advance from the current level to the next. */
+  xpToNext: number
   /** Living enemies currently on the grid. */
   enemies: Enemy[]
   /** The subset of `enemies` that are active — sharing the hero's room. These
@@ -89,6 +95,73 @@ const DEFAULT_ATTACKS: AttackProfiles = {
   melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 },
   ranged: { accuracy: 0.6, minDamage: 2, maxDamage: 4 },
   spell: { accuracy: 0.9, minDamage: 3, maxDamage: 6 },
+}
+
+/**
+ * Leveling knobs — expect to tune these as the dungeon deepens. XP to advance
+ * from level L to L+1 is `xpPerLevel * L`; each level grants the hero more max
+ * HP, more damage on every attack, and a little more accuracy.
+ */
+const LEVELING = {
+  xpPerLevel: 16,
+  hpPerLevel: 4,
+  damagePerLevel: 1,
+  accuracyPerLevel: 0.02,
+}
+
+/** XP needed to advance from `level` to the next. */
+function xpToNext(level: number): number {
+  return LEVELING.xpPerLevel * level
+}
+
+/** Grow an attack profile by `bonus` levels (accuracy never exceeds 1). */
+function leveledProfile(p: AttackProfile, bonus: number): AttackProfile {
+  return {
+    accuracy: Math.min(1, p.accuracy + bonus * LEVELING.accuracyPerLevel),
+    minDamage: p.minDamage + bonus * LEVELING.damagePerLevel,
+    maxDamage: p.maxDamage + bonus * LEVELING.damagePerLevel,
+  }
+}
+
+/** The hero's current max HP and attack profiles at a given level, derived from
+ *  their base (level-1) profile so stats never drift. */
+function statsAt(base: HeroConfig, level: number): { maxHp: number; attacks: AttackProfiles } {
+  const bonus = level - 1
+  return {
+    maxHp: base.maxHp + bonus * LEVELING.hpPerLevel,
+    attacks: {
+      melee: leveledProfile(base.attacks.melee, bonus),
+      ranged: leveledProfile(base.attacks.ranged, bonus),
+      spell: leveledProfile(base.attacks.spell, bonus),
+    },
+  }
+}
+
+/**
+ * Apply earned XP, leveling the hero up as thresholds are crossed. Each level-up
+ * raises max HP / damage / accuracy and fully heals; the new stats are derived
+ * from `base`. Pushes a log line per level gained. Pure.
+ */
+function applyXp(
+  base: HeroConfig,
+  level: number,
+  xp: number,
+  hp: number,
+  gained: number,
+  messages: string[],
+): { level: number; xp: number; maxHp: number; attacks: AttackProfiles; hp: number } {
+  let lvl = level
+  let prog = xp + gained
+  let stats = statsAt(base, lvl)
+  let nextHp = hp
+  while (prog >= xpToNext(lvl)) {
+    prog -= xpToNext(lvl)
+    lvl += 1
+    stats = statsAt(base, lvl)
+    nextHp = stats.maxHp // level-ups fully heal
+    messages.push(`You reach level ${lvl}! You feel tougher and deadlier.`)
+  }
+  return { level: lvl, xp: prog, maxHp: stats.maxHp, attacks: stats.attacks, hp: nextHp }
 }
 
 /**
@@ -501,7 +574,8 @@ function markLit(seen: boolean[][], dungeon: Dungeon, p: Point): void {
 // every enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
 // same discipline that the other games in this family rely on.
-/** The hero's tunable profile, carried so reset/start can rebuild it. */
+/** The hero's *base* (level-1) profile, carried so reset/start can rebuild it and
+ *  level-ups can derive current stats from it without drift. */
 interface HeroConfig {
   maxHp: number
   attacks: AttackProfiles
@@ -510,6 +584,12 @@ interface HeroConfig {
 interface GameState extends HeroConfig {
   /** The generated level for this run; spatial helpers read from it. */
   dungeon: Dungeon
+  /** The hero's base (level-1) profile; current `maxHp`/`attacks` derive from it. */
+  base: HeroConfig
+  /** Current character level (starts at 1). */
+  level: number
+  /** XP earned toward the next level. */
+  xp: number
   player: Point
   hp: number
   enemies: Enemy[]
@@ -545,11 +625,17 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
   const dungeon = generateDungeon(seed)
   const seen = blankSeen(dungeon)
   markLit(seen, dungeon, dungeon.playerStart)
+  // Level 1 stats equal the base profile; fresh delves start at level 1.
+  const stats = statsAt(config, 1)
   return {
-    ...config,
+    maxHp: stats.maxHp,
+    attacks: stats.attacks,
+    base: config,
+    level: 1,
+    xp: 0,
     dungeon,
     player: { ...dungeon.playerStart },
-    hp: config.maxHp,
+    hp: stats.maxHp,
     enemies: dungeon.enemies.map((e) => ({ ...e })),
     status: 'idle',
     kills: 0,
@@ -565,9 +651,9 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
   }
 }
 
-/** Pull the hero's profile back out of a live game state. */
+/** Pull the hero's base profile back out so reset/start begins at level 1 again. */
 function configOf(state: GameState): HeroConfig {
-  return { maxHp: state.maxHp, attacks: state.attacks }
+  return state.base
 }
 
 /** Append messages to the log, minting a stable id for each. Pure. */
@@ -685,6 +771,12 @@ function reducer(state: GameState, action: GameAction): GameState {
       let player = state.player
       let enemies = state.enemies
       let kills = state.kills
+      // Leveling carries through the turn; a kill may raise these and refill hp.
+      let level = state.level
+      let xp = state.xp
+      let maxHp = state.maxHp
+      let attacks = state.attacks
+      let hp = state.hp
       const messages: string[] = []
 
       // Re-light the torch radius around wherever the hero ends up this turn.
@@ -713,11 +805,18 @@ function reducer(state: GameState, action: GameAction): GameState {
             .filter((e) => e.hp > 0)
           const slain = enemies.length < state.enemies.length
           kills = state.kills + (slain ? 1 : 0)
-          messages.push(
-            slain
-              ? `You strike the ${name} for ${damage} — slain!`
-              : `You strike the ${name} for ${damage}.`,
-          )
+          if (slain) {
+            const gained = ENEMY_INFO[targetBat.kind].xp
+            messages.push(`You strike the ${name} for ${damage} — slain! (+${gained} XP)`)
+            const lv = applyXp(state.base, level, xp, hp, gained, messages)
+            level = lv.level
+            xp = lv.xp
+            maxHp = lv.maxHp
+            attacks = lv.attacks
+            hp = lv.hp
+          } else {
+            messages.push(`You strike the ${name} for ${damage}.`)
+          }
         } else {
           messages.push(`You swing at the ${name} and miss.`)
         }
@@ -756,7 +855,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         roomAt(state.dungeon.rooms, player.x, player.y),
       )
 
-      const phase = runEnemyPhase(state.dungeon, player, enemies, state.hp, roll, messages)
+      const phase = runEnemyPhase(state.dungeon, player, enemies, hp, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
@@ -764,6 +863,10 @@ function reducer(state: GameState, action: GameAction): GameState {
         ...state,
         player,
         hp: Math.max(0, phase.hp),
+        maxHp,
+        attacks,
+        level,
+        xp,
         enemies: phase.enemies,
         kills,
         status,
@@ -823,6 +926,11 @@ function reducer(state: GameState, action: GameAction): GameState {
       const messages: string[] = []
       let enemies = state.enemies
       let kills = state.kills
+      let level = state.level
+      let xp = state.xp
+      let maxHp = state.maxHp
+      let attacks = state.attacks
+      let hp = state.hp
 
       // The hero looses an arrow: resolve the ranged profile, then enemies act.
       const name = ENEMY_INFO[target.kind].name
@@ -833,22 +941,33 @@ function reducer(state: GameState, action: GameAction): GameState {
           .filter((e) => e.hp > 0)
         const slain = enemies.length < state.enemies.length
         kills = state.kills + (slain ? 1 : 0)
-        messages.push(
-          slain
-            ? `You shoot the ${name} for ${damage} — slain!`
-            : `You shoot the ${name} for ${damage}.`,
-        )
+        if (slain) {
+          const gained = ENEMY_INFO[target.kind].xp
+          messages.push(`You shoot the ${name} for ${damage} — slain! (+${gained} XP)`)
+          const lv = applyXp(state.base, level, xp, hp, gained, messages)
+          level = lv.level
+          xp = lv.xp
+          maxHp = lv.maxHp
+          attacks = lv.attacks
+          hp = lv.hp
+        } else {
+          messages.push(`You shoot the ${name} for ${damage}.`)
+        }
       } else {
         messages.push(`Your arrow misses the ${name}.`)
       }
 
-      const phase = runEnemyPhase(state.dungeon, state.player, enemies, state.hp, roll, messages)
+      const phase = runEnemyPhase(state.dungeon, state.player, enemies, hp, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
       return {
         ...state,
         hp: Math.max(0, phase.hp),
+        maxHp,
+        attacks,
+        level,
+        xp,
         enemies: phase.enemies,
         kills,
         status,
@@ -945,6 +1064,9 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     hp: state.hp,
     maxHp: state.maxHp,
     attacks: state.attacks,
+    level: state.level,
+    xp: state.xp,
+    xpToNext: xpToNext(state.level),
     enemies: state.enemies,
     activeEnemies,
     status: state.status,

@@ -22,6 +22,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Activity log: a scrolling, turn-by-turn record of moves, room discoveries,
   strikes, bites, and the run's end, emitted by the reducer as part of each
   transition and exposed as a `log` of `LogEntry` items on the hook.
+- Character leveling: slaying foes grants XP (per-kind, from the bestiary —
+  goblins give more than bats). Crossing the XP threshold for the level levels the
+  hero up, which raises max HP and **fully heals**, and makes every attack
+  (melee/ranged/spell) hit harder and more accurately. Current stats derive from
+  the hero's base profile + level via `statsAt`, so they never drift; the curve
+  and per-level gains live in a tunable `LEVELING` block. The hook exposes
+  `level`, `xp`, and `xpToNext`, shown in the header. Fresh delves restart at
+  level 1 (progression will persist once descending stairs lands).
 - Melee combat with rolls: the hero attacks via a per-kind `AttackProfile`
   (`accuracy` + `minDamage`/`maxDamage`); the hero starts with 12 HP and melee
   defaults to an 80% hit for 3–6 damage. `ranged` (bow/throw) and `spell` profiles are modeled and tuned now so

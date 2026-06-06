@@ -18,6 +18,8 @@ export interface EnemyInfo {
   damage: number
   /** Verb used in the activity log when it hits, e.g. "bites". */
   verb: string
+  /** Experience the hero earns for slaying one. */
+  xp: number
 }
 
 export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
@@ -30,6 +32,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     accuracy: 0.6,
     damage: 1,
     verb: 'bites',
+    xp: 4,
   },
   goblin: {
     name: 'Goblin',
@@ -40,5 +43,6 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     accuracy: 0.7,
     damage: 2,
     verb: 'slashes',
+    xp: 12,
   },
 }

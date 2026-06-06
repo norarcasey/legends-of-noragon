@@ -114,6 +114,21 @@ function enterMultiEnemyRoom(result: Hook, cap = 600) {
   }
 }
 
+/** Hunt down and kill every enemy on the level (never stepping on the chest). */
+function clearDungeon(result: Hook, cap = 3000) {
+  for (
+    let i = 0;
+    i < cap && result.current.enemies.length > 0 && result.current.status === 'playing';
+    i++
+  ) {
+    const foe = result.current.enemies[0]
+    if (!foe) break
+    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    if (!dir) break
+    act(() => result.current.move(dir))
+  }
+}
+
 /** Compute the keystroke path to the first enemy room for a given run. */
 function dirsToEnemyRoom(opts: UseNoragonOptions): Direction[] {
   const { result, unmount } = renderHook(() => useNoragon(opts))
@@ -555,5 +570,88 @@ describe('useNoragon — combat', () => {
     }
     expect(bumped).toBe(true)
     expect(result.current.status).toBe('playing')
+  })
+})
+
+describe('useNoragon — leveling', () => {
+  it('rewards more XP for tougher foes', () => {
+    expect(ENEMY_INFO.bat.xp).toBeGreaterThan(0)
+    expect(ENEMY_INFO.goblin.xp).toBeGreaterThan(ENEMY_INFO.bat.xp)
+  })
+
+  it('awards XP for a kill, shown in the log', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+
+    // Hunt down and slay one foe.
+    for (
+      let i = 0;
+      i < 60 && result.current.kills === 0 && result.current.status === 'playing';
+      i++
+    ) {
+      const foe = result.current.enemies[0]
+      if (!foe) break
+      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      if (!dir) break
+      act(() => result.current.move(dir))
+    }
+
+    expect(result.current.kills).toBe(1)
+    expect(result.current.xp).toBeGreaterThan(0) // a single kill isn't enough to level
+    expect(result.current.level).toBe(1)
+    expect(result.current.log.some((e) => /slain! \(\+\d+ XP\)$/.test(e.text))).toBe(true)
+  })
+
+  it('levels up from kills: grows max HP, damage, and accuracy, and heals', () => {
+    const baseMaxHp = 50
+    const baseMax = 20
+    const baseAcc = 0.9
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: baseMaxHp,
+        attacks: {
+          melee: { accuracy: baseAcc, minDamage: 20, maxDamage: baseMax },
+          ranged: { accuracy: baseAcc, minDamage: 2, maxDamage: 4 },
+        },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    expect(result.current.level).toBe(1)
+    expect(result.current.maxHp).toBe(baseMaxHp)
+
+    clearDungeon(result)
+
+    expect(result.current.level).toBeGreaterThan(1)
+    expect(result.current.maxHp).toBeGreaterThan(baseMaxHp) // tougher
+    expect(result.current.attacks.melee.maxDamage).toBeGreaterThan(baseMax) // deadlier
+    expect(result.current.attacks.melee.accuracy).toBeGreaterThan(baseAcc) // more accurate
+    expect(result.current.attacks.ranged.maxDamage).toBeGreaterThan(4) // all attacks grow
+    expect(result.current.hp).toBeLessThanOrEqual(result.current.maxHp) // heals never overfill
+    expect(result.current.log.some((e) => /reach level 2/.test(e.text))).toBe(true)
+  })
+
+  it('starts a fresh delve back at level 1', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 50,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    clearDungeon(result)
+    expect(result.current.level).toBeGreaterThan(1)
+
+    act(() => result.current.start()) // a new delve
+    expect(result.current.level).toBe(1)
+    expect(result.current.xp).toBe(0)
+    expect(result.current.maxHp).toBe(50)
   })
 })
