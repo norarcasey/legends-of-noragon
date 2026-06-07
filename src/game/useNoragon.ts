@@ -77,6 +77,10 @@ export interface NoragonApi {
   reset: () => void
   /** Step the hero one tile. Bumping an enemy attacks it; a wall is ignored. */
   move: (dir: Direction) => void
+  /** Whether the hero is standing on a downward stairway. */
+  onStairs: boolean
+  /** Take the stairs down to the next, deeper level. No-op unless on stairs. */
+  descend: () => void
   /** Enter ranged-aiming mode, targeting the nearest enemy in the room. */
   aimStart: () => void
   /** While aiming, move the crosshairs to another enemy (`+1` next, `-1` prev). */
@@ -643,6 +647,7 @@ type GameAction =
   | { type: 'reset'; seed: number }
   | { type: 'start'; seed: number }
   | { type: 'move'; dir: Direction }
+  | { type: 'descend' }
   | { type: 'aimStart' }
   | { type: 'aimCycle'; delta: number }
   | { type: 'aimCancel' }
@@ -885,13 +890,9 @@ function reducer(state: GameState, action: GameAction): GameState {
         return state
       } else {
         const tile = tileAt(state.dungeon, target.x, target.y)
-        // The stairs end this level immediately — descend, carrying the hero.
-        if (tile === 'stairs') {
-          messages.push(`You move ${DIR_NAME[action.dir]}.`)
-          return descend(state, messages)
-        }
         player = target
         messages.push(`You move ${DIR_NAME[action.dir]}.`)
+        // The stairs are walkable; descending is a deliberate action (see below).
         // A chest is treasure: claim the XP and consume it (it becomes floor).
         if (tile === 'chest') {
           const gained = LEVELING.chestXp * state.depth
@@ -941,6 +942,13 @@ function reducer(state: GameState, action: GameAction): GameState {
         targetId: null,
         ...logLines(state.log, state.nextLogId, messages),
       }
+    }
+    case 'descend': {
+      // Deliberate: only works while the hero is standing on the stairs, so the
+      // stairs never block the way to the chest or a fight.
+      if (state.status !== 'playing') return state
+      if (tileAt(state.dungeon, state.player.x, state.player.y) !== 'stairs') return state
+      return descend(state, [])
     }
     case 'aimStart': {
       if (state.status !== 'playing') return state
@@ -1096,6 +1104,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const start = useCallback(() => dispatch({ type: 'start', seed: makeSeed() }), [makeSeed])
   const reset = useCallback(() => dispatch({ type: 'reset', seed: makeSeed() }), [makeSeed])
   const move = useCallback((dir: Direction) => dispatch({ type: 'move', dir }), [])
+  const descend = useCallback(() => dispatch({ type: 'descend' }), [])
   const aimStart = useCallback(() => dispatch({ type: 'aimStart' }), [])
   const aimCycle = useCallback((delta: number) => dispatch({ type: 'aimCycle', delta }), [])
   const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
@@ -1105,6 +1114,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   // that governs whether they take turns. Those are the ones we surface as cards.
   const currentRoom = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
   const activeEnemies = state.enemies.filter((e) => e.room === currentRoom)
+  const onStairs = tileAt(state.dungeon, state.player.x, state.player.y) === 'stairs'
 
   // Fog: revealed rooms (plus a doorway peek) lit permanently, with the torch
   // trail overlaid so explored corridors stay visible.
@@ -1141,9 +1151,11 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     visible,
     aiming: state.aiming,
     targetId: state.targetId,
+    onStairs,
     start,
     reset,
     move,
+    descend,
     aimStart,
     aimCycle,
     aimCancel,

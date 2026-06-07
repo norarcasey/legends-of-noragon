@@ -43,7 +43,8 @@ export function Noragon({
 }: NoragonProps) {
   const game = useNoragon({ maxHp, attacks, seed })
   const melee = game.attacks.melee
-  const { status, aiming, start, move, aimStart, aimCycle, aimCancel, fire } = game
+  const { status, aiming, onStairs, start, move, descend, aimStart, aimCycle, aimCancel, fire } =
+    game
 
   useEffect(() => {
     if (!enableKeyboard) return
@@ -69,10 +70,16 @@ export function Noragon({
         return
       }
 
-      // ---- Normal play: F starts aiming; directions move (and start). ----
+      // ---- Normal play ----
       if (status === 'playing' && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault()
         aimStart()
+        return
+      }
+      // Descend the stairs deliberately with `>` (or Enter while on them).
+      if (status === 'playing' && onStairs && (e.key === '>' || e.key === 'Enter')) {
+        e.preventDefault()
+        descend()
         return
       }
 
@@ -90,7 +97,19 @@ export function Noragon({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [enableKeyboard, status, aiming, start, move, aimStart, aimCycle, aimCancel, fire])
+  }, [
+    enableKeyboard,
+    status,
+    aiming,
+    onStairs,
+    start,
+    move,
+    descend,
+    aimStart,
+    aimCycle,
+    aimCancel,
+    fire,
+  ])
 
   const isOver = status === 'dead'
 
@@ -117,6 +136,17 @@ export function Noragon({
           {aiming && (
             <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
               Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>F</kbd> fire · <kbd>Esc</kbd> cancel
+            </div>
+          )}
+
+          {status === 'playing' && onStairs && !aiming && (
+            <div className="noragon__stairs-banner" role="status" data-testid="stairs-banner">
+              <span>
+                A stairway leads down. Press <kbd>&gt;</kbd> to descend.
+              </span>
+              <button type="button" className="noragon__descend-button" onClick={descend}>
+                Descend ▾
+              </button>
             </div>
           )}
 

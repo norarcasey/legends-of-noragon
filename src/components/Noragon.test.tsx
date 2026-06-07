@@ -129,6 +129,14 @@ function clearDungeon(result: Hook, cap = 3000) {
   }
 }
 
+/** Walk onto the stairs and take them down one level. */
+function takeStairs(result: Hook) {
+  const stairs = findTile(result.current.tiles, 'stairs')
+  if (!stairs) return
+  navigateToTile(result, stairs, false)
+  if (result.current.onStairs) act(() => result.current.descend())
+}
+
 /** Clear each level and take the stairs until the run reaches `target` depth. */
 function descendToDepth(result: Hook, target: number, cap = 25) {
   for (
@@ -137,15 +145,9 @@ function descendToDepth(result: Hook, target: number, cap = 25) {
     d++
   ) {
     clearDungeon(result)
-    for (let i = 0; i < 1000 && result.current.status === 'playing'; i++) {
-      const startDepth = result.current.depth
-      const stairs = findTile(result.current.tiles, 'stairs')
-      if (!stairs) break
-      const dir = bfsDir(result.current.tiles, result.current.player, stairs, false)
-      if (!dir) break
-      act(() => result.current.move(dir))
-      if (result.current.depth !== startDepth) break
-    }
+    const before = result.current.depth
+    takeStairs(result)
+    if (result.current.depth === before) break
   }
 }
 
@@ -715,18 +717,8 @@ describe('useNoragon — descending', () => {
     const killsBefore = result.current.kills
     expect(levelBefore).toBeGreaterThan(1)
 
-    // Walk to the stairs and step down (stop the moment the depth changes).
-    for (
-      let i = 0;
-      i < 800 && result.current.depth === 1 && result.current.status === 'playing';
-      i++
-    ) {
-      const stairs = findTile(result.current.tiles, 'stairs')
-      if (!stairs) break
-      const dir = bfsDir(result.current.tiles, result.current.player, stairs, false)
-      if (!dir) break
-      act(() => result.current.move(dir))
-    }
+    // Walk onto the stairs, then deliberately descend.
+    takeStairs(result)
 
     expect(result.current.depth).toBe(2)
     expect(result.current.status).toBe('playing')
@@ -746,22 +738,32 @@ describe('useNoragon — descending', () => {
     )
     act(() => result.current.start())
     clearDungeon(result)
-    for (
-      let i = 0;
-      i < 800 && result.current.depth === 1 && result.current.status === 'playing';
-      i++
-    ) {
-      const stairs = findTile(result.current.tiles, 'stairs')
-      if (!stairs) break
-      const dir = bfsDir(result.current.tiles, result.current.player, stairs, false)
-      if (!dir) break
-      act(() => result.current.move(dir))
-    }
+    takeStairs(result)
     expect(result.current.depth).toBe(2)
 
     act(() => result.current.start())
     expect(result.current.depth).toBe(1)
     expect(result.current.level).toBe(1)
+  })
+
+  it('does not descend off the stairs (the stairs no longer auto-descend)', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    clearDungeon(result)
+    const stairs = findTile(result.current.tiles, 'stairs')
+    expect(stairs).not.toBeNull()
+    if (stairs) navigateToTile(result, stairs, false) // stand on the stairs
+
+    expect(result.current.onStairs).toBe(true)
+    expect(result.current.depth).toBe(1) // just standing there doesn't descend
+    act(() => result.current.descend()) // ...pressing descend does
+    expect(result.current.depth).toBe(2)
   })
 })
 

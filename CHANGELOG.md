@@ -28,6 +28,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   appear early, orcs/goblins in the mid rooms, and orcs/trolls deep down, with the
   vault guardian escalating to a troll past depth 4. Each renders in its own colour
   and glyph.
+- Descending is now a deliberate action: the stairs (`>`) are walkable and no
+  longer descend on contact (which could strand the chest behind them). Stand on
+  the stairs and press `>` / Enter, or click the Descend button, to drop down. The
+  hook exposes `onStairs` and `descend()`.
 - Multi-level runs: the stairs (`>`) now descend to a freshly generated, deeper
   level instead of being inert, and the run is an endless descent (the `won`
   status is gone — death is the only end). The hero's depth, level, XP, HP, and

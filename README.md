@@ -27,7 +27,9 @@ the dark between them. You start safe in **the entry hall**; the farthest room (
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
 (`>`). A run is an **endless descent**: clear or sneak through each level, take
 the stairs to a deeper, tougher one, and see how far down you can get before you
-die.
+die. The stairs are walkable — they don't descend on contact — so you can cross
+them to reach the chest or fight the guards; when you're ready, stand on them and
+press **`>`** (or the **Descend** button) to drop down.
 
 Combat:
 
