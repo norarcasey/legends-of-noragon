@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.0] - 2026-06-04
 
+### Changed
+
+- The `useNoragon` hook's return value is now grouped for clarity instead of one
+  flat object: spatial state lives under `game.board` (`cols`, `rows`, `tiles`,
+  `visible`, `floorItems`), the character under `game.hero` (`position` — the old
+  `player` — plus `hp`, `maxHp`, `level`, `xp`, `xpToNext`, `attacks`, `defense`,
+  `gold`, `inventory`, `equipment`, `onStairs`), and run-level state under
+  `game.run` (`status`, `depth`, `kills`, `turns`). Enemies, the activity log,
+  aiming, and all action callbacks stay top-level. New exported view types
+  `BoardView`, `HeroView`, and `RunView`.
+
 ### Added
 
 - Initial release of Noragon — An embeddable React turn-based top-down dungeon crawler.

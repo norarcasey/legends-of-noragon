@@ -7,7 +7,8 @@ interface BoardProps {
   cols: number
   rows: number
   tiles: TileType[][]
-  player: Point
+  /** The hero's tile position, drawn on top of whatever tile they stand on. */
+  hero: Point
   enemies: Enemy[]
   /** Loot on the floor, drawn on its tile when visible. */
   floorItems: FloorItem[]
@@ -37,7 +38,7 @@ export function Board({
   cols,
   rows,
   tiles,
-  player,
+  hero,
   enemies,
   floorItems,
   visible,
@@ -60,7 +61,7 @@ export function Board({
     <div className="noragon__board" style={gridStyle} data-testid="board" aria-hidden>
       {tiles.flatMap((row, y) =>
         row.map((tile, x) => {
-          const isPlayer = player.x === x && player.y === y
+          const isPlayer = hero.x === x && hero.y === y
           // The hero is always lit; everything else stays dark until discovered.
           const lit = isPlayer || visible[y]?.[x]
           if (!lit) {

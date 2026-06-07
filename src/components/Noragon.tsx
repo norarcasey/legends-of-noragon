@@ -43,22 +43,12 @@ export function Noragon({
   className,
 }: NoragonProps) {
   const game = useNoragon({ maxHp, attacks, seed })
-  const melee = game.attacks.melee
-  const {
-    status,
-    aiming,
-    onStairs,
-    start,
-    move,
-    descend,
-    equip,
-    drink,
-    aimStart,
-    aimCycle,
-    aimCancel,
-    fire,
-  } = game
-  const firstPotion = game.inventory.find((i) => i.kind === 'healthPotion')
+  const { board, hero, run } = game
+  const { status } = run
+  const { onStairs } = hero
+  const melee = hero.attacks.melee
+  const { aiming, start, move, descend, equip, drink, aimStart, aimCycle, aimCancel, fire } = game
+  const firstPotion = hero.inventory.find((i) => i.kind === 'healthPotion')
 
   useEffect(() => {
     if (!enableKeyboard) return
@@ -145,13 +135,13 @@ export function Noragon({
       <div className="noragon__layout">
         <div className="noragon__stage">
           <Board
-            cols={game.cols}
-            rows={game.rows}
-            tiles={game.tiles}
-            player={game.player}
+            cols={board.cols}
+            rows={board.rows}
+            tiles={board.tiles}
+            hero={hero.position}
             enemies={game.enemies}
-            floorItems={game.floorItems}
-            visible={game.visible}
+            floorItems={board.floorItems}
+            visible={board.visible}
             aiming={aiming}
             targetId={game.targetId}
           />
@@ -179,7 +169,7 @@ export function Noragon({
                 <p className="noragon__message">Descend into the dungeon of Noragon</p>
               )}
               {status === 'dead' && (
-                <p className="noragon__message">You died at depth {game.depth}. 💀</p>
+                <p className="noragon__message">You died at depth {run.depth}. 💀</p>
               )}
               <button type="button" className="noragon__button" onClick={start}>
                 {isOver ? 'Delve again' : 'Enter'}
@@ -195,22 +185,22 @@ export function Noragon({
           <dl className="noragon__stats" aria-live="polite">
             <div className="noragon__stat">
               <dt>Depth</dt>
-              <dd>{game.depth}</dd>
+              <dd>{run.depth}</dd>
             </div>
             <div className="noragon__stat">
               <dt>Level</dt>
-              <dd>{game.level}</dd>
+              <dd>{hero.level}</dd>
             </div>
             <div className="noragon__stat">
               <dt>XP</dt>
               <dd>
-                {game.xp}/{game.xpToNext}
+                {hero.xp}/{hero.xpToNext}
               </dd>
             </div>
             <div className="noragon__stat">
               <dt>HP</dt>
               <dd>
-                {game.hp}/{game.maxHp}
+                {hero.hp}/{hero.maxHp}
               </dd>
             </div>
             <div className="noragon__stat">
@@ -225,15 +215,15 @@ export function Noragon({
             </div>
             <div className="noragon__stat">
               <dt>Defense</dt>
-              <dd>{game.defense}</dd>
+              <dd>{hero.defense}</dd>
             </div>
             <div className="noragon__stat">
               <dt>Gold</dt>
-              <dd>{game.gold}</dd>
+              <dd>{hero.gold}</dd>
             </div>
             <div className="noragon__stat">
               <dt>Slain</dt>
-              <dd>{game.kills}</dd>
+              <dd>{run.kills}</dd>
             </div>
           </dl>
 
@@ -243,9 +233,9 @@ export function Noragon({
 
           {status !== 'idle' && (
             <Inventory
-              inventory={game.inventory}
-              equipment={game.equipment}
-              gold={game.gold}
+              inventory={hero.inventory}
+              equipment={hero.equipment}
+              gold={hero.gold}
               onEquip={equip}
               onDrink={drink}
             />

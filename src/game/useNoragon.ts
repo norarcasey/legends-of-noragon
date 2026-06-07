@@ -29,19 +29,35 @@ export interface UseNoragonOptions {
   seed?: number
 }
 
-export interface NoragonApi {
+/** The dungeon grid the hero is exploring — dimensions, tiles, fog, and loot. */
+export interface BoardView {
   /** Dungeon width in tiles. */
   cols: number
   /** Dungeon height in tiles. */
   rows: number
   /** The static tile grid, row-major (`tiles[y][x]`). */
   tiles: TileType[][]
-  /** The hero's position. */
-  player: Point
+  /** Per-tile fog-of-war mask (`visible[y][x]`): a tile is shown once a room it
+   *  borders has been discovered. Undiscovered tiles render as fog. */
+  visible: boolean[][]
+  /** Loot lying on the current level's floor (picked up by walking onto it). */
+  floorItems: FloorItem[]
+}
+
+/** The hero: where they stand, their vitals and combat stats, gear, and progress. */
+export interface HeroView {
+  /** The hero's tile position. */
+  position: Point
   /** Current hit points. */
   hp: number
   /** Maximum hit points. */
   maxHp: number
+  /** The hero's current character level (starts at 1). */
+  level: number
+  /** XP earned toward the next level. */
+  xp: number
+  /** XP required to advance from the current level to the next. */
+  xpToNext: number
   /** The hero's attack profiles, one per kind, at the current level — including
    *  the equipped weapon's bonus. Only `melee`/`ranged` are used in play today. */
   attacks: AttackProfiles
@@ -53,47 +69,49 @@ export interface NoragonApi {
   inventory: InventoryItem[]
   /** Which inventory item fills each equipment slot. */
   equipment: Equipment
-  /** Loot lying on the current level's floor (picked up by walking onto it). */
-  floorItems: FloorItem[]
+  /** Whether the hero is standing on a downward stairway. */
+  onStairs: boolean
+}
+
+/** The run as a whole: how it's going and how far it's gotten. */
+export interface RunView {
+  status: GameStatus
   /** How deep the run has gone (1 at the entrance, +1 per stairway descended). */
   depth: number
-  /** The hero's current character level (starts at 1). */
-  level: number
-  /** XP earned toward the next level. */
-  xp: number
-  /** XP required to advance from the current level to the next. */
-  xpToNext: number
+  /** Enemies slain so far this level. */
+  kills: number
+  /** Turns the hero has taken. */
+  turns: number
+}
+
+export interface NoragonApi {
+  /** The dungeon grid: dimensions, tiles, fog mask, and floor loot. */
+  board: BoardView
+  /** The hero's position, vitals, combat stats, gear, and progression. */
+  hero: HeroView
+  /** Run-level state: status, depth, and tallies. */
+  run: RunView
   /** Living enemies currently on the grid. */
   enemies: Enemy[]
   /** The subset of `enemies` that are active — sharing the hero's room. These
    *  are the ones taking turns, and the ones shown as cards. */
   activeEnemies: Enemy[]
-  status: GameStatus
-  /** Enemies slain so far this level. */
-  kills: number
-  /** Turns the hero has taken. */
-  turns: number
   /** The room id the hero currently stands in, or `null` if in a doorway. */
   currentRoom: number | null
-  /** A running log of what happened each turn, oldest entry first. */
-  log: LogEntry[]
   /** Ids of rooms the hero has entered; their tiles and contents are revealed. */
   revealedRooms: number[]
-  /** Per-tile fog-of-war mask (`visible[y][x]`): a tile is shown once a room it
-   *  borders has been discovered. Undiscovered tiles render as fog. */
-  visible: boolean[][]
   /** Whether the hero is aiming a ranged attack. */
   aiming: boolean
   /** Id of the enemy in the crosshairs while aiming, else `null`. */
   targetId: number | null
+  /** A running log of what happened each turn, oldest entry first. */
+  log: LogEntry[]
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
   reset: () => void
   /** Step the hero one tile. Bumping an enemy attacks it; a wall is ignored. */
   move: (dir: Direction) => void
-  /** Whether the hero is standing on a downward stairway. */
-  onStairs: boolean
   /** Take the stairs down to the next, deeper level. No-op unless on stairs. */
   descend: () => void
   /** Equip a carried weapon or armor by its inventory item id. */
@@ -1386,34 +1404,40 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   }
 
   return {
-    cols: state.dungeon.cols,
-    rows: state.dungeon.rows,
-    tiles: state.dungeon.tiles,
-    player: state.player,
-    hp: state.hp,
-    maxHp: state.maxHp,
-    attacks: state.attacks,
-    defense: state.defense,
-    gold: state.gold,
-    inventory: state.inventory,
-    equipment: state.equipment,
-    floorItems: state.floorItems,
-    depth: state.depth,
-    level: state.level,
-    xp: state.xp,
-    xpToNext: xpToNext(state.level),
+    board: {
+      cols: state.dungeon.cols,
+      rows: state.dungeon.rows,
+      tiles: state.dungeon.tiles,
+      visible,
+      floorItems: state.floorItems,
+    },
+    hero: {
+      position: state.player,
+      hp: state.hp,
+      maxHp: state.maxHp,
+      level: state.level,
+      xp: state.xp,
+      xpToNext: xpToNext(state.level),
+      attacks: state.attacks,
+      defense: state.defense,
+      gold: state.gold,
+      inventory: state.inventory,
+      equipment: state.equipment,
+      onStairs,
+    },
+    run: {
+      status: state.status,
+      depth: state.depth,
+      kills: state.kills,
+      turns: state.turns,
+    },
     enemies: state.enemies,
     activeEnemies,
-    status: state.status,
-    kills: state.kills,
-    turns: state.turns,
     currentRoom,
-    log: state.log,
     revealedRooms: state.revealedRooms,
-    visible,
     aiming: state.aiming,
     targetId: state.targetId,
-    onStairs,
+    log: state.log,
     start,
     reset,
     move,

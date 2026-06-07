@@ -3,7 +3,7 @@ export { Noragon } from './components/Noragon'
 export type { NoragonProps } from './components/Noragon'
 
 export { useNoragon } from './game/useNoragon'
-export type { NoragonApi, UseNoragonOptions } from './game/useNoragon'
+export type { BoardView, HeroView, NoragonApi, RunView, UseNoragonOptions } from './game/useNoragon'
 
 export type {
   AttackKind,

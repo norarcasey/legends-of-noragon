@@ -72,10 +72,10 @@ type Hook = { current: NoragonApi }
 
 /** Walk the hero to a target tile, re-pathing each step (enemies get bumped). */
 function navigateToTile(result: Hook, target: Point, blockChest = true, cap = 600) {
-  for (let i = 0; i < cap && result.current.status === 'playing'; i++) {
-    const p = result.current.player
+  for (let i = 0; i < cap && result.current.run.status === 'playing'; i++) {
+    const p = result.current.hero.position
     if (p.x === target.x && p.y === target.y) break
-    const dir = bfsDir(result.current.tiles, p, target, blockChest)
+    const dir = bfsDir(result.current.board.tiles, p, target, blockChest)
     if (!dir) break
     act(() => result.current.move(dir))
   }
@@ -83,11 +83,16 @@ function navigateToTile(result: Hook, target: Point, blockChest = true, cap = 60
 
 /** Walk toward `enemies[0]` until the hero shares a room with active enemies. */
 function enterEnemyRoom(result: Hook, cap = 600) {
-  for (let i = 0; i < cap && result.current.status === 'playing'; i++) {
+  for (let i = 0; i < cap && result.current.run.status === 'playing'; i++) {
     if (result.current.activeEnemies.length > 0) return
     const foe = result.current.enemies[0]
     if (!foe) return
-    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    const dir = bfsDir(
+      result.current.board.tiles,
+      result.current.hero.position,
+      { x: foe.x, y: foe.y },
+      true,
+    )
     if (!dir) return
     act(() => result.current.move(dir))
   }
@@ -105,11 +110,16 @@ function enterMultiEnemyRoom(result: Hook, cap = 600) {
     }
   }
   if (roomId === -1) return
-  for (let i = 0; i < cap && result.current.status === 'playing'; i++) {
+  for (let i = 0; i < cap && result.current.run.status === 'playing'; i++) {
     if (result.current.activeEnemies.length >= 2) return
     const foe = result.current.enemies.find((e) => e.room === roomId)
     if (!foe) return
-    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    const dir = bfsDir(
+      result.current.board.tiles,
+      result.current.hero.position,
+      { x: foe.x, y: foe.y },
+      true,
+    )
     if (!dir) return
     act(() => result.current.move(dir))
   }
@@ -119,12 +129,17 @@ function enterMultiEnemyRoom(result: Hook, cap = 600) {
 function clearDungeon(result: Hook, cap = 3000) {
   for (
     let i = 0;
-    i < cap && result.current.enemies.length > 0 && result.current.status === 'playing';
+    i < cap && result.current.enemies.length > 0 && result.current.run.status === 'playing';
     i++
   ) {
     const foe = result.current.enemies[0]
     if (!foe) break
-    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    const dir = bfsDir(
+      result.current.board.tiles,
+      result.current.hero.position,
+      { x: foe.x, y: foe.y },
+      true,
+    )
     if (!dir) break
     act(() => result.current.move(dir))
   }
@@ -132,23 +147,23 @@ function clearDungeon(result: Hook, cap = 3000) {
 
 /** Walk onto the stairs and take them down one level. */
 function takeStairs(result: Hook) {
-  const stairs = findTile(result.current.tiles, 'stairs')
+  const stairs = findTile(result.current.board.tiles, 'stairs')
   if (!stairs) return
   navigateToTile(result, stairs, false)
-  if (result.current.onStairs) act(() => result.current.descend())
+  if (result.current.hero.onStairs) act(() => result.current.descend())
 }
 
 /** Clear each level and take the stairs until the run reaches `target` depth. */
 function descendToDepth(result: Hook, target: number, cap = 25) {
   for (
     let d = 0;
-    d < cap && result.current.depth < target && result.current.status === 'playing';
+    d < cap && result.current.run.depth < target && result.current.run.status === 'playing';
     d++
   ) {
     clearDungeon(result)
-    const before = result.current.depth
+    const before = result.current.run.depth
     takeStairs(result)
-    if (result.current.depth === before) break
+    if (result.current.run.depth === before) break
   }
 }
 
@@ -157,11 +172,16 @@ function dirsToEnemyRoom(opts: UseNoragonOptions): Direction[] {
   const { result, unmount } = renderHook(() => useNoragon(opts))
   act(() => result.current.start())
   const dirs: Direction[] = []
-  for (let i = 0; i < 200 && result.current.status === 'playing'; i++) {
+  for (let i = 0; i < 200 && result.current.run.status === 'playing'; i++) {
     if (result.current.activeEnemies.length > 0) break
     const foe = result.current.enemies[0]
     if (!foe) break
-    const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    const dir = bfsDir(
+      result.current.board.tiles,
+      result.current.hero.position,
+      { x: foe.x, y: foe.y },
+      true,
+    )
     if (!dir) break
     dirs.push(dir)
     act(() => result.current.move(dir))
@@ -263,8 +283,8 @@ describe('<Noragon />', () => {
 
 describe('useNoragon — procedural generation', () => {
   const layoutOf = (result: Hook) => ({
-    tiles: result.current.tiles.map((row) => row.join('')),
-    player: result.current.player,
+    tiles: result.current.board.tiles.map((row) => row.join('')),
+    player: result.current.hero.position,
     enemies: result.current.enemies.map((e) => ({ kind: e.kind, x: e.x, y: e.y })),
   })
 
@@ -281,7 +301,7 @@ describe('useNoragon — procedural generation', () => {
     const fingerprint = (seed: number) => {
       const { result } = renderHook(() => useNoragon({ seed }))
       act(() => result.current.start())
-      return result.current.tiles.map((row) => row.join('')).join('\n')
+      return result.current.board.tiles.map((row) => row.join('')).join('\n')
     }
     const unique = new Set(SEEDS.map(fingerprint))
     expect(unique.size).toBeGreaterThan(1)
@@ -291,7 +311,8 @@ describe('useNoragon — procedural generation', () => {
     for (const seed of SEEDS) {
       const { result } = renderHook(() => useNoragon({ seed }))
       act(() => result.current.start())
-      const { tiles, player } = result.current
+      const { tiles } = result.current.board
+      const player = result.current.hero.position
       const rows = tiles.length
       const cols = tiles[0].length
 
@@ -335,7 +356,7 @@ describe('useNoragon — procedural generation', () => {
     for (const seed of SEEDS) {
       const { result } = renderHook(() => useNoragon({ seed }))
       act(() => result.current.start())
-      const corridors = result.current.tiles.flat().filter((t) => t === 'corridor').length
+      const corridors = result.current.board.tiles.flat().filter((t) => t === 'corridor').length
       expect(corridors).toBeGreaterThan(0)
     }
   })
@@ -344,7 +365,7 @@ describe('useNoragon — procedural generation', () => {
     for (const seed of SEEDS) {
       const { result } = renderHook(() => useNoragon({ seed }))
       act(() => result.current.start())
-      const tiles = result.current.tiles
+      const tiles = result.current.board.tiles
       // A corridor tile must never sit directly against room floor — the only
       // bridge between a corridor and a room is a single `door` tile.
       for (let y = 0; y < tiles.length; y++) {
@@ -361,13 +382,13 @@ describe('useNoragon — procedural generation', () => {
   it('lights corridors with the torch trail as the hero explores', () => {
     const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 7 }))
     act(() => result.current.start())
-    const chest = findTile(result.current.tiles, 'chest')
+    const chest = findTile(result.current.board.tiles, 'chest')
     expect(chest).not.toBeNull()
     if (chest) navigateToTile(result, chest, false)
 
     // Having walked the passages to the vault, some corridor tiles are now lit
     // (no room reveals a corridor — only the torch trail does).
-    const { tiles, visible } = result.current
+    const { tiles, visible } = result.current.board
     let litCorridors = 0
     for (let y = 0; y < tiles.length; y++) {
       for (let x = 0; x < tiles[y].length; x++) {
@@ -380,19 +401,19 @@ describe('useNoragon — procedural generation', () => {
   it('reveals the room ahead while the hero stands in a doorway', () => {
     const { result } = renderHook(() => useNoragon({ maxHp: 99, seed: 7 }))
     act(() => result.current.start())
-    const chest = findTile(result.current.tiles, 'chest')
+    const chest = findTile(result.current.board.tiles, 'chest')
     expect(chest).not.toBeNull()
 
     // Step toward the chest until the hero is standing on a door tile.
     let onDoor = false
-    for (let i = 0; i < 200 && result.current.status === 'playing'; i++) {
-      const p = result.current.player
-      if (result.current.tiles[p.y][p.x] === 'door') {
+    for (let i = 0; i < 200 && result.current.run.status === 'playing'; i++) {
+      const p = result.current.hero.position
+      if (result.current.board.tiles[p.y][p.x] === 'door') {
         onDoor = true
         break
       }
       if (!chest) break
-      const dir = bfsDir(result.current.tiles, p, chest, false)
+      const dir = bfsDir(result.current.board.tiles, p, chest, false)
       if (!dir) break
       act(() => result.current.move(dir))
     }
@@ -400,7 +421,8 @@ describe('useNoragon — procedural generation', () => {
 
     // The floor tiles on both sides of the doorway (both rooms) are now lit —
     // including the room the hero hasn't entered yet.
-    const { player, tiles, visible } = result.current
+    const { tiles, visible } = result.current.board
+    const player = result.current.hero.position
     let floorNeighbors = 0
     for (const dir of DIRECTIONS) {
       const nx = player.x + DELTA[dir].x
@@ -433,18 +455,20 @@ describe('useNoragon — procedural generation', () => {
     act(() => result.current.start())
     clearDungeon(result) // also clears the vault guardians
 
-    const goldBefore = result.current.gold
-    const potionsBefore = result.current.inventory.filter((i) => i.kind === 'healthPotion').length
-    const chest = findTile(result.current.tiles, 'chest')
+    const goldBefore = result.current.hero.gold
+    const potionsBefore = result.current.hero.inventory.filter(
+      (i) => i.kind === 'healthPotion',
+    ).length
+    const chest = findTile(result.current.board.tiles, 'chest')
     expect(chest).not.toBeNull()
     if (chest) navigateToTile(result, chest, false) // step onto the chest
 
-    expect(findTile(result.current.tiles, 'chest')).toBeNull() // consumed
-    expect(result.current.gold).toBeGreaterThan(goldBefore) // gold gained
+    expect(findTile(result.current.board.tiles, 'chest')).toBeNull() // consumed
+    expect(result.current.hero.gold).toBeGreaterThan(goldBefore) // gold gained
     expect(
-      result.current.inventory.filter((i) => i.kind === 'healthPotion').length,
+      result.current.hero.inventory.filter((i) => i.kind === 'healthPotion').length,
     ).toBeGreaterThan(potionsBefore) // and a potion
-    expect(result.current.status).toBe('playing') // chests no longer end the run
+    expect(result.current.run.status).toBe('playing') // chests no longer end the run
   })
 })
 
@@ -465,7 +489,12 @@ describe('useNoragon — combat', () => {
     for (let i = 0; i < 20; i++) {
       const foe = result.current.activeEnemies[0]
       if (!foe) break
-      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      const dir = bfsDir(
+        result.current.board.tiles,
+        result.current.hero.position,
+        { x: foe.x, y: foe.y },
+        true,
+      )
       if (!dir) break
       act(() => result.current.move(dir))
     }
@@ -485,18 +514,23 @@ describe('useNoragon — combat', () => {
     act(() => result.current.start())
     enterEnemyRoom(result)
     // Effective range = base (3–6) + the equipped Short Sword (+2) = 5–8.
-    const lo = result.current.attacks.melee.minDamage
-    const hi = result.current.attacks.melee.maxDamage
+    const lo = result.current.hero.attacks.melee.minDamage
+    const hi = result.current.hero.attacks.melee.maxDamage
 
     // Bump foes while still level 1, so the effective range can't shift on us.
     for (
       let i = 0;
-      i < 40 && result.current.level === 1 && result.current.activeEnemies.length > 0;
+      i < 40 && result.current.hero.level === 1 && result.current.activeEnemies.length > 0;
       i++
     ) {
       const foe = result.current.activeEnemies[0]
       if (!foe) break
-      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      const dir = bfsDir(
+        result.current.board.tiles,
+        result.current.hero.position,
+        { x: foe.x, y: foe.y },
+        true,
+      )
       if (!dir) break
       act(() => result.current.move(dir))
     }
@@ -525,12 +559,12 @@ describe('useNoragon — combat', () => {
     act(() => result.current.aimStart())
     expect(result.current.aiming).toBe(true)
     expect(result.current.targetId).not.toBeNull()
-    const turnsBefore = result.current.turns
+    const turnsBefore = result.current.run.turns
 
     act(() => result.current.fire())
     expect(result.current.aiming).toBe(false)
-    expect(result.current.turns).toBe(turnsBefore + 1)
-    expect(result.current.kills).toBeGreaterThan(0)
+    expect(result.current.run.turns).toBe(turnsBefore + 1)
+    expect(result.current.run.kills).toBeGreaterThan(0)
     expect(result.current.log.some((e) => /^You shoot the \w+ for 10/.test(e.text))).toBe(true)
   })
 
@@ -574,16 +608,21 @@ describe('useNoragon — combat', () => {
     expect(tough).toBeDefined()
 
     // March onto the harder-hitting foe and let it punch through the armor.
-    for (let i = 0; i < 300 && result.current.status === 'playing'; i++) {
+    for (let i = 0; i < 300 && result.current.run.status === 'playing'; i++) {
       const t = result.current.enemies.find((e) => e.id === tough?.id)
       if (!t) break
-      const dir = bfsDir(result.current.tiles, result.current.player, { x: t.x, y: t.y }, true)
+      const dir = bfsDir(
+        result.current.board.tiles,
+        result.current.hero.position,
+        { x: t.x, y: t.y },
+        true,
+      )
       if (!dir) break
       act(() => result.current.move(dir))
     }
 
-    expect(result.current.status).toBe('dead')
-    expect(result.current.hp).toBe(0)
+    expect(result.current.run.status).toBe('dead')
+    expect(result.current.hero.hp).toBe(0)
   })
 
   it('lets foes strike a hero loitering in a doorway (no safe poking)', () => {
@@ -594,7 +633,9 @@ describe('useNoragon — combat', () => {
     const onDoorwayBesideFoe = (r: Hook) =>
       r.current.currentRoom === null &&
       r.current.enemies.some(
-        (e) => Math.abs(e.x - r.current.player.x) + Math.abs(e.y - r.current.player.y) === 1,
+        (e) =>
+          Math.abs(e.x - r.current.hero.position.x) + Math.abs(e.y - r.current.hero.position.y) ===
+          1,
       )
 
     for (const seed of [7, 1, 42, 99, 256, 4242, 5, 11, 77, 123, 2, 3]) {
@@ -609,14 +650,14 @@ describe('useNoragon — combat', () => {
       // Hunt the nearest foe; stop as soon as we're in a doorway next to one.
       for (
         let i = 0;
-        i < 400 && !onDoorwayBesideFoe(result) && result.current.status === 'playing';
+        i < 400 && !onDoorwayBesideFoe(result) && result.current.run.status === 'playing';
         i++
       ) {
         const foe = result.current.enemies[0]
         if (!foe) break
         const dir = bfsDir(
-          result.current.tiles,
-          result.current.player,
+          result.current.board.tiles,
+          result.current.hero.position,
           { x: foe.x, y: foe.y },
           true,
         )
@@ -630,15 +671,20 @@ describe('useNoragon — combat', () => {
       expect(result.current.currentRoom).toBeNull() // on a doorway (no room)
       expect(result.current.activeEnemies.length).toBeGreaterThan(0) // yet a foe is active
       // Loiter and poke (accuracy 0 — can't kill it); it lands hits back.
-      const hp0 = result.current.hp
-      for (let i = 0; i < 25 && result.current.hp === hp0; i++) {
+      const hp0 = result.current.hero.hp
+      for (let i = 0; i < 25 && result.current.hero.hp === hp0; i++) {
         const f = result.current.activeEnemies[0]
         if (!f) break
-        const dir = bfsDir(result.current.tiles, result.current.player, { x: f.x, y: f.y }, false)
+        const dir = bfsDir(
+          result.current.board.tiles,
+          result.current.hero.position,
+          { x: f.x, y: f.y },
+          false,
+        )
         if (!dir) break
         act(() => result.current.move(dir))
       }
-      expect(result.current.hp).toBeLessThan(hp0)
+      expect(result.current.hero.hp).toBeLessThan(hp0)
       unmount()
       return
     }
@@ -675,20 +721,20 @@ describe('useNoragon — combat', () => {
     // that is the outer wall, since enemy bumps still consume a turn.
     let bumped = false
     for (let i = 0; i < 60; i++) {
-      const beforeP = result.current.player
-      const beforeT = result.current.turns
+      const beforeP = result.current.hero.position
+      const beforeT = result.current.run.turns
       act(() => result.current.move('up'))
       if (
-        result.current.player.x === beforeP.x &&
-        result.current.player.y === beforeP.y &&
-        result.current.turns === beforeT
+        result.current.hero.position.x === beforeP.x &&
+        result.current.hero.position.y === beforeP.y &&
+        result.current.run.turns === beforeT
       ) {
         bumped = true
         break
       }
     }
     expect(bumped).toBe(true)
-    expect(result.current.status).toBe('playing')
+    expect(result.current.run.status).toBe('playing')
   })
 })
 
@@ -711,19 +757,24 @@ describe('useNoragon — leveling', () => {
     // Hunt down and slay one foe.
     for (
       let i = 0;
-      i < 60 && result.current.kills === 0 && result.current.status === 'playing';
+      i < 60 && result.current.run.kills === 0 && result.current.run.status === 'playing';
       i++
     ) {
       const foe = result.current.enemies[0]
       if (!foe) break
-      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+      const dir = bfsDir(
+        result.current.board.tiles,
+        result.current.hero.position,
+        { x: foe.x, y: foe.y },
+        true,
+      )
       if (!dir) break
       act(() => result.current.move(dir))
     }
 
-    expect(result.current.kills).toBe(1)
-    expect(result.current.xp).toBeGreaterThan(0) // a single kill isn't enough to level
-    expect(result.current.level).toBe(1)
+    expect(result.current.run.kills).toBe(1)
+    expect(result.current.hero.xp).toBeGreaterThan(0) // a single kill isn't enough to level
+    expect(result.current.hero.level).toBe(1)
     expect(result.current.log.some((e) => /slain! \(\+\d+ XP\)$/.test(e.text))).toBe(true)
   })
 
@@ -742,17 +793,17 @@ describe('useNoragon — leveling', () => {
       }),
     )
     act(() => result.current.start())
-    expect(result.current.level).toBe(1)
-    expect(result.current.maxHp).toBe(baseMaxHp)
+    expect(result.current.hero.level).toBe(1)
+    expect(result.current.hero.maxHp).toBe(baseMaxHp)
 
     clearDungeon(result)
 
-    expect(result.current.level).toBeGreaterThan(1)
-    expect(result.current.maxHp).toBeGreaterThan(baseMaxHp) // tougher
-    expect(result.current.attacks.melee.maxDamage).toBeGreaterThan(baseMax) // deadlier
-    expect(result.current.attacks.melee.accuracy).toBeGreaterThan(baseAcc) // more accurate
-    expect(result.current.attacks.ranged.maxDamage).toBeGreaterThan(4) // all attacks grow
-    expect(result.current.hp).toBeLessThanOrEqual(result.current.maxHp) // heals never overfill
+    expect(result.current.hero.level).toBeGreaterThan(1)
+    expect(result.current.hero.maxHp).toBeGreaterThan(baseMaxHp) // tougher
+    expect(result.current.hero.attacks.melee.maxDamage).toBeGreaterThan(baseMax) // deadlier
+    expect(result.current.hero.attacks.melee.accuracy).toBeGreaterThan(baseAcc) // more accurate
+    expect(result.current.hero.attacks.ranged.maxDamage).toBeGreaterThan(4) // all attacks grow
+    expect(result.current.hero.hp).toBeLessThanOrEqual(result.current.hero.maxHp) // heals never overfill
     expect(result.current.log.some((e) => /reach level 2/.test(e.text))).toBe(true)
   })
 
@@ -766,12 +817,12 @@ describe('useNoragon — leveling', () => {
     )
     act(() => result.current.start())
     clearDungeon(result)
-    expect(result.current.level).toBeGreaterThan(1)
+    expect(result.current.hero.level).toBeGreaterThan(1)
 
     act(() => result.current.start()) // a new delve
-    expect(result.current.level).toBe(1)
-    expect(result.current.xp).toBe(0)
-    expect(result.current.maxHp).toBe(50)
+    expect(result.current.hero.level).toBe(1)
+    expect(result.current.hero.xp).toBe(0)
+    expect(result.current.hero.maxHp).toBe(50)
   })
 })
 
@@ -785,19 +836,19 @@ describe('useNoragon — descending', () => {
       }),
     )
     act(() => result.current.start())
-    expect(result.current.depth).toBe(1)
+    expect(result.current.run.depth).toBe(1)
     clearDungeon(result) // fight through, leveling up on the way
-    const levelBefore = result.current.level
-    const killsBefore = result.current.kills
+    const levelBefore = result.current.hero.level
+    const killsBefore = result.current.run.kills
     expect(levelBefore).toBeGreaterThan(1)
 
     // Walk onto the stairs, then deliberately descend.
     takeStairs(result)
 
-    expect(result.current.depth).toBe(2)
-    expect(result.current.status).toBe('playing')
-    expect(result.current.level).toBe(levelBefore) // progression carries over
-    expect(result.current.kills).toBe(killsBefore) // a fresh level's foes are new
+    expect(result.current.run.depth).toBe(2)
+    expect(result.current.run.status).toBe('playing')
+    expect(result.current.hero.level).toBe(levelBefore) // progression carries over
+    expect(result.current.run.kills).toBe(killsBefore) // a fresh level's foes are new
     expect(result.current.enemies.length).toBeGreaterThan(0) // and it's populated
     expect(result.current.log.some((e) => /descend the stairs to depth 2/.test(e.text))).toBe(true)
   })
@@ -813,11 +864,11 @@ describe('useNoragon — descending', () => {
     act(() => result.current.start())
     clearDungeon(result)
     takeStairs(result)
-    expect(result.current.depth).toBe(2)
+    expect(result.current.run.depth).toBe(2)
 
     act(() => result.current.start())
-    expect(result.current.depth).toBe(1)
-    expect(result.current.level).toBe(1)
+    expect(result.current.run.depth).toBe(1)
+    expect(result.current.hero.level).toBe(1)
   })
 
   it('does not descend off the stairs (the stairs no longer auto-descend)', () => {
@@ -830,14 +881,14 @@ describe('useNoragon — descending', () => {
     )
     act(() => result.current.start())
     clearDungeon(result)
-    const stairs = findTile(result.current.tiles, 'stairs')
+    const stairs = findTile(result.current.board.tiles, 'stairs')
     expect(stairs).not.toBeNull()
     if (stairs) navigateToTile(result, stairs, false) // stand on the stairs
 
-    expect(result.current.onStairs).toBe(true)
-    expect(result.current.depth).toBe(1) // just standing there doesn't descend
+    expect(result.current.hero.onStairs).toBe(true)
+    expect(result.current.run.depth).toBe(1) // just standing there doesn't descend
     act(() => result.current.descend()) // ...pressing descend does
-    expect(result.current.depth).toBe(2)
+    expect(result.current.run.depth).toBe(2)
   })
 })
 
@@ -864,7 +915,7 @@ describe('useNoragon — new enemies', () => {
     )
     act(() => result.current.start())
     descendToDepth(result, 4)
-    expect(result.current.depth).toBeGreaterThanOrEqual(4)
+    expect(result.current.run.depth).toBeGreaterThanOrEqual(4)
     expect(result.current.enemies.some((e) => e.kind === 'troll')).toBe(true)
   })
 })
@@ -876,18 +927,22 @@ describe('useNoragon — loot & equipment', () => {
     const { result } = renderHook(() => useNoragon({ seed: 7 }))
     act(() => result.current.start())
 
-    const kinds = result.current.inventory.map((i) => i.kind).sort()
+    const kinds = result.current.hero.inventory.map((i) => i.kind).sort()
     expect(kinds).toEqual(['clothes', 'healthPotion', 'shortSword'])
 
-    const weapon = result.current.inventory.find((i) => i.id === result.current.equipment.weapon)
-    const armor = result.current.inventory.find((i) => i.id === result.current.equipment.armor)
+    const weapon = result.current.hero.inventory.find(
+      (i) => i.id === result.current.hero.equipment.weapon,
+    )
+    const armor = result.current.hero.inventory.find(
+      (i) => i.id === result.current.hero.equipment.armor,
+    )
     expect(weapon?.kind).toBe('shortSword')
     expect(armor?.kind).toBe('clothes')
 
     // The equipped sword adds its +2 to melee; the clothes give their defense.
-    expect(result.current.attacks.melee.maxDamage).toBe(6 + ITEMS.shortSword.meleeDamage)
-    expect(result.current.defense).toBe(ITEMS.clothes.defense)
-    expect(result.current.gold).toBe(15)
+    expect(result.current.hero.attacks.melee.maxDamage).toBe(6 + ITEMS.shortSword.meleeDamage)
+    expect(result.current.hero.defense).toBe(ITEMS.clothes.defense)
+    expect(result.current.hero.gold).toBe(15)
   })
 
   it('equipping a found weapon retunes melee damage', () => {
@@ -900,7 +955,7 @@ describe('useNoragon — loot & equipment', () => {
         }),
       )
       act(() => result.current.start())
-      const onFloor = result.current.floorItems.find(
+      const onFloor = result.current.board.floorItems.find(
         (i) => i.kind !== 'gold' && ITEMS[i.kind].category === 'weapon',
       )
       if (!onFloor || onFloor.kind === 'gold') {
@@ -909,18 +964,18 @@ describe('useNoragon — loot & equipment', () => {
       }
       const kind = onFloor.kind
       navigateToTile(result, { x: onFloor.x, y: onFloor.y }, false)
-      const picked = result.current.inventory.find(
-        (i) => i.kind === kind && i.id !== result.current.equipment.weapon,
+      const picked = result.current.hero.inventory.find(
+        (i) => i.kind === kind && i.id !== result.current.hero.equipment.weapon,
       )
       if (!picked) {
         unmount()
         continue
       }
-      const before = result.current.attacks.melee.maxDamage
+      const before = result.current.hero.attacks.melee.maxDamage
       act(() => result.current.equip(picked.id))
       // Equip is instant (no leveling between reads), so the change is exactly the
       // difference between the old Short Sword and the newly equipped weapon.
-      expect(result.current.attacks.melee.maxDamage - before).toBe(
+      expect(result.current.hero.attacks.melee.maxDamage - before).toBe(
         ITEMS[kind].meleeDamage - ITEMS.shortSword.meleeDamage,
       )
       unmount()
@@ -939,7 +994,7 @@ describe('useNoragon — loot & equipment', () => {
         }),
       )
       act(() => result.current.start())
-      const onFloor = result.current.floorItems.find(
+      const onFloor = result.current.board.floorItems.find(
         (i) => i.kind !== 'gold' && ITEMS[i.kind].category === 'armor',
       )
       if (!onFloor || onFloor.kind === 'gold') {
@@ -948,15 +1003,15 @@ describe('useNoragon — loot & equipment', () => {
       }
       const kind = onFloor.kind
       navigateToTile(result, { x: onFloor.x, y: onFloor.y }, false)
-      const picked = result.current.inventory.find(
-        (i) => i.kind === kind && i.id !== result.current.equipment.armor,
+      const picked = result.current.hero.inventory.find(
+        (i) => i.kind === kind && i.id !== result.current.hero.equipment.armor,
       )
       if (!picked) {
         unmount()
         continue
       }
       act(() => result.current.equip(picked.id))
-      expect(result.current.defense).toBe(ITEMS[kind].defense)
+      expect(result.current.hero.defense).toBe(ITEMS[kind].defense)
       unmount()
       return
     }
@@ -973,19 +1028,19 @@ describe('useNoragon — loot & equipment', () => {
         }),
       )
       act(() => result.current.start())
-      const pile = result.current.floorItems.find((i) => i.kind === 'gold')
+      const pile = result.current.board.floorItems.find((i) => i.kind === 'gold')
       if (!pile) {
         unmount()
         continue
       }
-      const before = result.current.gold
+      const before = result.current.hero.gold
       navigateToTile(result, { x: pile.x, y: pile.y }, false)
-      if (result.current.player.x !== pile.x || result.current.player.y !== pile.y) {
+      if (result.current.hero.position.x !== pile.x || result.current.hero.position.y !== pile.y) {
         unmount()
         continue
       }
-      expect(result.current.gold).toBeGreaterThan(before)
-      expect(result.current.floorItems.some((i) => i.id === pile.id)).toBe(false)
+      expect(result.current.hero.gold).toBeGreaterThan(before)
+      expect(result.current.board.floorItems.some((i) => i.id === pile.id)).toBe(false)
       unmount()
       return
     }
@@ -1010,30 +1065,35 @@ describe('useNoragon — loot & equipment', () => {
       // Let a hard-hitting foe wound the hero below a full potion's worth.
       for (
         let i = 0;
-        i < 200 && result.current.hp > 20 && result.current.status === 'playing';
+        i < 200 && result.current.hero.hp > 20 && result.current.run.status === 'playing';
         i++
       ) {
         const t = result.current.enemies.find((e) => e.id === tough.id)
         if (!t) break
-        const dir = bfsDir(result.current.tiles, result.current.player, { x: t.x, y: t.y }, true)
+        const dir = bfsDir(
+          result.current.board.tiles,
+          result.current.hero.position,
+          { x: t.x, y: t.y },
+          true,
+        )
         if (!dir) break
         act(() => result.current.move(dir))
       }
-      if (result.current.hp > 20 || result.current.status !== 'playing') {
+      if (result.current.hero.hp > 20 || result.current.run.status !== 'playing') {
         unmount()
         continue
       }
-      const potion = result.current.inventory.find((i) => i.kind === 'healthPotion')
+      const potion = result.current.hero.inventory.find((i) => i.kind === 'healthPotion')
       if (!potion) {
         unmount()
         continue
       }
-      const hpBefore = result.current.hp
-      const turnsBefore = result.current.turns
+      const hpBefore = result.current.hero.hp
+      const turnsBefore = result.current.run.turns
       act(() => result.current.drink(potion.id))
-      expect(result.current.hp).toBeGreaterThan(hpBefore)
-      expect(result.current.inventory.some((i) => i.id === potion.id)).toBe(false)
-      expect(result.current.turns).toBe(turnsBefore + 1)
+      expect(result.current.hero.hp).toBeGreaterThan(hpBefore)
+      expect(result.current.hero.inventory.some((i) => i.id === potion.id)).toBe(false)
+      expect(result.current.run.turns).toBe(turnsBefore + 1)
       unmount()
       return
     }
@@ -1049,15 +1109,15 @@ describe('useNoragon — loot & equipment', () => {
       }),
     )
     act(() => result.current.start())
-    const goldStart = result.current.gold
+    const goldStart = result.current.hero.gold
     descendToDepth(result, 2)
-    expect(result.current.depth).toBe(2)
+    expect(result.current.run.depth).toBe(2)
     // Gold/inventory persisted (gold only grows from loot on the way down).
-    expect(result.current.gold).toBeGreaterThanOrEqual(goldStart)
+    expect(result.current.hero.gold).toBeGreaterThanOrEqual(goldStart)
 
     act(() => result.current.start()) // fresh delve
-    expect(result.current.gold).toBe(15)
-    expect(result.current.inventory.map((i) => i.kind).sort()).toEqual([
+    expect(result.current.hero.gold).toBe(15)
+    expect(result.current.hero.inventory.map((i) => i.kind).sort()).toEqual([
       'clothes',
       'healthPotion',
       'shortSword',

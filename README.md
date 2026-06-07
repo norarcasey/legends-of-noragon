@@ -103,14 +103,19 @@ const game = useNoragon({
   maxHp: 12,
   attacks: { melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 } },
 })
-// game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
-// game.depth, game.level, game.xp, game.xpToNext, game.maxHp, game.attacks, game.defense
-// game.gold, game.inventory, game.equipment, game.floorItems, game.onStairs
-// game.attacks.melee / .ranged (.spell reserved), game.aiming, game.targetId
-// game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
-// game.log (turn-by-turn LogEntry[])
-// game.start(), game.reset(), game.move("up" | "down" | "left" | "right"), game.descend()
-// game.equip(itemId), game.drink(itemId)
+
+// State is grouped into three views plus a few top-level fields:
+// game.board  — { cols, rows, tiles, visible (fog mask), floorItems }
+// game.hero   — { position, hp, maxHp, level, xp, xpToNext, attacks (.melee /
+//                 .ranged, .spell reserved), defense, gold, inventory,
+//                 equipment, onStairs }
+// game.run    — { status, depth, kills, turns }
+// game.enemies, game.activeEnemies, game.currentRoom, game.revealedRooms
+// game.aiming, game.targetId, game.log (turn-by-turn LogEntry[])
+
+// Actions stay top-level:
+// game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
+// game.descend(), game.equip(itemId), game.drink(itemId)
 // game.aimStart(), game.aimCycle(+1 | -1), game.aimCancel(), game.fire()
 ```
 
