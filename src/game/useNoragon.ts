@@ -101,11 +101,11 @@ const DEFAULT_ATTACKS: AttackProfiles = {
 
 /**
  * Leveling knobs — expect to tune these as the dungeon deepens. XP to advance
- * from level L to L+1 is `xpPerLevel * L`; each level grants the hero more max
- * HP, more damage on every attack, and a little more accuracy.
+ * from level L to L+1 is `xpPerLevel * L²` (a steep curve so later levels cost a
+ * lot more); each level grants more max HP, more damage, and a little accuracy.
  */
 const LEVELING = {
-  xpPerLevel: 16,
+  xpPerLevel: 24,
   hpPerLevel: 4,
   damagePerLevel: 1,
   accuracyPerLevel: 0.02,
@@ -113,9 +113,9 @@ const LEVELING = {
   chestXp: 12,
 }
 
-/** XP needed to advance from `level` to the next. */
+/** XP needed to advance from `level` to the next (quadratic in level). */
 function xpToNext(level: number): number {
-  return LEVELING.xpPerLevel * level
+  return LEVELING.xpPerLevel * level * level
 }
 
 /** Grow an attack profile by `bonus` levels (accuracy never exceeds 1). */
