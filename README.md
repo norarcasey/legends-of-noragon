@@ -45,8 +45,16 @@ Combat:
   **Trolls** (20 HP, slam for 5) deep down. Rooms farther from the entrance — and
   deeper levels — hold more and tougher foes, and the vault is always guarded.
 
-Slaying foes earns **XP** (goblins give more than bats; chests give a treasure
-chunk that scales with depth). Fill the bar and you **level up**: your max HP
+You begin with a kit — a **Short Sword**, **Traveler's Clothes**, a **Health
+Potion**, and a little **gold**. Your equipped weapon adds to your melee damage
+and armor subtracts flat **defense** from every hit you take. Loot lies on the
+floor (gold piles `$`, potions `!`, weapons `/`, armor `]`) — walk onto it to
+pick it up — and chests cough up gold and a potion (sometimes gear). Open the
+**Pack** panel to equip better gear or **drink** a potion (or just press `Q` to
+quaff). Your gold and pack carry down the stairs with you.
+
+Slaying foes earns **XP** (goblins give more than bats). Fill the bar and you
+**level up**: your max HP
 rises and you're **fully healed**, and every attack gets stronger and more
 accurate. Your level, XP, and HP **carry with you down the stairs** — only a
 fresh delve (after death) starts back at depth 1, level 1. Deeper levels field
@@ -96,11 +104,13 @@ const game = useNoragon({
   attacks: { melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 } },
 })
 // game.tiles, game.player, game.enemies, game.activeEnemies, game.hp, game.kills
-// game.depth, game.level, game.xp, game.xpToNext, game.maxHp, game.attacks
+// game.depth, game.level, game.xp, game.xpToNext, game.maxHp, game.attacks, game.defense
+// game.gold, game.inventory, game.equipment, game.floorItems, game.onStairs
 // game.attacks.melee / .ranged (.spell reserved), game.aiming, game.targetId
 // game.status, game.currentRoom, game.revealedRooms, game.visible (fog mask)
 // game.log (turn-by-turn LogEntry[])
-// game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
+// game.start(), game.reset(), game.move("up" | "down" | "left" | "right"), game.descend()
+// game.equip(itemId), game.drink(itemId)
 // game.aimStart(), game.aimCycle(+1 | -1), game.aimCancel(), game.fire()
 ```
 
@@ -117,8 +127,8 @@ guarded chest. Planned next, in roughly the order it was dreamed up:
   `spell` profile (targeted the same way) and an arrow/quiver resource for ranged.
 - **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
   enemy evasion, criticals, line-of-sight/cover, and per-weapon damage profiles.
-- **Loot & equipment** — the chest grants loot (or springs a trap); equip armor,
-  weapon, and shield, drink potions, and fire a bow.
+- **More loot & equipment** — building on weapons/armor/potions/gold: shields,
+  rings and trinkets, a shop to spend gold, and chests that sometimes spring traps.
 - **Run depth & payoff** — a boss/▼victory at a target depth, rest/heal sites,
   and run summaries, building on the endless-descent loop.
 - **Richer generation** — building on variable size / irregular footprint /

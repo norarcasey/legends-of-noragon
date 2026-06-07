@@ -1,6 +1,7 @@
 // Framework-free types shared by the dungeon engine and the React layer.
 
 import type { EnemyKind } from './enemies'
+import type { ItemKind } from './items'
 
 /** A tile on the dungeon grid. Origin is top-left; x grows right, y grows down. */
 export interface Point {
@@ -41,6 +42,28 @@ export interface Room {
 export interface LogEntry {
   id: number
   text: string
+}
+
+/** One item the hero is carrying; `id` is a stable, unique instance key. */
+export interface InventoryItem {
+  id: number
+  kind: ItemKind
+}
+
+/** Loot lying on the dungeon floor, picked up by walking onto its tile. `kind`
+ *  is `'gold'` for a coin pile (with `amount`), otherwise an item kind. */
+export interface FloorItem {
+  id: number
+  x: number
+  y: number
+  kind: ItemKind | 'gold'
+  amount: number
+}
+
+/** Which inventory item is equipped in each slot (by item id), or `null`. */
+export interface Equipment {
+  weapon: number | null
+  armor: number | null
 }
 
 /**

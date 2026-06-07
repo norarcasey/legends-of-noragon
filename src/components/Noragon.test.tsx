@@ -4,6 +4,7 @@ import { Noragon } from './Noragon'
 import { useNoragon } from './../game/useNoragon'
 import type { NoragonApi, UseNoragonOptions } from './../game/useNoragon'
 import { ENEMY_INFO } from '../game/enemies'
+import { ITEMS } from '../game/items'
 import type { Direction, Point, TileType } from '../game/types'
 
 const DELTA: Record<Direction, Point> = {
@@ -176,8 +177,8 @@ describe('<Noragon />', () => {
     render(<Noragon />)
     expect(screen.getByRole('heading', { name: 'Legends of Noragon' })).toBeInTheDocument()
     expect(screen.getByText('12/12')).toBeInTheDocument() // HP
-    expect(screen.getByText('80%')).toBeInTheDocument() // melee accuracy
-    expect(screen.getByText('3–6')).toBeInTheDocument() // damage range
+    expect(screen.getByText('85%')).toBeInTheDocument() // melee accuracy (incl. Short Sword)
+    expect(screen.getByText('5–8')).toBeInTheDocument() // damage (3–6 base + 2 from the sword)
     expect(screen.getByText('Descend into the dungeon of Noragon')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enter' })).toBeInTheDocument()
   })
@@ -421,9 +422,7 @@ describe('useNoragon — procedural generation', () => {
     }
   })
 
-  it('opening a chest grants treasure XP and consumes it', () => {
-    // Sure-kill so the hero can fight to the vault; accuracy 0.9 leaves XP from
-    // kills, but the chest's own XP shows up in the log and the tile is consumed.
+  it('opening a chest yields gold and a potion, and consumes it', () => {
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 99,
@@ -434,12 +433,17 @@ describe('useNoragon — procedural generation', () => {
     act(() => result.current.start())
     clearDungeon(result) // also clears the vault guardians
 
+    const goldBefore = result.current.gold
+    const potionsBefore = result.current.inventory.filter((i) => i.kind === 'healthPotion').length
     const chest = findTile(result.current.tiles, 'chest')
     expect(chest).not.toBeNull()
     if (chest) navigateToTile(result, chest, false) // step onto the chest
 
     expect(findTile(result.current.tiles, 'chest')).toBeNull() // consumed
-    expect(result.current.log.some((e) => /treasure! \(\+\d+ XP\)/.test(e.text))).toBe(true)
+    expect(result.current.gold).toBeGreaterThan(goldBefore) // gold gained
+    expect(
+      result.current.inventory.filter((i) => i.kind === 'healthPotion').length,
+    ).toBeGreaterThan(potionsBefore) // and a potion
     expect(result.current.status).toBe('playing') // chests no longer end the run
   })
 })
@@ -470,7 +474,7 @@ describe('useNoragon — combat', () => {
     expect(result.current.enemies.every((e) => e.hp === e.maxHp)).toBe(true)
   })
 
-  it('keeps melee damage within the configured range', () => {
+  it('keeps melee damage within the hero’s effective range (incl. weapon)', () => {
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 99,
@@ -480,9 +484,16 @@ describe('useNoragon — combat', () => {
     )
     act(() => result.current.start())
     enterEnemyRoom(result)
+    // Effective range = base (3–6) + the equipped Short Sword (+2) = 5–8.
+    const lo = result.current.attacks.melee.minDamage
+    const hi = result.current.attacks.melee.maxDamage
 
-    // Clear the room, bumping the nearest active foe each turn.
-    for (let i = 0; i < 80 && result.current.activeEnemies.length > 0; i++) {
+    // Bump foes while still level 1, so the effective range can't shift on us.
+    for (
+      let i = 0;
+      i < 40 && result.current.level === 1 && result.current.activeEnemies.length > 0;
+      i++
+    ) {
       const foe = result.current.activeEnemies[0]
       if (!foe) break
       const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
@@ -496,7 +507,7 @@ describe('useNoragon — combat', () => {
       if (m) damages.push(Number(m[1]))
     }
     expect(damages.length).toBeGreaterThan(0)
-    expect(damages.every((d) => d >= 3 && d <= 6)).toBe(true)
+    expect(damages.every((d) => d >= lo && d <= hi)).toBe(true)
   })
 
   it('shoots a targeted foe from range, costing a turn', () => {
@@ -549,6 +560,8 @@ describe('useNoragon — combat', () => {
   })
 
   it('kills the hero when foes land enough hits', () => {
+    // 1 HP, never landing a blow (accuracy 0). The starting clothes give 1 defense,
+    // so the hero must face a foe that hits for more than 1 to actually die.
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 1,
@@ -557,12 +570,14 @@ describe('useNoragon — combat', () => {
       }),
     )
     act(() => result.current.start())
-    enterEnemyRoom(result)
+    const tough = result.current.enemies.find((e) => ENEMY_INFO[e.kind].damage > 1)
+    expect(tough).toBeDefined()
 
-    for (let i = 0; i < 40 && result.current.status === 'playing'; i++) {
-      const foe = result.current.activeEnemies[0]
-      if (!foe) break
-      const dir = bfsDir(result.current.tiles, result.current.player, { x: foe.x, y: foe.y }, true)
+    // March onto the harder-hitting foe and let it punch through the armor.
+    for (let i = 0; i < 300 && result.current.status === 'playing'; i++) {
+      const t = result.current.enemies.find((e) => e.id === tough?.id)
+      if (!t) break
+      const dir = bfsDir(result.current.tiles, result.current.player, { x: t.x, y: t.y }, true)
       if (!dir) break
       act(() => result.current.move(dir))
     }
@@ -851,5 +866,201 @@ describe('useNoragon — new enemies', () => {
     descendToDepth(result, 4)
     expect(result.current.depth).toBeGreaterThanOrEqual(4)
     expect(result.current.enemies.some((e) => e.kind === 'troll')).toBe(true)
+  })
+})
+
+const LOOT_SEEDS = [1, 7, 42, 99, 256, 4242, 5, 11, 77, 123, 2, 3, 8, 13, 21]
+
+describe('useNoragon — loot & equipment', () => {
+  it('starts the hero with a sword, clothes, gold, and a potion', () => {
+    const { result } = renderHook(() => useNoragon({ seed: 7 }))
+    act(() => result.current.start())
+
+    const kinds = result.current.inventory.map((i) => i.kind).sort()
+    expect(kinds).toEqual(['clothes', 'healthPotion', 'shortSword'])
+
+    const weapon = result.current.inventory.find((i) => i.id === result.current.equipment.weapon)
+    const armor = result.current.inventory.find((i) => i.id === result.current.equipment.armor)
+    expect(weapon?.kind).toBe('shortSword')
+    expect(armor?.kind).toBe('clothes')
+
+    // The equipped sword adds its +2 to melee; the clothes give their defense.
+    expect(result.current.attacks.melee.maxDamage).toBe(6 + ITEMS.shortSword.meleeDamage)
+    expect(result.current.defense).toBe(ITEMS.clothes.defense)
+    expect(result.current.gold).toBe(15)
+  })
+
+  it('equipping a found weapon retunes melee damage', () => {
+    for (const seed of LOOT_SEEDS) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 999,
+          attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      const onFloor = result.current.floorItems.find(
+        (i) => i.kind !== 'gold' && ITEMS[i.kind].category === 'weapon',
+      )
+      if (!onFloor || onFloor.kind === 'gold') {
+        unmount()
+        continue
+      }
+      const kind = onFloor.kind
+      navigateToTile(result, { x: onFloor.x, y: onFloor.y }, false)
+      const picked = result.current.inventory.find(
+        (i) => i.kind === kind && i.id !== result.current.equipment.weapon,
+      )
+      if (!picked) {
+        unmount()
+        continue
+      }
+      const before = result.current.attacks.melee.maxDamage
+      act(() => result.current.equip(picked.id))
+      // Equip is instant (no leveling between reads), so the change is exactly the
+      // difference between the old Short Sword and the newly equipped weapon.
+      expect(result.current.attacks.melee.maxDamage - before).toBe(
+        ITEMS[kind].meleeDamage - ITEMS.shortSword.meleeDamage,
+      )
+      unmount()
+      return
+    }
+    throw new Error('no floor weapon found across seeds')
+  })
+
+  it('equipping found armor sets the hero’s defense', () => {
+    for (const seed of LOOT_SEEDS) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 999,
+          attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      const onFloor = result.current.floorItems.find(
+        (i) => i.kind !== 'gold' && ITEMS[i.kind].category === 'armor',
+      )
+      if (!onFloor || onFloor.kind === 'gold') {
+        unmount()
+        continue
+      }
+      const kind = onFloor.kind
+      navigateToTile(result, { x: onFloor.x, y: onFloor.y }, false)
+      const picked = result.current.inventory.find(
+        (i) => i.kind === kind && i.id !== result.current.equipment.armor,
+      )
+      if (!picked) {
+        unmount()
+        continue
+      }
+      act(() => result.current.equip(picked.id))
+      expect(result.current.defense).toBe(ITEMS[kind].defense)
+      unmount()
+      return
+    }
+    throw new Error('no floor armor found across seeds')
+  })
+
+  it('picking up a gold pile adds to the purse', () => {
+    for (const seed of LOOT_SEEDS) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 999,
+          attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      const pile = result.current.floorItems.find((i) => i.kind === 'gold')
+      if (!pile) {
+        unmount()
+        continue
+      }
+      const before = result.current.gold
+      navigateToTile(result, { x: pile.x, y: pile.y }, false)
+      if (result.current.player.x !== pile.x || result.current.player.y !== pile.y) {
+        unmount()
+        continue
+      }
+      expect(result.current.gold).toBeGreaterThan(before)
+      expect(result.current.floorItems.some((i) => i.id === pile.id)).toBe(false)
+      unmount()
+      return
+    }
+    throw new Error('no gold pile found across seeds')
+  })
+
+  it('drinking a potion heals the hero, is consumed, and costs a turn', () => {
+    for (const seed of LOOT_SEEDS) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 30,
+          attacks: { melee: { accuracy: 0, minDamage: 1, maxDamage: 1 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      const tough = result.current.enemies.find((e) => ENEMY_INFO[e.kind].damage > 1)
+      if (!tough) {
+        unmount()
+        continue
+      }
+      // Let a hard-hitting foe wound the hero below a full potion's worth.
+      for (
+        let i = 0;
+        i < 200 && result.current.hp > 20 && result.current.status === 'playing';
+        i++
+      ) {
+        const t = result.current.enemies.find((e) => e.id === tough.id)
+        if (!t) break
+        const dir = bfsDir(result.current.tiles, result.current.player, { x: t.x, y: t.y }, true)
+        if (!dir) break
+        act(() => result.current.move(dir))
+      }
+      if (result.current.hp > 20 || result.current.status !== 'playing') {
+        unmount()
+        continue
+      }
+      const potion = result.current.inventory.find((i) => i.kind === 'healthPotion')
+      if (!potion) {
+        unmount()
+        continue
+      }
+      const hpBefore = result.current.hp
+      const turnsBefore = result.current.turns
+      act(() => result.current.drink(potion.id))
+      expect(result.current.hp).toBeGreaterThan(hpBefore)
+      expect(result.current.inventory.some((i) => i.id === potion.id)).toBe(false)
+      expect(result.current.turns).toBe(turnsBefore + 1)
+      unmount()
+      return
+    }
+    throw new Error('could not set up a drink scenario across seeds')
+  })
+
+  it('carries the kit down the stairs but restocks a fresh delve', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 999,
+        attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    const goldStart = result.current.gold
+    descendToDepth(result, 2)
+    expect(result.current.depth).toBe(2)
+    // Gold/inventory persisted (gold only grows from loot on the way down).
+    expect(result.current.gold).toBeGreaterThanOrEqual(goldStart)
+
+    act(() => result.current.start()) // fresh delve
+    expect(result.current.gold).toBe(15)
+    expect(result.current.inventory.map((i) => i.kind).sort()).toEqual([
+      'clothes',
+      'healthPotion',
+      'shortSword',
+    ])
   })
 })

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
-import type { Enemy, Point, TileType } from '../game/types'
+import type { Enemy, FloorItem, Point, TileType } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
+import { ITEMS } from '../game/items'
 
 interface BoardProps {
   cols: number
@@ -8,6 +9,8 @@ interface BoardProps {
   tiles: TileType[][]
   player: Point
   enemies: Enemy[]
+  /** Loot on the floor, drawn on its tile when visible. */
+  floorItems: FloorItem[]
   /** Fog-of-war mask (`visible[y][x]`); undiscovered tiles render as fog. */
   visible: boolean[][]
   /** Whether the hero is aiming; when true the targeted enemy shows a reticle. */
@@ -36,6 +39,7 @@ export function Board({
   tiles,
   player,
   enemies,
+  floorItems,
   visible,
   aiming,
   targetId,
@@ -50,6 +54,7 @@ export function Board({
   }
 
   const enemyAt = (x: number, y: number) => enemies.find((e) => e.x === x && e.y === y)
+  const itemAt = (x: number, y: number) => floorItems.find((i) => i.x === x && i.y === y)
 
   return (
     <div className="noragon__board" style={gridStyle} data-testid="board" aria-hidden>
@@ -62,22 +67,26 @@ export function Board({
             return <div key={`${x},${y}`} className="noragon__tile noragon__tile--hidden" />
           }
           const foe = enemyAt(x, y)
+          const item = enemyAt(x, y) ? undefined : itemAt(x, y)
           let cls = `noragon__tile noragon__tile--${tile}`
           let glyph = TILE_GLYPH[tile]
+          let testid: string | undefined
           if (isPlayer) {
             cls += ' noragon__tile--player'
             glyph = '☻'
+            testid = 'player'
           } else if (foe) {
             cls += ` noragon__tile--enemy noragon__tile--${foe.kind}`
             glyph = ENEMY_INFO[foe.kind].glyph
+            testid = `enemy-${foe.kind}`
             if (aiming && foe.id === targetId) cls += ' noragon__tile--target'
+          } else if (item) {
+            cls += ` noragon__tile--loot noragon__tile--loot-${item.kind}`
+            glyph = item.kind === 'gold' ? '$' : ITEMS[item.kind].glyph
+            testid = `loot-${item.kind}`
           }
           return (
-            <div
-              key={`${x},${y}`}
-              className={cls}
-              data-testid={isPlayer ? 'player' : foe ? `enemy-${foe.kind}` : undefined}
-            >
+            <div key={`${x},${y}`} className={cls} data-testid={testid}>
               {glyph}
             </div>
           )

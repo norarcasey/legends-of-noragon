@@ -4,6 +4,7 @@ import type { AttackProfiles, Direction } from '../game/types'
 import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
+import { Inventory } from './Inventory'
 import './Noragon.css'
 
 export interface NoragonProps {
@@ -43,8 +44,21 @@ export function Noragon({
 }: NoragonProps) {
   const game = useNoragon({ maxHp, attacks, seed })
   const melee = game.attacks.melee
-  const { status, aiming, onStairs, start, move, descend, aimStart, aimCycle, aimCancel, fire } =
-    game
+  const {
+    status,
+    aiming,
+    onStairs,
+    start,
+    move,
+    descend,
+    equip,
+    drink,
+    aimStart,
+    aimCycle,
+    aimCancel,
+    fire,
+  } = game
+  const firstPotion = game.inventory.find((i) => i.kind === 'healthPotion')
 
   useEffect(() => {
     if (!enableKeyboard) return
@@ -82,6 +96,12 @@ export function Noragon({
         descend()
         return
       }
+      // Quick-drink a health potion with Q.
+      if (status === 'playing' && (e.key === 'q' || e.key === 'Q') && firstPotion) {
+        e.preventDefault()
+        drink(firstPotion.id)
+        return
+      }
 
       const dir = KEY_TO_DIRECTION[e.key]
       if (!dir) return
@@ -102,9 +122,11 @@ export function Noragon({
     status,
     aiming,
     onStairs,
+    firstPotion,
     start,
     move,
     descend,
+    drink,
     aimStart,
     aimCycle,
     aimCancel,
@@ -128,6 +150,7 @@ export function Noragon({
             tiles={game.tiles}
             player={game.player}
             enemies={game.enemies}
+            floorItems={game.floorItems}
             visible={game.visible}
             aiming={aiming}
             targetId={game.targetId}
@@ -201,6 +224,14 @@ export function Noragon({
               </dd>
             </div>
             <div className="noragon__stat">
+              <dt>Defense</dt>
+              <dd>{game.defense}</dd>
+            </div>
+            <div className="noragon__stat">
+              <dt>Gold</dt>
+              <dd>{game.gold}</dd>
+            </div>
+            <div className="noragon__stat">
               <dt>Slain</dt>
               <dd>{game.kills}</dd>
             </div>
@@ -208,6 +239,16 @@ export function Noragon({
 
           {status === 'playing' && (
             <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+          )}
+
+          {status !== 'idle' && (
+            <Inventory
+              inventory={game.inventory}
+              equipment={game.equipment}
+              gold={game.gold}
+              onEquip={equip}
+              onDrink={drink}
+            />
           )}
 
           {status !== 'idle' && <ActivityLog entries={game.log} />}

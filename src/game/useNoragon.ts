@@ -4,7 +4,10 @@ import type {
   AttackProfiles,
   Direction,
   Enemy,
+  Equipment,
+  FloorItem,
   GameStatus,
+  InventoryItem,
   LogEntry,
   Point,
   Room,
@@ -12,6 +15,8 @@ import type {
 } from './types'
 import { ENEMY_INFO } from './enemies'
 import type { EnemyKind } from './enemies'
+import { ARMOR_KINDS, ITEMS, STARTING_GOLD, WEAPON_KINDS } from './items'
+import type { ItemDef, ItemKind } from './items'
 
 export interface UseNoragonOptions {
   /** The hero's starting (and maximum) hit points. Default `6`. */
@@ -37,9 +42,19 @@ export interface NoragonApi {
   hp: number
   /** Maximum hit points. */
   maxHp: number
-  /** The hero's attack profiles, one per kind, at the current level. Only `melee`
-   *  is used in play today; `ranged`/`spell` are present for forthcoming modes. */
+  /** The hero's attack profiles, one per kind, at the current level — including
+   *  the equipped weapon's bonus. Only `melee`/`ranged` are used in play today. */
   attacks: AttackProfiles
+  /** Flat damage reduction from the equipped armor. */
+  defense: number
+  /** Gold the hero is carrying. */
+  gold: number
+  /** Everything the hero is carrying (equipped or not). */
+  inventory: InventoryItem[]
+  /** Which inventory item fills each equipment slot. */
+  equipment: Equipment
+  /** Loot lying on the current level's floor (picked up by walking onto it). */
+  floorItems: FloorItem[]
   /** How deep the run has gone (1 at the entrance, +1 per stairway descended). */
   depth: number
   /** The hero's current character level (starts at 1). */
@@ -81,6 +96,10 @@ export interface NoragonApi {
   onStairs: boolean
   /** Take the stairs down to the next, deeper level. No-op unless on stairs. */
   descend: () => void
+  /** Equip a carried weapon or armor by its inventory item id. */
+  equip: (itemId: number) => void
+  /** Drink a carried potion by its inventory item id (costs a turn). */
+  drink: (itemId: number) => void
   /** Enter ranged-aiming mode, targeting the nearest enemy in the room. */
   aimStart: () => void
   /** While aiming, move the crosshairs to another enemy (`+1` next, `-1` prev). */
@@ -145,10 +164,48 @@ function statsAt(base: HeroConfig, level: number): { maxHp: number; attacks: Att
   }
 }
 
+/** The item def equipped in a slot (by item id), or null if the slot is empty. */
+function equippedDef(inventory: InventoryItem[], id: number | null): ItemDef | null {
+  if (id === null) return null
+  const item = inventory.find((i) => i.id === id)
+  return item ? ITEMS[item.kind] : null
+}
+
+interface CombatStats {
+  maxHp: number
+  attacks: AttackProfiles
+  defense: number
+}
+
+/** The hero's effective combat stats: leveled base, plus the equipped weapon's
+ *  melee bonus and the equipped armor's flat defense. */
+function deriveCombat(
+  base: HeroConfig,
+  level: number,
+  inventory: InventoryItem[],
+  equipment: Equipment,
+): CombatStats {
+  const leveled = statsAt(base, level)
+  const weapon = equippedDef(inventory, equipment.weapon)
+  const armor = equippedDef(inventory, equipment.armor)
+  const melee = weapon
+    ? {
+        accuracy: Math.min(1, leveled.attacks.melee.accuracy + weapon.meleeAccuracy),
+        minDamage: leveled.attacks.melee.minDamage + weapon.meleeDamage,
+        maxDamage: leveled.attacks.melee.maxDamage + weapon.meleeDamage,
+      }
+    : leveled.attacks.melee
+  return {
+    maxHp: leveled.maxHp,
+    attacks: { ...leveled.attacks, melee },
+    defense: armor ? armor.defense : 0,
+  }
+}
+
 /**
  * Apply earned XP, leveling the hero up as thresholds are crossed. Each level-up
  * raises max HP / damage / accuracy and fully heals; the new stats are derived
- * from `base`. Pushes a log line per level gained. Pure.
+ * from `base` plus equipped gear. Pushes a log line per level gained. Pure.
  */
 function applyXp(
   base: HeroConfig,
@@ -157,19 +214,34 @@ function applyXp(
   hp: number,
   gained: number,
   messages: string[],
-): { level: number; xp: number; maxHp: number; attacks: AttackProfiles; hp: number } {
+  inventory: InventoryItem[],
+  equipment: Equipment,
+): {
+  level: number
+  xp: number
+  maxHp: number
+  attacks: AttackProfiles
+  defense: number
+  hp: number
+} {
   let lvl = level
   let prog = xp + gained
-  let stats = statsAt(base, lvl)
   let nextHp = hp
   while (prog >= xpToNext(lvl)) {
     prog -= xpToNext(lvl)
     lvl += 1
-    stats = statsAt(base, lvl)
-    nextHp = stats.maxHp // level-ups fully heal
+    nextHp = statsAt(base, lvl).maxHp // level-ups fully heal
     messages.push(`You reach level ${lvl}! You feel tougher and deadlier.`)
   }
-  return { level: lvl, xp: prog, maxHp: stats.maxHp, attacks: stats.attacks, hp: nextHp }
+  const c = deriveCombat(base, lvl, inventory, equipment)
+  return {
+    level: lvl,
+    xp: prog,
+    maxHp: c.maxHp,
+    attacks: c.attacks,
+    defense: c.defense,
+    hp: nextHp,
+  }
 }
 
 /**
@@ -268,6 +340,8 @@ interface Dungeon {
   rooms: Room[]
   playerStart: Point
   enemies: Enemy[]
+  /** Loot scattered on the floor, awaiting pickup. */
+  items: FloorItem[]
 }
 
 /** The room containing a tile, or `null` for walls / doorways between rooms. */
@@ -542,7 +616,35 @@ function generateDungeon(seed: number, depth: number): Dungeon {
     placeIn(roomOf(cell), rollKinds((dist.get(cell) ?? 1) + (depth - 1)))
   }
 
-  return { cols, rows, tiles, rooms, playerStart, enemies }
+  // Scatter loot on free floor tiles: coin piles, the odd potion, and the rare
+  // weapon or armor (better gear the deeper you are).
+  const items: FloorItem[] = []
+  let itemId = 0
+  const dropIn = (room: Room, kind: ItemKind | 'gold', amount: number) => {
+    const free: Point[] = []
+    for (let y = room.y0; y <= room.y1; y++) {
+      for (let x = room.x0; x <= room.x1; x++) {
+        if (tiles[y][x] === 'floor' && !taken.has(`${x},${y}`)) free.push({ x, y })
+      }
+    }
+    if (free.length === 0) return
+    const spot = free.splice(rng.int(free.length), 1)[0]
+    taken.add(`${spot.x},${spot.y}`)
+    items.push({ id: itemId++, x: spot.x, y: spot.y, kind, amount })
+  }
+  const tierIndex = Math.min(WEAPON_KINDS.length - 1, rng.int(2) + Math.floor((depth - 1) / 2))
+  for (const cell of cells) {
+    if (cell === startCell) continue
+    const room = roomOf(cell)
+    if (rng.next() < 0.5) dropIn(room, 'gold', 3 + rng.int(6) + depth * 2)
+    if (rng.next() < 0.2) dropIn(room, 'healthPotion', 1)
+    if (rng.next() < 0.12) {
+      const pool = rng.next() < 0.5 ? WEAPON_KINDS : ARMOR_KINDS
+      dropIn(room, pool[tierIndex], 1)
+    }
+  }
+
+  return { cols, rows, tiles, rooms, playerStart, enemies, items }
 }
 
 /** Add `room` to the revealed set (returning the same array if already known). */
@@ -623,6 +725,18 @@ interface GameState extends HeroConfig {
   xp: number
   player: Point
   hp: number
+  /** Flat damage reduction from equipped armor. */
+  defense: number
+  /** Gold the hero is carrying. */
+  gold: number
+  /** Everything the hero is carrying (equipped or not). */
+  inventory: InventoryItem[]
+  /** Which inventory item fills each equipment slot. */
+  equipment: Equipment
+  /** Next id to mint for a picked-up inventory item. */
+  nextItemId: number
+  /** Loot still lying on this level's floor. */
+  floorItems: FloorItem[]
   enemies: Enemy[]
   status: GameStatus
   kills: number
@@ -648,6 +762,8 @@ type GameAction =
   | { type: 'start'; seed: number }
   | { type: 'move'; dir: Direction }
   | { type: 'descend' }
+  | { type: 'equip'; itemId: number }
+  | { type: 'drink'; itemId: number }
   | { type: 'aimStart' }
   | { type: 'aimCycle'; delta: number }
   | { type: 'aimCancel' }
@@ -658,11 +774,24 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
   const dungeon = generateDungeon(seed, depth)
   const seen = blankSeen(dungeon)
   markLit(seen, dungeon, dungeon.playerStart)
-  // Level 1 stats equal the base profile; fresh delves start at level 1.
-  const stats = statsAt(config, 1)
+
+  // Starting kit: a sword and clothes (both equipped), a potion, and some gold.
+  const sword: InventoryItem = { id: 0, kind: 'shortSword' }
+  const clothes: InventoryItem = { id: 1, kind: 'clothes' }
+  const potion: InventoryItem = { id: 2, kind: 'healthPotion' }
+  const inventory: InventoryItem[] = [sword, clothes, potion]
+  const equipment: Equipment = { weapon: sword.id, armor: clothes.id }
+  const stats = deriveCombat(config, 1, inventory, equipment)
+
   return {
     maxHp: stats.maxHp,
     attacks: stats.attacks,
+    defense: stats.defense,
+    gold: STARTING_GOLD,
+    inventory,
+    equipment,
+    nextItemId: 3,
+    floorItems: dungeon.items.map((i) => ({ ...i })),
     seed,
     depth,
     base: config,
@@ -710,6 +839,7 @@ function descend(state: GameState, messages: string[]): GameState {
     dungeon,
     player: { ...dungeon.playerStart },
     enemies: dungeon.enemies.map((e) => ({ ...e })),
+    floorItems: dungeon.items.map((i) => ({ ...i })),
     revealedRooms: reveal([], startRoom),
     seen,
     aiming: false,
@@ -779,6 +909,7 @@ function runEnemyPhase(
   player: Point,
   enemies: Enemy[],
   hp: number,
+  defense: number,
   roll: () => number,
   messages: string[],
 ): { enemies: Enemy[]; hp: number } {
@@ -792,12 +923,17 @@ function runEnemyPhase(
       continue
     }
     if (manhattan(foe, player) === 1) {
-      // Adjacent: the foe rolls to land its attack for its flat damage — this
-      // fires even when the hero stands in a doorway beside it.
+      // Adjacent: the foe rolls to land its attack — armor soaks a flat amount,
+      // never below zero. This fires even when the hero stands in a doorway.
       const info = ENEMY_INFO[foe.kind]
       if (roll() < info.accuracy) {
-        nextHp -= info.damage
-        messages.push(`The ${info.name} ${info.verb} you for ${info.damage}.`)
+        const dealt = Math.max(0, info.damage - defense)
+        nextHp -= dealt
+        messages.push(
+          dealt > 0
+            ? `The ${info.name} ${info.verb} you for ${dealt}.`
+            : `The ${info.name} ${info.verb} you, but your armor holds.`,
+        )
       } else {
         messages.push(`The ${info.name} misses you.`)
       }
@@ -844,7 +980,13 @@ function reducer(state: GameState, action: GameAction): GameState {
       let xp = state.xp
       let maxHp = state.maxHp
       let attacks = state.attacks
+      let defense = state.defense
       let hp = state.hp
+      // Loot the hero may gain this turn (chest, floor pickups).
+      let gold = state.gold
+      let inventory = state.inventory
+      let nextItemId = state.nextItemId
+      let floorItems = state.floorItems
       // The dungeon can change this turn (opening a chest consumes its tile).
       let dungeon = state.dungeon
       const messages: string[] = []
@@ -878,11 +1020,21 @@ function reducer(state: GameState, action: GameAction): GameState {
           if (slain) {
             const gained = ENEMY_INFO[targetBat.kind].xp
             messages.push(`You strike the ${name} for ${damage} — slain! (+${gained} XP)`)
-            const lv = applyXp(state.base, level, xp, hp, gained, messages)
+            const lv = applyXp(
+              state.base,
+              level,
+              xp,
+              hp,
+              gained,
+              messages,
+              inventory,
+              state.equipment,
+            )
             level = lv.level
             xp = lv.xp
             maxHp = lv.maxHp
             attacks = lv.attacks
+            defense = lv.defense
             hp = lv.hp
           } else {
             messages.push(`You strike the ${name} for ${damage}.`)
@@ -898,19 +1050,35 @@ function reducer(state: GameState, action: GameAction): GameState {
         player = target
         messages.push(`You move ${DIR_NAME[action.dir]}.`)
         // The stairs are walkable; descending is a deliberate action (see below).
-        // A chest is treasure: claim the XP and consume it (it becomes floor).
+        // A chest is treasure: gold + a potion (+ chance of gear), then consumed.
         if (tile === 'chest') {
-          const gained = LEVELING.chestXp * state.depth
-          messages.push(`You pry open the chest — treasure! (+${gained} XP)`)
-          const lv = applyXp(state.base, level, xp, hp, gained, messages)
-          level = lv.level
-          xp = lv.xp
-          maxHp = lv.maxHp
-          attacks = lv.attacks
-          hp = lv.hp
+          gold += 10 + state.depth * 8
+          messages.push(
+            `You pry open the chest — ${10 + state.depth * 8} gold and a Health Potion!`,
+          )
+          inventory = [...inventory, { id: nextItemId++, kind: 'healthPotion' }]
+          if (roll() < 0.5) {
+            const pool = roll() < 0.5 ? WEAPON_KINDS : ARMOR_KINDS
+            const tier = Math.min(pool.length - 1, 1 + Math.floor(state.depth / 2))
+            const kind = pool[tier]
+            inventory = [...inventory, { id: nextItemId++, kind }]
+            messages.push(`The chest also holds a ${ITEMS[kind].name}!`)
+          }
           const tiles = dungeon.tiles.map((row) => [...row])
           tiles[player.y][player.x] = 'floor'
           dungeon = { ...dungeon, tiles }
+        }
+        // Pick up any loot lying on the tile the hero stepped onto.
+        const loot = floorItems.find((i) => i.x === player.x && i.y === player.y)
+        if (loot) {
+          floorItems = floorItems.filter((i) => i !== loot)
+          if (loot.kind === 'gold') {
+            gold += loot.amount
+            messages.push(`You find ${loot.amount} gold.`)
+          } else {
+            inventory = [...inventory, { id: nextItemId++, kind: loot.kind }]
+            messages.push(`You pick up a ${ITEMS[loot.kind].name}.`)
+          }
         }
         // Announce crossing into a room the hero hasn't been in before.
         const steppedInto = roomAt(dungeon.rooms, player.x, player.y)
@@ -922,7 +1090,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       // Light up the room the hero just stepped into (a no-op if already known).
       const revealedRooms = reveal(state.revealedRooms, roomAt(dungeon.rooms, player.x, player.y))
 
-      const phase = runEnemyPhase(dungeon, player, enemies, hp, roll, messages)
+      const phase = runEnemyPhase(dungeon, player, enemies, hp, defense, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
@@ -933,6 +1101,11 @@ function reducer(state: GameState, action: GameAction): GameState {
         hp: Math.max(0, phase.hp),
         maxHp,
         attacks,
+        defense,
+        gold,
+        inventory,
+        nextItemId,
+        floorItems,
         level,
         xp,
         enemies: phase.enemies,
@@ -954,6 +1127,71 @@ function reducer(state: GameState, action: GameAction): GameState {
       if (state.status !== 'playing') return state
       if (tileAt(state.dungeon, state.player.x, state.player.y) !== 'stairs') return state
       return descend(state, [])
+    }
+    case 'equip': {
+      // Swapping gear is a free menu action (no turn). It re-derives the hero's
+      // melee bonus and defense from the newly equipped weapon/armor.
+      if (state.status !== 'playing') return state
+      const item = state.inventory.find((i) => i.id === action.itemId)
+      if (!item) return state
+      const def = ITEMS[item.kind]
+      if (def.category !== 'weapon' && def.category !== 'armor') return state
+      const slot: 'weapon' | 'armor' = def.category
+      if (state.equipment[slot] === item.id) return state
+      const equipment: Equipment = { ...state.equipment, [slot]: item.id }
+      const c = deriveCombat(state.base, state.level, state.inventory, equipment)
+      return {
+        ...state,
+        equipment,
+        maxHp: c.maxHp,
+        attacks: c.attacks,
+        defense: c.defense,
+        hp: Math.min(state.hp, c.maxHp),
+        ...logLines(state.log, state.nextLogId, [`You equip the ${def.name}.`]),
+      }
+    }
+    case 'drink': {
+      // Quaffing a potion costs a turn — foes act after you drink.
+      if (state.status !== 'playing') return state
+      const item = state.inventory.find((i) => i.id === action.itemId)
+      if (!item || ITEMS[item.kind].category !== 'potion') return state
+      if (state.hp >= state.maxHp) {
+        return {
+          ...state,
+          ...logLines(state.log, state.nextLogId, ['You are already at full health.']),
+        }
+      }
+      const messages: string[] = []
+      let rngState = state.rngState
+      const roll = () => {
+        const r = nextRng(rngState)
+        rngState = r.state
+        return r.value
+      }
+      const healed = Math.min(state.maxHp, state.hp + ITEMS[item.kind].heal)
+      messages.push(`You drink a ${ITEMS[item.kind].name} and recover ${healed - state.hp} HP.`)
+      const inventory = state.inventory.filter((i) => i.id !== item.id)
+      const phase = runEnemyPhase(
+        state.dungeon,
+        state.player,
+        state.enemies,
+        healed,
+        state.defense,
+        roll,
+        messages,
+      )
+      const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
+      if (status === 'dead') messages.push('You collapse, slain in the dark.')
+      return {
+        ...state,
+        inventory,
+        hp: Math.max(0, phase.hp),
+        enemies: phase.enemies,
+        status,
+        turns: state.turns + 1,
+        rngState,
+        ...logLines(state.log, state.nextLogId, messages),
+      }
     }
     case 'aimStart': {
       if (state.status !== 'playing') return state
@@ -1005,6 +1243,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       let xp = state.xp
       let maxHp = state.maxHp
       let attacks = state.attacks
+      let defense = state.defense
       let hp = state.hp
 
       // The hero looses an arrow: resolve the ranged profile, then enemies act.
@@ -1019,11 +1258,21 @@ function reducer(state: GameState, action: GameAction): GameState {
         if (slain) {
           const gained = ENEMY_INFO[target.kind].xp
           messages.push(`You shoot the ${name} for ${damage} — slain! (+${gained} XP)`)
-          const lv = applyXp(state.base, level, xp, hp, gained, messages)
+          const lv = applyXp(
+            state.base,
+            level,
+            xp,
+            hp,
+            gained,
+            messages,
+            state.inventory,
+            state.equipment,
+          )
           level = lv.level
           xp = lv.xp
           maxHp = lv.maxHp
           attacks = lv.attacks
+          defense = lv.defense
           hp = lv.hp
         } else {
           messages.push(`You shoot the ${name} for ${damage}.`)
@@ -1032,7 +1281,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         messages.push(`Your arrow misses the ${name}.`)
       }
 
-      const phase = runEnemyPhase(state.dungeon, state.player, enemies, hp, roll, messages)
+      const phase = runEnemyPhase(state.dungeon, state.player, enemies, hp, defense, roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
@@ -1041,6 +1290,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         hp: Math.max(0, phase.hp),
         maxHp,
         attacks,
+        defense,
         level,
         xp,
         enemies: phase.enemies,
@@ -1110,6 +1360,8 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const reset = useCallback(() => dispatch({ type: 'reset', seed: makeSeed() }), [makeSeed])
   const move = useCallback((dir: Direction) => dispatch({ type: 'move', dir }), [])
   const descend = useCallback(() => dispatch({ type: 'descend' }), [])
+  const equip = useCallback((itemId: number) => dispatch({ type: 'equip', itemId }), [])
+  const drink = useCallback((itemId: number) => dispatch({ type: 'drink', itemId }), [])
   const aimStart = useCallback(() => dispatch({ type: 'aimStart' }), [])
   const aimCycle = useCallback((delta: number) => dispatch({ type: 'aimCycle', delta }), [])
   const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
@@ -1141,6 +1393,11 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     hp: state.hp,
     maxHp: state.maxHp,
     attacks: state.attacks,
+    defense: state.defense,
+    gold: state.gold,
+    inventory: state.inventory,
+    equipment: state.equipment,
+    floorItems: state.floorItems,
     depth: state.depth,
     level: state.level,
     xp: state.xp,
@@ -1161,6 +1418,8 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     reset,
     move,
     descend,
+    equip,
+    drink,
     aimStart,
     aimCycle,
     aimCancel,

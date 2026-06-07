@@ -22,6 +22,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Activity log: a scrolling, turn-by-turn record of moves, room discoveries,
   strikes, bites, and the run's end, emitted by the reducer as part of each
   transition and exposed as a `log` of `LogEntry` items on the hook.
+- Loot & equipment: the hero starts with a kit (Short Sword + Traveler's Clothes
+  equipped, a Health Potion, and gold) and can find more. Weapons add to melee
+  damage/accuracy; armor gives flat **defense** that soaks each hit. An item
+  registry (`ITEMS`) defines weapons, armor, and potions; the dungeon scatters
+  gold piles, potions, and gear as floor items you pick up by walking onto them,
+  and chests now yield gold + a potion (sometimes gear) instead of XP. New `equip`
+  and `drink` actions (drinking costs a turn; `Q` quick-drinks), an inventory
+  panel with equip/drink buttons, floor loot on the board, and gold/defense in the
+  header. Gold and pack carry down the stairs; a fresh delve restocks the kit.
 - Three new foes round out the bestiary: the **Spider** (fragile, fast, accurate),
   the **Orc** (a tanky bruiser between goblin and troll), and the **Troll** (huge
   HP, crushing damage, big XP). Placement draws from a threat-scaled pool — spiders

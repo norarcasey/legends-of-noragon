@@ -11,7 +11,10 @@ export type {
   AttackProfiles,
   Direction,
   Enemy,
+  Equipment,
+  FloorItem,
   GameStatus,
+  InventoryItem,
   LogEntry,
   Point,
   Room,
@@ -19,3 +22,5 @@ export type {
 } from './game/types'
 export { ENEMY_INFO } from './game/enemies'
 export type { EnemyInfo, EnemyKind } from './game/enemies'
+export { ITEMS } from './game/items'
+export type { ItemCategory, ItemDef, ItemKind } from './game/items'
