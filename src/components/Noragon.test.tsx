@@ -571,6 +571,65 @@ describe('useNoragon — combat', () => {
     expect(result.current.hp).toBe(0)
   })
 
+  it('lets foes strike a hero loitering in a doorway (no safe poking)', () => {
+    // Walk toward foes (accuracy 0, so nothing dies) and, the first time the hero
+    // ends a step standing on a doorway/corridor (no room) with a foe right
+    // beside it, confirm that foe is active and chips the hero. The old exploit
+    // let the hero poke from such a tile — which belongs to no room — for free.
+    const onDoorwayBesideFoe = (r: Hook) =>
+      r.current.currentRoom === null &&
+      r.current.enemies.some(
+        (e) => Math.abs(e.x - r.current.player.x) + Math.abs(e.y - r.current.player.y) === 1,
+      )
+
+    for (const seed of [7, 1, 42, 99, 256, 4242, 5, 11, 77, 123, 2, 3]) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 99,
+          attacks: { melee: { accuracy: 0, minDamage: 1, maxDamage: 1 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      // Hunt the nearest foe; stop as soon as we're in a doorway next to one.
+      for (
+        let i = 0;
+        i < 400 && !onDoorwayBesideFoe(result) && result.current.status === 'playing';
+        i++
+      ) {
+        const foe = result.current.enemies[0]
+        if (!foe) break
+        const dir = bfsDir(
+          result.current.tiles,
+          result.current.player,
+          { x: foe.x, y: foe.y },
+          true,
+        )
+        if (!dir) break
+        act(() => result.current.move(dir))
+      }
+      if (!onDoorwayBesideFoe(result)) {
+        unmount()
+        continue
+      }
+      expect(result.current.currentRoom).toBeNull() // on a doorway (no room)
+      expect(result.current.activeEnemies.length).toBeGreaterThan(0) // yet a foe is active
+      // Loiter and poke (accuracy 0 — can't kill it); it lands hits back.
+      const hp0 = result.current.hp
+      for (let i = 0; i < 25 && result.current.hp === hp0; i++) {
+        const f = result.current.activeEnemies[0]
+        if (!f) break
+        const dir = bfsDir(result.current.tiles, result.current.player, { x: f.x, y: f.y }, false)
+        if (!dir) break
+        act(() => result.current.move(dir))
+      }
+      expect(result.current.hp).toBeLessThan(hp0)
+      unmount()
+      return
+    }
+    throw new Error('never reached a doorway beside a foe across candidate seeds')
+  })
+
   it('escalates the bestiary from bats up to trolls', () => {
     const i = ENEMY_INFO
     // Goblins out-muscle bats; orcs out-muscle goblins; trolls top them all.

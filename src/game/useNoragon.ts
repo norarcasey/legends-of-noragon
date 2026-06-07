@@ -756,10 +756,15 @@ function chaseStep(rooms: Room[], foe: Enemy, target: Point, occupied: Set<strin
 
 const manhattan = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
-/** Enemies sharing the hero's current room, in stable id order. */
+/** A foe acts when the hero shares its room *or* is right beside it — so a foe at
+ *  a doorway can still strike a hero loitering on the threshold (no safe poking). */
+function isActiveFoe(rooms: Room[], player: Point, foe: Enemy): boolean {
+  return foe.room === roomAt(rooms, player.x, player.y) || manhattan(foe, player) === 1
+}
+
+/** Foes that can act this turn (share the hero's room or are adjacent), id order. */
 function activeEnemiesOf(rooms: Room[], player: Point, enemies: Enemy[]): Enemy[] {
-  const room = roomAt(rooms, player.x, player.y)
-  return enemies.filter((e) => e.room === room).sort((a, b) => a.id - b.id)
+  return enemies.filter((e) => isActiveFoe(rooms, player, e)).sort((a, b) => a.id - b.id)
 }
 
 /**
@@ -777,18 +782,18 @@ function runEnemyPhase(
   roll: () => number,
   messages: string[],
 ): { enemies: Enemy[]; hp: number } {
-  const room = roomAt(dungeon.rooms, player.x, player.y)
   const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
   const moved: Enemy[] = []
   let nextHp = hp
 
   for (const foe of enemies) {
-    if (foe.room !== room) {
+    if (!isActiveFoe(dungeon.rooms, player, foe)) {
       moved.push(foe)
       continue
     }
     if (manhattan(foe, player) === 1) {
-      // Adjacent: the foe rolls to land its attack for its flat damage.
+      // Adjacent: the foe rolls to land its attack for its flat damage — this
+      // fires even when the hero stands in a doorway beside it.
       const info = ENEMY_INFO[foe.kind]
       if (roll() < info.accuracy) {
         nextHp -= info.damage
@@ -1110,10 +1115,10 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
   const fire = useCallback(() => dispatch({ type: 'fire' }), [])
 
-  // Enemies are "active" only while the hero shares their room — the same rule
-  // that governs whether they take turns. Those are the ones we surface as cards.
+  // "Active" foes — sharing the hero's room or right beside them — are the ones
+  // that take turns, show as cards, and can be targeted. Same rule everywhere.
   const currentRoom = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
-  const activeEnemies = state.enemies.filter((e) => e.room === currentRoom)
+  const activeEnemies = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
   const onStairs = tileAt(state.dungeon, state.player.x, state.player.y) === 'stairs'
 
   // Fog: revealed rooms (plus a doorway peek) lit permanently, with the torch
