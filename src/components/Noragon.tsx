@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { useNoragon } from '../game/useNoragon'
 import type { AttackProfiles, Direction } from '../game/types'
 import { ActivityLog } from './ActivityLog'
@@ -21,6 +22,12 @@ export interface NoragonProps {
   title?: string | null
   /** Extra class on the root element. */
   className?: string
+  /** Optional content for the top of the left info column — e.g. a description
+   *  or how-to-play blurb. Sits above the enemy cards. */
+  intro?: ReactNode
+  /** Optional content for the bottom of the left info column — e.g. a credit or
+   *  footnote. Sits below the enemy cards. */
+  footer?: ReactNode
 }
 
 const KEY_TO_DIRECTION: Record<string, Direction> = {
@@ -41,6 +48,8 @@ export function Noragon({
   enableKeyboard = true,
   title = 'Legends of Noragon',
   className,
+  intro,
+  footer,
 }: NoragonProps) {
   const game = useNoragon({ maxHp, attacks, seed })
   const { board, hero, run } = game
@@ -142,6 +151,16 @@ export function Noragon({
       {title !== null && <h2 className="noragon__title">{title}</h2>}
 
       <div className="noragon__layout">
+        <aside className="noragon__info">
+          {intro != null && <div className="noragon__intro">{intro}</div>}
+
+          {status === 'playing' && (
+            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+          )}
+
+          {footer != null && <div className="noragon__note">{footer}</div>}
+        </aside>
+
         <div className="noragon__stage">
           <Board
             cols={board.cols}
@@ -235,10 +254,6 @@ export function Noragon({
               <dd>{run.kills}</dd>
             </div>
           </dl>
-
-          {status === 'playing' && (
-            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
-          )}
 
           {status !== 'idle' && <ActivityLog entries={game.log} />}
 

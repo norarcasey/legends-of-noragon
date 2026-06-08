@@ -101,6 +101,8 @@ export function App() {
 | `enableKeyboard` | `boolean`                 | `true`                 | Move with the arrow keys / WASD.                                                                            |
 | `title`          | `string \| null`          | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it.                                                          |
 | `className`      | `string`                  | —                      | Extra class on the root element.                                                                            |
+| `intro`          | `ReactNode`               | —                      | Content for the top of the left info column (above the enemy cards) — e.g. a description.                   |
+| `footer`         | `ReactNode`               | —                      | Content for the bottom of the left info column (below the enemy cards) — e.g. a credit or footnote.         |
 
 ### Headless engine
 

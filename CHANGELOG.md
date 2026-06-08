@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Three-column layout on wide screens: the left info column holds the enemy cards
+  (plus optional `intro`/`footer` slots), the middle column is the board, and the
+  right panel holds the stats, activity log, and pack. It collapses to a single
+  stack on narrow screens. New `intro` and `footer` props (ReactNode) let an
+  embedder place content in the left column — the demo uses them for its
+  description and the "drop `<Noragon />`" credit, so that text stays out of the
+  reusable component.
 - The activity log is now colour-coded — only the meaningful spans, so lines stay
   readable: gold amounts in gold, damage the hero takes (`slashes you for 1`) in
   red, kills/XP/heals/held-armor in green, level-ups in cyan, and a death line in
