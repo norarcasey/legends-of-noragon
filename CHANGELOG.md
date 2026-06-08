@@ -54,9 +54,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `interface`/`type` in `src/game/*.ts` and how they connect (inheritance +
   associations) — straight from the source via the TypeScript parser. It emits a
   fully-connected view plus three focused area views (domain, engine, public API,
-  with cross-area types shown as `<<external>>` stubs), each rendered to an SVG
-  under `docs/domain-model/` via `@mermaid-js/mermaid-cli`. CI regenerates the
-  diagram text and fails if it's stale, so the model never drifts from the types.
+  with cross-area types shown as `<<external>>` stubs), embedded in the page and
+  rendered inline on GitHub. CI regenerates the diagram text and fails if it's
+  stale, so the model never drifts from the types. SVG renders aren't committed —
+  a dedicated CI **docs** job renders them via `@mermaid-js/mermaid-cli` and
+  uploads them as a build artifact (or run `npm run docs:render` locally).
 - Initial release of Noragon — An embeddable React turn-based top-down dungeon crawler.
 - `<Noragon />` component: renders a hardcoded three-room dungeon as a block
   grid; move the hero with the arrow keys / WASD, bump bats to slay them, and

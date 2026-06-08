@@ -136,10 +136,11 @@ StrictMode and is trivial to drive headlessly in tests.
 Every type the game defines — and how they connect — is mapped in
 [docs/DOMAIN_MODEL.md](docs/DOMAIN_MODEL.md) as Mermaid class diagrams: one
 **fully-connected** view of all types plus three focused **area** views (domain,
-engine, public API), each also rendered to an
-[SVG](docs/domain-model/full.svg). It's generated straight from the source by
-`npm run docs:model` (CI fails if the diagram text drifts from the types), so it
-always reflects the current `src/game/*.ts` declarations.
+engine, public API), rendered inline on GitHub. It's generated straight from the
+source by `npm run docs:model` (CI fails if the diagram text drifts from the
+types), so it always reflects the current `src/game/*.ts` declarations. SVG
+renders are produced by the CI **docs** job as a downloadable artifact, or
+locally with `npm run docs:render`.
 
 ## Roadmap
 

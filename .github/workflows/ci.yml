@@ -48,10 +48,36 @@ jobs:
         run: npm run build:lib
 
       - name: Check domain model is up to date
-        # Regenerate only the deterministic text (Mermaid sources + the page) —
-        # not the SVGs, whose ids/metrics aren't reproducible — and fail if it
-        # drifts from the types. SVGs are refreshed locally by `npm run docs:model`.
+        # Regenerate the deterministic text (Mermaid sources + the page) and fail
+        # if it drifts from the types. SVGs are not committed — the `docs` job
+        # below renders them as an artifact.
         run: |
           node scripts/generate-domain-model.mjs
           npx prettier --write docs/DOMAIN_MODEL.md
           git diff --exit-code docs/DOMAIN_MODEL.md docs/domain-model/*.mmd
+
+  docs:
+    # Render the domain-model diagrams to SVG (needs Chromium via Puppeteer) and
+    # upload them as a downloadable artifact, rather than committing them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Render domain-model SVGs
+        run: npm run docs:render
+
+      - name: Upload diagrams
+        uses: actions/upload-artifact@v4
+        with:
+          name: domain-model-svg
+          path: docs/domain-model/*.svg
+          if-no-files-found: error

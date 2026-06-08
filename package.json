@@ -52,7 +52,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs:model": "node scripts/generate-domain-model.mjs --render && prettier --write docs/DOMAIN_MODEL.md",
+    "docs:model": "node scripts/generate-domain-model.mjs && prettier --write docs/DOMAIN_MODEL.md",
+    "docs:render": "node scripts/generate-domain-model.mjs --render",
     "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build:lib"
   },
   "peerDependencies": {

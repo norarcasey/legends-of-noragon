@@ -6,3 +6,7 @@ dist-ssr
 coverage
 *.tsbuildinfo
 .vite
+
+# Domain-model SVGs are rendered by the CI docs job (and locally via
+# `npm run docs:render`), not committed.
+docs/domain-model/*.svg
