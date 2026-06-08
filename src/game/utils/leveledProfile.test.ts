@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { leveledProfile } from './leveledProfile'
-import { LEVELING } from './leveling'
+import { LEVELING } from '../constants'
 import type { AttackProfile } from '../types'
 
 const base: AttackProfile = { accuracy: 0.8, minDamage: 3, maxDamage: 6 }

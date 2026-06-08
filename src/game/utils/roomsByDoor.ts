@@ -1,5 +1,5 @@
 import type { Dungeon, Point } from '../types'
-import { DELTA } from './directions'
+import { DELTA } from '../constants'
 import { roomAt } from './roomAt'
 import { tileAt } from './tileAt'
 

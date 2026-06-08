@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { xpToNext } from './xpToNext'
-import { LEVELING } from './leveling'
+import { LEVELING } from '../constants'
 
 describe('xpToNext', () => {
   it('grows quadratically with level', () => {

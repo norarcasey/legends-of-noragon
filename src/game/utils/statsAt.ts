@@ -1,5 +1,5 @@
 import type { HeroStats } from '../types'
-import { LEVELING } from './leveling'
+import { LEVELING } from '../constants'
 import { leveledProfile } from './leveledProfile'
 
 /** The hero's current max HP and attack profiles at a given level, derived from

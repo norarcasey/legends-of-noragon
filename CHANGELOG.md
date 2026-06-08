@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Internal refactor: gathered the game's tuning constants into a single
+  `src/game/constants.ts` — hero defaults (`DEFAULTS`, `DEFAULT_ATTACKS`), the
+  leveling curve (`LEVELING`), movement deltas (`DELTA`, `DIR_NAME`), and the
+  map-generation dimensions (`CELL`, `MAX_ROOM`, `MIN_ROOM`, `MIN_CELLS`,
+  `ROOM_NAMES`) — so `utils/` holds functions only and every tunable literal lives
+  in one place. Domain constants (item values, `ENEMY_DEPTH_SCALING`) stay with
+  their modules. No behavior change.
 - Internal refactor: the self-contained pure helpers that lived in `useNoragon.ts`
   now sit one-per-file under `src/game/utils/` — combat/stat math (`xpToNext`,
   `leveledProfile`, `statsAt`, `equippedDef`, `deriveCombat`, `applyXp`,

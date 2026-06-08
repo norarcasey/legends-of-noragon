@@ -3,6 +3,7 @@ import { ENEMY_INFO } from '../enemies'
 import type { EnemyKind } from '../enemies'
 import { ARMOR_KINDS, WEAPON_KINDS } from '../items'
 import type { ItemKind } from '../items'
+import { CELL, MAX_ROOM, MIN_CELLS, MIN_ROOM, ROOM_NAMES } from '../constants'
 import { makeRng } from './makeRng'
 import { spawnEnemy } from './spawnEnemy'
 
@@ -15,26 +16,9 @@ import { spawnEnemy } from './spawnEnemy'
 // room model — fog of war, enemy confinement, and activation are all keyed on
 // rooms — while making every run a different shape and size.
 //
-// Each room lives in a CELL×CELL slot (a MAX_ROOM interior plus one wall). Rooms
-// vary from MIN_ROOM to MAX_ROOM and are anchored to the slot edge on any side
-// they connect through; because any span ≥ MIN_ROOM (3) inside a 5-wide slot
-// always covers the slot centre, adjacent rooms overlap and a single-tile door
-// always lands floor-to-floor — no corridors required.
-const CELL = 7
-const MAX_ROOM = 4
-const MIN_ROOM = 3
-/** Never shrink an irregular footprint below this many rooms. */
-const MIN_CELLS = 4
-
-/** Atmospheric names for the rooms between the entrance and the vault. */
-const ROOM_NAMES = [
-  'a dank chamber',
-  'a mossy crypt',
-  'a collapsed gallery',
-  'a torch-lit hall',
-  'a bone-strewn cell',
-  'a flooded cavern',
-]
+// Each room lives in a CELL×CELL slot (a MAX_ROOM interior plus one wall), sized
+// MIN_ROOM..MAX_ROOM; an irregular footprint may omit cells but never drops below
+// MIN_CELLS rooms. Those dimensions live in ../constants.
 
 /**
  * Build the dungeon for the given `depth` of a run from `seed`: pick a grid size,

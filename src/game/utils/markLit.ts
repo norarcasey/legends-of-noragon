@@ -1,5 +1,5 @@
 import type { Dungeon, Point } from '../types'
-import { DELTA } from './directions'
+import { DELTA } from '../constants'
 
 /** Light the hero's tile and its orthogonal neighbours — a one-step torch radius
  *  so corridors (which no room reveals) light up as the hero walks them. Mutates. */

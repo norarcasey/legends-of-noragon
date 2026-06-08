@@ -1,5 +1,5 @@
 import type { AttackProfile } from '../types'
-import { LEVELING } from './leveling'
+import { LEVELING } from '../constants'
 
 /** Grow an attack profile by `bonus` levels (accuracy never exceeds 1). */
 export function leveledProfile(p: AttackProfile, bonus: number): AttackProfile {

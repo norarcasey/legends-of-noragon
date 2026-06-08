@@ -14,14 +14,13 @@ import type {
 } from './types'
 import { ENEMY_INFO } from './enemies'
 import { ARMOR_KINDS, ITEMS, STARTING_GOLD, WEAPON_KINDS } from './items'
+import { DEFAULT_ATTACKS, DEFAULTS, DELTA, DIR_NAME } from './constants'
 import {
   activeEnemiesOf,
   applyXp,
   blankSeen,
   computeVisible,
-  DELTA,
   deriveCombat,
-  DIR_NAME,
   generateDungeon,
   logLines,
   manhattan,
@@ -35,18 +34,6 @@ import {
   tileAt,
   xpToNext,
 } from './utils'
-
-const DEFAULTS = { maxHp: 12 }
-
-/**
- * Default attack profiles. `melee` drives the current bump-to-attack; `ranged`
- * and `spell` are tuned and ready but not yet wired to a targeting action.
- */
-const DEFAULT_ATTACKS: AttackProfiles = {
-  melee: { accuracy: 0.8, minDamage: 3, maxDamage: 6 },
-  ranged: { accuracy: 0.6, minDamage: 2, maxDamage: 4 },
-  spell: { accuracy: 0.9, minDamage: 3, maxDamage: 6 },
-}
 
 // The whole level lives in one reducer, so each turn — the hero's step plus every
 // enemy's response — is computed from the previous state in a single pure

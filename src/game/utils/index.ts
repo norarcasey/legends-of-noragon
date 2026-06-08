@@ -1,9 +1,7 @@
 // Barrel for the self-contained game utilities. Each function lives in its own
 // file (with a co-located test); the reducer/hook in ../useNoragon.ts imports
-// them from here. Tests import the individual files directly.
-
-export { LEVELING } from './leveling'
-export { DELTA, DIR_NAME } from './directions'
+// them from here. Tests import the individual files directly. Tuning constants
+// live in ../constants.ts, not here.
 
 export { xpToNext } from './xpToNext'
 export { leveledProfile } from './leveledProfile'

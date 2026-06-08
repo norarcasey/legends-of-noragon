@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { statsAt } from './statsAt'
-import { LEVELING } from './leveling'
+import { LEVELING } from '../constants'
 import type { HeroStats } from '../types'
 
 const base: HeroStats = {
