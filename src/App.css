@@ -1,7 +1,10 @@
 .demo {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2.5rem 1.25rem 3.5rem;
+  /* Full viewport width — the three columns stretch across the screen, with the
+     board a fixed-size island in the middle and the info/panel columns filling
+     the rest. A little side padding keeps content off the edges. */
+  max-width: none;
+  margin: 0;
+  padding: 2.5rem 2rem 3.5rem;
 }
 
 .demo__intro {
