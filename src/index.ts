@@ -17,6 +17,8 @@ export { ActivityLog } from './components/ActivityLog'
 export type { ActivityLogProps } from './components/ActivityLog'
 export { Inventory } from './components/Inventory'
 export type { InventoryProps } from './components/Inventory'
+export { useNoragonKeyboard } from './components/useNoragonKeyboard'
+export type { UseNoragonKeyboardOptions } from './components/useNoragonKeyboard'
 
 export { useNoragon } from './game/useNoragon'
 

@@ -14,6 +14,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `useNoragon()`). Each part takes a granular slice of the hook's return; the
   all-in-one `Noragon` is now composed from these same parts (the stats readout
   was extracted into a `Stats` component). Their prop types are exported too.
+- New `useNoragonKeyboard(game, { enabled })` hook exposes the default keyboard
+  controls (arrows/WASD, Enter, `F`, `>`, `Q`) for consumers composing their own
+  layout. `Noragon` now uses it instead of an inline effect.
 - Three-column layout on wide screens: the left info column holds the enemy cards
   (plus optional `intro`/`footer` slots), the middle column is the board, and the
   right panel holds the stats, activity log, and pack. It collapses to a single

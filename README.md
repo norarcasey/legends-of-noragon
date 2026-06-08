@@ -186,9 +186,19 @@ export function MyDungeon() {
 }
 ```
 
-The parts are presentational only — wiring keyboard input (via the hook's
-`move`/`fire`/etc.) and any start/over overlay is up to you; `<Noragon />` is the
-turnkey arrangement of these same parts if you'd rather not.
+The parts are presentational only. For the default controls, call
+`useNoragonKeyboard(game)` — it attaches a `window` keydown listener for the same
+keys `<Noragon />` uses (arrows/WASD to move, Enter to start, `F` to aim/fire,
+`>` to descend, `Q` to quaff), and takes `{ enabled }` to toggle it:
+
+```tsx
+const game = useNoragon()
+useNoragonKeyboard(game) // or useNoragonKeyboard(game, { enabled: false })
+```
+
+Any start/over overlay is still up to you (drive it from `game.start()` and
+`game.run.status`); `<Noragon />` is the turnkey arrangement of these same parts
+if you'd rather not wire it yourself.
 
 ### Domain model
 

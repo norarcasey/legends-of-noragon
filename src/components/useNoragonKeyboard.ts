@@ -1,0 +1,119 @@
+import { useEffect } from 'react'
+import type { Direction, NoragonApi } from '../game/types'
+
+const KEY_TO_DIRECTION: Record<string, Direction> = {
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  w: 'up',
+  s: 'down',
+  a: 'left',
+  d: 'right',
+}
+
+export interface UseNoragonKeyboardOptions {
+  /** Listen for keys. Default `true`; pass `false` to disable without unmounting. */
+  enabled?: boolean
+}
+
+/**
+ * Wire the default keyboard controls to a {@link NoragonApi} from `useNoragon()`:
+ * arrow keys / WASD move (and start a stopped run on the first step), Enter
+ * begins/restarts, `F` takes aim then fires (Tab/arrows switch targets, Esc
+ * cancels), `>`/Enter descends on the stairs, and `Q` quaffs a health potion.
+ *
+ * Attaches a single `window` keydown listener. `<Noragon />` uses this; call it
+ * yourself when composing your own layout from the exported parts.
+ */
+export function useNoragonKeyboard(
+  game: NoragonApi,
+  options: UseNoragonKeyboardOptions = {},
+): void {
+  const enabled = options.enabled ?? true
+  const { aiming, start, move, descend, drink, aimStart, aimCycle, aimCancel, fire } = game
+  const { status } = game.run
+  const { onStairs } = game.hero
+  const firstPotion = game.hero.inventory.find((i) => i.kind === 'healthPotion')
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      // ---- Aiming mode: arrows cycle targets, F/Enter fires, Esc cancels. ----
+      if (aiming) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          aimCancel()
+        } else if (e.key === 'f' || e.key === 'F' || e.key === 'Enter') {
+          e.preventDefault()
+          fire()
+        } else if (e.key === 'Tab') {
+          e.preventDefault()
+          aimCycle(e.shiftKey ? -1 : 1)
+        } else {
+          const dir = KEY_TO_DIRECTION[e.key]
+          if (!dir) return
+          e.preventDefault()
+          aimCycle(dir === 'up' || dir === 'left' ? -1 : 1)
+        }
+        return
+      }
+
+      // From a stopped dungeon (idle or after death), Enter begins a fresh run —
+      // the same as clicking the Enter / Delve again button.
+      if (status !== 'playing' && e.key === 'Enter') {
+        e.preventDefault()
+        start()
+        return
+      }
+
+      // ---- Normal play ----
+      if (status === 'playing' && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault()
+        aimStart()
+        return
+      }
+      // Descend the stairs deliberately with `>` (or Enter while on them).
+      if (status === 'playing' && onStairs && (e.key === '>' || e.key === 'Enter')) {
+        e.preventDefault()
+        descend()
+        return
+      }
+      // Quick-drink a health potion with Q.
+      if (status === 'playing' && (e.key === 'q' || e.key === 'Q') && firstPotion) {
+        e.preventDefault()
+        drink(firstPotion.id)
+        return
+      }
+
+      const dir = KEY_TO_DIRECTION[e.key]
+      if (!dir) return
+      e.preventDefault()
+      // A direction key from a stopped dungeon both begins and takes the first step.
+      if (status === 'playing') {
+        move(dir)
+      } else if (status === 'idle') {
+        start()
+        move(dir)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    enabled,
+    status,
+    aiming,
+    onStairs,
+    firstPotion,
+    start,
+    move,
+    descend,
+    drink,
+    aimStart,
+    aimCycle,
+    aimCancel,
+    fire,
+  ])
+}
