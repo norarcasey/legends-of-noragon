@@ -471,6 +471,28 @@
   margin-top: 0.15rem;
 }
 
+/* Highlighted spans inside a log line — only the meaningful bits are coloured,
+   so the line stays readable. Slightly bolder so they pop against the prose. */
+.noragon__log-mark {
+  font-weight: 600;
+}
+.noragon__log-mark--gold {
+  color: #e6c34a;
+}
+.noragon__log-mark--bad {
+  color: #ef5350;
+}
+.noragon__log-mark--good {
+  color: #81c784;
+}
+.noragon__log-mark--level {
+  color: #4fc3f7;
+}
+.noragon__log-mark--death {
+  color: #ff5252;
+  font-weight: 700;
+}
+
 /* ---- Aim banner ---- */
 .noragon__aim-banner {
   position: absolute;

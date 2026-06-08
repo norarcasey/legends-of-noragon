@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { LogEntry } from '../game/types'
+import { splitLog } from './logHighlights'
 
 interface ActivityLogProps {
   /** The log lines, oldest first; nothing renders when empty. */
@@ -27,7 +28,15 @@ export function ActivityLog({ entries }: ActivityLogProps) {
       <ol className="noragon__log-list" ref={scrollRef} role="log" aria-label="Activity log">
         {entries.map((entry) => (
           <li key={entry.id} className="noragon__log-entry" data-testid="log-entry">
-            {entry.text}
+            {splitLog(entry.text).map((seg, i) =>
+              seg.tone ? (
+                <span key={i} className={`noragon__log-mark noragon__log-mark--${seg.tone}`}>
+                  {seg.text}
+                </span>
+              ) : (
+                <span key={i}>{seg.text}</span>
+              ),
+            )}
           </li>
         ))}
       </ol>

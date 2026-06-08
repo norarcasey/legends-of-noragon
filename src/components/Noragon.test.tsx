@@ -2,6 +2,7 @@ import { render, renderHook, act, fireEvent, screen } from '@testing-library/rea
 import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
 import { Inventory } from './Inventory'
+import { ActivityLog } from './ActivityLog'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
@@ -1262,6 +1263,27 @@ describe('enemy depth scaling', () => {
       // And a depth-3 foe is at least as sturdy as a depth-1 one of its kind.
       expect(foe.maxHp).toBeGreaterThanOrEqual(enemyStatsAt(foe.kind, 1).maxHp)
     }
+  })
+})
+
+describe('ActivityLog colour-coding', () => {
+  it('wraps the meaningful spans in toned marks', () => {
+    const { container } = render(
+      <ActivityLog
+        entries={[
+          { id: 0, text: 'You find 10 gold.' },
+          { id: 1, text: 'The Goblin slashes you for 2.' },
+          { id: 2, text: 'You collapse, slain in the dark.' },
+        ]}
+      />,
+    )
+    expect(container.querySelector('.noragon__log-mark--gold')?.textContent).toBe('10 gold')
+    expect(container.querySelector('.noragon__log-mark--bad')?.textContent).toBe(
+      'slashes you for 2',
+    )
+    expect(container.querySelector('.noragon__log-mark--death')?.textContent).toBe(
+      'You collapse, slain in the dark.',
+    )
   })
 })
 

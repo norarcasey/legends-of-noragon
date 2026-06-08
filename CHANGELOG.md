@@ -8,6 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The activity log is now colour-coded — only the meaningful spans, so lines stay
+  readable: gold amounts in gold, damage the hero takes (`slashes you for 1`) in
+  red, kills/XP/heals/held-armor in green, level-ups in cyan, and a death line in
+  bold red. Driven by a small pure `splitLog` helper (segment classification by
+  message pattern); the engine still logs plain strings.
 - Bigger levels: the room grid grew from 2–3×2–3 to 3–4×3–4 (roughly double the
   rooms and corridors), rooms themselves are larger (`MAX_ROOM` 4→5, `CELL` 7→8,
   so chambers span 3–5 tiles), and a level keeps at least 6 rooms (`MIN_CELLS`
