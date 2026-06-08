@@ -616,17 +616,25 @@ function generateDungeon(seed: number, depth: number): Dungeon {
       enemies.push(spawnEnemy(rooms, kind, enemyId++, spot.x, spot.y, depth))
     }
   }
+  // Keep heavy hitters out of the shallow floors: drop any kind whose minimum
+  // spawn depth is below the current depth. Never empties (a bat is always
+  // eligible), so every pool still has something to draw from.
+  const eligible = (kinds: EnemyKind[]): EnemyKind[] => {
+    const ok = kinds.filter((k) => ENEMY_INFO[k].minDepth <= depth)
+    return ok.length > 0 ? ok : ['bat']
+  }
   // Foes come from a pool that escalates with threat = a room's distance from the
   // entrance plus how deep the run is, with more of them the deeper you go.
   const rollKinds = (threat: number): EnemyKind[] => {
-    const pool: EnemyKind[] =
+    const pool = eligible(
       threat >= 4
         ? ['goblin', 'orc', 'troll']
         : threat >= 3
           ? ['spider', 'goblin', 'orc']
           : threat >= 2
             ? ['bat', 'spider', 'goblin']
-            : ['bat', 'spider']
+            : ['bat', 'spider'],
+    )
     const count = threat >= 4 ? 3 : threat >= 2 ? 2 : 1
     const kinds: EnemyKind[] = []
     for (let i = 0; i < count; i++) kinds.push(pool[rng.int(pool.length)])
@@ -635,10 +643,12 @@ function generateDungeon(seed: number, depth: number): Dungeon {
   for (const cell of cells) {
     if (cell === startCell) continue
     if (cell === chestCell) {
-      // The vault guardian grows nastier the deeper the run.
+      // The vault guardian grows nastier the deeper the run (within depth limits).
       placeIn(
         roomOf(cell),
-        depth >= 4 ? ['troll', 'orc'] : depth >= 2 ? ['orc', 'goblin'] : ['goblin', 'bat'],
+        eligible(
+          depth >= 4 ? ['troll', 'orc'] : depth >= 2 ? ['orc', 'goblin'] : ['goblin', 'bat'],
+        ),
       )
       continue
     }

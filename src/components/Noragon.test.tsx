@@ -902,16 +902,37 @@ describe('useNoragon — descending', () => {
 })
 
 describe('useNoragon — new enemies', () => {
-  it('seeds spiders and orcs into the dungeon', () => {
-    const kinds = new Set<string>()
+  it('seeds spiders early and unlocks orcs by the depth they allow', () => {
+    // Depth 1: spiders show up, but orcs (min depth 2) and trolls (min depth 3)
+    // are gated out.
+    const shallow = new Set<string>()
     for (let seed = 1; seed <= 80; seed++) {
       const { result, unmount } = renderHook(() => useNoragon({ seed }))
       act(() => result.current.start())
-      for (const e of result.current.enemies) kinds.add(e.kind)
+      for (const e of result.current.enemies) shallow.add(e.kind)
       unmount()
     }
-    expect(kinds.has('spider')).toBe(true)
-    expect(kinds.has('orc')).toBe(true)
+    expect(shallow.has('spider')).toBe(true)
+    expect(shallow.has('orc')).toBe(false)
+    expect(shallow.has('troll')).toBe(false)
+
+    // By depth 2, orcs start appearing (god-mode hero so we can descend; stop at
+    // the first seed that proves it).
+    let sawOrc = false
+    for (let seed = 1; seed <= 30 && !sawOrc; seed++) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 9999,
+          attacks: { melee: { accuracy: 1, minDamage: 99, maxDamage: 99 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      descendToDepth(result, 2)
+      if (result.current.enemies.some((e) => e.kind === 'orc')) sawOrc = true
+      unmount()
+    }
+    expect(sawOrc).toBe(true)
   })
 
   it('sends trolls to guard the deepest vaults', () => {
@@ -1160,6 +1181,33 @@ describe('enemy depth scaling', () => {
 
   it('never scales accuracy past the cap', () => {
     expect(enemyStatsAt('spider', 100).accuracy).toBeLessThanOrEqual(0.95)
+  })
+
+  it('keeps foes below their minimum spawn depth out of the shallow floors', () => {
+    // Depth 1: no orcs (min depth 2) and no trolls (min depth 3) anywhere.
+    for (const seed of SEEDS) {
+      const { result } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      for (const foe of result.current.enemies) {
+        expect(ENEMY_INFO[foe.kind].minDepth).toBeLessThanOrEqual(1)
+      }
+    }
+
+    // Descend to depth 2 (god-mode hero): orcs may now appear, but never a troll.
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 9999,
+        attacks: { melee: { accuracy: 1, minDamage: 99, maxDamage: 99 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    descendToDepth(result, 2)
+    expect(result.current.run.depth).toBe(2)
+    for (const foe of result.current.enemies) {
+      expect(ENEMY_INFO[foe.kind].minDepth).toBeLessThanOrEqual(2)
+      expect(foe.kind).not.toBe('troll')
+    }
   })
 
   it('spawns foes with their depth-scaled stats, stiffening as the run descends', () => {

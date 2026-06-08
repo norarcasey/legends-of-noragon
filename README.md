@@ -42,8 +42,11 @@ Combat:
 - Foes roll their own chance to hit back, and the bestiary climbs from fodder to
   horror: **Bats** (3 HP) and **Spiders** (fragile but fast and accurate) early,
   then **Goblins** (8 HP) and **Orcs** (12 HP, hit for 3), up to lumbering
-  **Trolls** (20 HP, slam for 5) deep down. Rooms farther from the entrance — and
-  deeper levels — hold more and tougher foes, and the vault is always guarded. The
+  **Trolls** (20 HP, slam for 5) deep down. Each kind has a minimum spawn depth,
+  so the heavy hitters stay off the early floors — bats, spiders, and goblins from
+  the entrance, orcs from depth 2, trolls from depth 3. Rooms farther from the
+  entrance — and deeper levels — hold more and tougher foes, and the vault is
+  always guarded. The
   same kinds also stiffen as you descend: a depth-5 goblin has more HP, hits a
   little harder and more often, and is worth more XP than the one by the entrance.
 

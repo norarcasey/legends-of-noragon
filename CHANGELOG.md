@@ -12,6 +12,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   exposed as `drop(itemId)` on the hook) that discards the item; dropping a worn
   piece unequips it and re-derives the hero's combat stats first. The Activity Log
   now sits above the Pack in the side panel.
+- Each enemy kind now has a minimum spawn depth (`minDepth` in `ENEMY_INFO`), so
+  the heavy hitters stay off the early floors: bats, spiders, and goblins from
+  depth 1, orcs from depth 2, trolls from depth 3. Spawn pools (including the
+  vault guardian) filter out any kind too strong for the current depth.
 - Enemies of the same kind now stiffen as the run descends: each foe's max HP,
   damage, accuracy (capped), and slay XP scale up modestly per depth from its
   bestiary baseline, baked onto the foe when it spawns. A depth-5 goblin is a bit

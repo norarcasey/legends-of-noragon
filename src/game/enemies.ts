@@ -20,6 +20,9 @@ export interface EnemyInfo {
   verb: string
   /** Experience the hero earns for slaying one. */
   xp: number
+  /** Shallowest dungeon depth this kind may spawn at (1 = the entrance level).
+   *  Keeps heavy hitters like orcs and trolls out of the early floors. */
+  minDepth: number
 }
 
 export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
@@ -33,6 +36,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 1,
     verb: 'bites',
     xp: 4,
+    minDepth: 1,
   },
   spider: {
     name: 'Spider',
@@ -44,6 +48,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 2,
     verb: 'bites',
     xp: 6,
+    minDepth: 1,
   },
   goblin: {
     name: 'Goblin',
@@ -55,6 +60,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 2,
     verb: 'slashes',
     xp: 12,
+    minDepth: 1,
   },
   orc: {
     name: 'Orc',
@@ -66,6 +72,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 3,
     verb: 'cleaves',
     xp: 18,
+    minDepth: 2,
   },
   troll: {
     name: 'Troll',
@@ -77,6 +84,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 5,
     verb: 'smashes',
     xp: 40,
+    minDepth: 3,
   },
 }
 
