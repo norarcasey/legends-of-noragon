@@ -1208,6 +1208,7 @@ describe('Inventory grouping', () => {
         gold={0}
         onEquip={noop}
         onDrink={noop}
+        onDrop={noop}
       />,
     )
     // One row for the three potions, showing the count, with a single Drink button.
@@ -1228,6 +1229,7 @@ describe('Inventory grouping', () => {
         gold={0}
         onEquip={noop}
         onDrink={noop}
+        onDrop={noop}
       />,
     )
     // Two separate rows — the equipped one tagged, the spare still equippable.
@@ -1250,6 +1252,7 @@ describe('Inventory grouping', () => {
         onDrink={(id) => {
           drunk = id
         }}
+        onDrop={() => {}}
       />,
     )
     fireEvent.click(screen.getByRole('button', { name: 'Drink' }))
@@ -1269,6 +1272,7 @@ describe('Inventory grouping', () => {
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
+        onDrop={() => {}}
       />,
     )
     const names = screen.getAllByTestId('inventory-item').map((li) => li.textContent ?? '')
@@ -1292,6 +1296,7 @@ describe('Inventory grouping', () => {
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
+        onDrop={() => {}}
       />,
     )
     const names = screen.getAllByTestId('inventory-item').map((li) => li.textContent ?? '')
@@ -1299,5 +1304,50 @@ describe('Inventory grouping', () => {
     expect(names[1]).toContain('Chainmail')
     expect(names[2]).toContain('Dagger')
     expect(names[3]).toContain('Plate Armor')
+  })
+
+  it('offers a Drop button on every row that reports the item id', () => {
+    let dropped: number | null = null
+    render(
+      <Inventory
+        inventory={[
+          { id: 9, kind: 'dagger' },
+          { id: 10, kind: 'healthPotion' },
+        ]}
+        equipment={{ weapon: null, armor: null }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+        onDrop={(id) => {
+          dropped = id
+        }}
+      />,
+    )
+    const dropButtons = screen.getAllByRole('button', { name: 'Drop' })
+    expect(dropButtons).toHaveLength(2) // one per row (the dagger and the potion)
+    // Rows render consumables before spare gear, so the first Drop is the potion.
+    fireEvent.click(dropButtons[0])
+    expect(dropped).toBe(10)
+  })
+})
+
+describe('useNoragon — drop', () => {
+  it('discards an item for good, unequipping and re-deriving when it was worn', () => {
+    const { result } = renderHook(() => useNoragon({ seed: 7 }))
+    act(() => result.current.start())
+    // Starting kit: shortSword (id 0, equipped), clothes (id 1, equipped), potion (id 2).
+    expect(result.current.hero.defense).toBe(1) // Traveler's Clothes
+    const turnsBefore = result.current.run.turns
+
+    // Drop the spare potion: gone, and dropping is free — no turn, no enemy phase.
+    act(() => result.current.drop(2))
+    expect(result.current.hero.inventory.some((i) => i.id === 2)).toBe(false)
+    expect(result.current.run.turns).toBe(turnsBefore)
+
+    // Drop the worn armor: removed, the slot is cleared, and defense falls to 0.
+    act(() => result.current.drop(1))
+    expect(result.current.hero.inventory.some((i) => i.id === 1)).toBe(false)
+    expect(result.current.hero.equipment.armor).toBeNull()
+    expect(result.current.hero.defense).toBe(0)
   })
 })

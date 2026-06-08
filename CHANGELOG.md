@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The Pack panel gained a **Drop** action on every item row (a free menu action,
+  exposed as `drop(itemId)` on the hook) that discards the item; dropping a worn
+  piece unequips it and re-derives the hero's combat stats first. The Activity Log
+  now sits above the Pack in the side panel.
 - Enemies of the same kind now stiffen as the run descends: each foe's max HP,
   damage, accuracy (capped), and slay XP scale up modestly per depth from its
   bestiary baseline, baked onto the foe when it spawns. A depth-5 goblin is a bit

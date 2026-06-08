@@ -47,7 +47,8 @@ export function Noragon({
   const { status } = run
   const { onStairs } = hero
   const melee = hero.attacks.melee
-  const { aiming, start, move, descend, equip, drink, aimStart, aimCycle, aimCancel, fire } = game
+  const { aiming, start, move, descend, equip, drink, drop, aimStart, aimCycle, aimCancel, fire } =
+    game
   const firstPotion = hero.inventory.find((i) => i.kind === 'healthPotion')
 
   useEffect(() => {
@@ -239,6 +240,8 @@ export function Noragon({
             <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
           )}
 
+          {status !== 'idle' && <ActivityLog entries={game.log} />}
+
           {status !== 'idle' && (
             <Inventory
               inventory={hero.inventory}
@@ -246,10 +249,9 @@ export function Noragon({
               gold={hero.gold}
               onEquip={equip}
               onDrink={drink}
+              onDrop={drop}
             />
           )}
-
-          {status !== 'idle' && <ActivityLog entries={game.log} />}
         </aside>
       </div>
     </section>

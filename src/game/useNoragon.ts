@@ -118,6 +118,9 @@ export interface NoragonApi {
   equip: (itemId: number) => void
   /** Drink a carried potion by its inventory item id (costs a turn). */
   drink: (itemId: number) => void
+  /** Discard a carried item by its inventory item id. Unequips it first if worn.
+   *  Free (no turn); the item is gone for good. */
+  drop: (itemId: number) => void
   /** Enter ranged-aiming mode, targeting the nearest enemy in the room. */
   aimStart: () => void
   /** While aiming, move the crosshairs to another enemy (`+1` next, `-1` prev). */
@@ -790,6 +793,7 @@ type GameAction =
   | { type: 'descend' }
   | { type: 'equip'; itemId: number }
   | { type: 'drink'; itemId: number }
+  | { type: 'drop'; itemId: number }
   | { type: 'aimStart' }
   | { type: 'aimCycle'; delta: number }
   | { type: 'aimCancel' }
@@ -1220,6 +1224,29 @@ function reducer(state: GameState, action: GameAction): GameState {
         ...logLines(state.log, state.nextLogId, messages),
       }
     }
+    case 'drop': {
+      // Discarding is a free menu action (no turn). If the item was equipped,
+      // clear that slot and re-derive the hero's combat stats from what remains.
+      if (state.status !== 'playing') return state
+      const item = state.inventory.find((i) => i.id === action.itemId)
+      if (!item) return state
+      const inventory = state.inventory.filter((i) => i.id !== item.id)
+      const equipment: Equipment = {
+        weapon: state.equipment.weapon === item.id ? null : state.equipment.weapon,
+        armor: state.equipment.armor === item.id ? null : state.equipment.armor,
+      }
+      const c = deriveCombat(state.base, state.level, inventory, equipment)
+      return {
+        ...state,
+        inventory,
+        equipment,
+        maxHp: c.maxHp,
+        attacks: c.attacks,
+        defense: c.defense,
+        hp: Math.min(state.hp, c.maxHp),
+        ...logLines(state.log, state.nextLogId, [`You drop the ${ITEMS[item.kind].name}.`]),
+      }
+    }
     case 'aimStart': {
       if (state.status !== 'playing') return state
       const actives = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
@@ -1389,6 +1416,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const descend = useCallback(() => dispatch({ type: 'descend' }), [])
   const equip = useCallback((itemId: number) => dispatch({ type: 'equip', itemId }), [])
   const drink = useCallback((itemId: number) => dispatch({ type: 'drink', itemId }), [])
+  const drop = useCallback((itemId: number) => dispatch({ type: 'drop', itemId }), [])
   const aimStart = useCallback(() => dispatch({ type: 'aimStart' }), [])
   const aimCycle = useCallback((delta: number) => dispatch({ type: 'aimCycle', delta }), [])
   const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
@@ -1453,6 +1481,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     descend,
     equip,
     drink,
+    drop,
     aimStart,
     aimCycle,
     aimCancel,

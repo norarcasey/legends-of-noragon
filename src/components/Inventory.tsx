@@ -8,6 +8,7 @@ interface InventoryProps {
   gold: number
   onEquip: (itemId: number) => void
   onDrink: (itemId: number) => void
+  onDrop: (itemId: number) => void
 }
 
 /**
@@ -18,7 +19,14 @@ interface InventoryProps {
  * Rows are ordered equipped gear first, then consumables, then spare gear — so
  * what's in use and what's quaffable sit at the top, with swap-in spares below.
  */
-export function Inventory({ inventory, equipment, gold, onEquip, onDrink }: InventoryProps) {
+export function Inventory({
+  inventory,
+  equipment,
+  gold,
+  onEquip,
+  onDrink,
+  onDrop,
+}: InventoryProps) {
   const isEquipped = (item: InventoryItem) =>
     equipment.weapon === item.id || equipment.armor === item.id
 
@@ -50,13 +58,22 @@ export function Inventory({ inventory, equipment, gold, onEquip, onDrink }: Inve
           {def.glyph}
         </span>
         <span className="noragon__item-name">{def.name}</span>
-        {worn ? (
-          <span className="noragon__item-tag">Equipped</span>
-        ) : (
-          <button type="button" className="noragon__item-button" onClick={() => onEquip(item.id)}>
-            Equip
+        <span className="noragon__item-actions">
+          {worn ? (
+            <span className="noragon__item-tag">Equipped</span>
+          ) : (
+            <button type="button" className="noragon__item-button" onClick={() => onEquip(item.id)}>
+              Equip
+            </button>
+          )}
+          <button
+            type="button"
+            className="noragon__item-button noragon__item-button--drop"
+            onClick={() => onDrop(item.id)}
+          >
+            Drop
           </button>
-        )}
+        </span>
       </li>
     )
   }
@@ -78,15 +95,24 @@ export function Inventory({ inventory, equipment, gold, onEquip, onDrink }: Inve
                 {def.name}
                 {count > 1 && <span className="noragon__item-count"> ({count})</span>}
               </span>
-              {def.category === 'potion' && (
+              <span className="noragon__item-actions">
+                {def.category === 'potion' && (
+                  <button
+                    type="button"
+                    className="noragon__item-button"
+                    onClick={() => onDrink(items[0].id)}
+                  >
+                    Drink
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="noragon__item-button"
-                  onClick={() => onDrink(items[0].id)}
+                  className="noragon__item-button noragon__item-button--drop"
+                  onClick={() => onDrop(items[0].id)}
                 >
-                  Drink
+                  Drop
                 </button>
-              )}
+              </span>
             </li>
           )
         })}

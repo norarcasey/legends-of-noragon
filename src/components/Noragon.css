@@ -370,6 +370,26 @@
   filter: brightness(1.1);
 }
 
+.noragon__item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* The Drop action is deliberately understated so it doesn't compete with
+   Equip/Drink — a quiet, outlined button that warms up on hover. */
+.noragon__item-button--drop {
+  color: var(--noragon-muted, #8a90a6);
+  background: transparent;
+  border: 1px solid var(--noragon-wall-edge);
+}
+
+.noragon__item-button--drop:hover {
+  color: #0b0d14;
+  background: var(--noragon-muted, #8a90a6);
+  filter: none;
+}
+
 /* ---- Activity log ---- */
 .noragon__log {
   margin-top: 0.75rem;

@@ -52,10 +52,11 @@ Potion**, and a little **gold**. Your equipped weapon adds to your melee damage
 and armor subtracts flat **defense** from every hit you take. Loot lies on the
 floor (gold piles `$`, potions `!`, weapons `/`, armor `]`) — walk onto it to
 pick it up — and chests cough up gold and a potion (sometimes gear). Open the
-**Pack** panel to equip better gear or **drink** a potion (or just press `Q` to
-quaff). Stackable items like potions collapse into one counted row (`Health
-Potion (3)`), while gear stays listed per-item so you can equip a specific piece.
-Your gold and pack carry down the stairs with you.
+**Pack** panel to equip better gear, **drink** a potion (or just press `Q` to
+quaff), or **drop** an item you don't want (dropping is free and discards it).
+Stackable items like potions collapse into one counted row (`Health Potion (3)`),
+while gear stays listed per-item so you can equip a specific piece. Your gold and
+pack carry down the stairs with you.
 
 Slaying foes earns **XP** (goblins give more than bats). Fill the bar and you
 **level up**: your max HP
@@ -119,7 +120,7 @@ const game = useNoragon({
 
 // Actions stay top-level:
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
-// game.descend(), game.equip(itemId), game.drink(itemId)
+// game.descend(), game.equip(itemId), game.drink(itemId), game.drop(itemId)
 // game.aimStart(), game.aimCycle(+1 | -1), game.aimCancel(), game.fire()
 ```
 
