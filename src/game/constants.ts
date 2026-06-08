@@ -28,8 +28,6 @@ export const LEVELING = {
   hpPerLevel: 4,
   damagePerLevel: 1,
   accuracyPerLevel: 0.02,
-  /** Treasure XP from a chest, multiplied by the current dungeon depth. */
-  chestXp: 12,
 }
 
 /** The tile offset for each direction. Origin top-left; x grows right, y down. */

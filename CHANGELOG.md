@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Internal refactor: the reducer's `move` and `fire` turns shared near-identical
+  attack/level-up logic and each hand-rolled the combat PRNG; that's now factored
+  into a `resolveHeroAttack` helper (one path for melee and ranged, parameterized
+  by attack profile and log flavor) and a `makeRoller` util (a seeded roller with
+  a `state()` read-back, replacing the three copied `roll()` closures across
+  move/drink/fire). Also dropped the dead `LEVELING.chestXp` constant. No behavior
+  change — combat draws the same rolls in the same order, so seeded runs are
+  identical; 124 tests pass.
 - Internal refactor: gathered the game's tuning constants into a single
   `src/game/constants.ts` — hero defaults (`DEFAULTS`, `DEFAULT_ATTACKS`), the
   leveling curve (`LEVELING`), movement deltas (`DELTA`, `DIR_NAME`), and the

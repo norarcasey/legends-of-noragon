@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import type {
+  AttackProfile,
   AttackProfiles,
   Direction,
+  Enemy,
   Equipment,
   GameAction,
   GameState,
@@ -23,9 +25,9 @@ import {
   deriveCombat,
   generateDungeon,
   logLines,
+  makeRoller,
   manhattan,
   markLit,
-  nextRng,
   resolveAttack,
   reveal,
   roomAt,
@@ -122,6 +124,86 @@ function descend(state: GameState, messages: string[]): GameState {
   }
 }
 
+/** The hero-state fields a single attack can change. */
+interface HeroAttackOutcome {
+  enemies: Enemy[]
+  kills: number
+  level: number
+  xp: number
+  maxHp: number
+  attacks: AttackProfiles
+  defense: number
+  hp: number
+}
+
+/**
+ * Resolve one hero attack (melee bump or ranged shot) against `target`: roll to
+ * hit, deal damage, and — if it slays the foe — award XP and apply any level-up.
+ * Reads the pre-attack hero state from `state` and returns the post-attack values
+ * for the reducer to fold in; pushes hit / slain / miss flavor onto `messages`.
+ * Shared by the `move` and `fire` turns so both resolve combat identically.
+ */
+function resolveHeroAttack(
+  state: GameState,
+  target: Enemy,
+  profile: AttackProfile,
+  roll: () => number,
+  messages: string[],
+  flavor: {
+    hit: (name: string, damage: number) => string
+    slain: (name: string, damage: number, gained: number) => string
+    miss: (name: string) => string
+  },
+): HeroAttackOutcome {
+  const unchanged: HeroAttackOutcome = {
+    enemies: state.enemies,
+    kills: state.kills,
+    level: state.level,
+    xp: state.xp,
+    maxHp: state.maxHp,
+    attacks: state.attacks,
+    defense: state.defense,
+    hp: state.hp,
+  }
+  const name = ENEMY_INFO[target.kind].name
+  const { hit, damage } = resolveAttack(profile, roll)
+  if (!hit) {
+    messages.push(flavor.miss(name))
+    return unchanged
+  }
+  const enemies = state.enemies
+    .map((e) => (e.id === target.id ? { ...e, hp: e.hp - damage } : e))
+    .filter((e) => e.hp > 0)
+  if (enemies.length === state.enemies.length) {
+    // A hit that didn't kill: damage landed, no XP.
+    messages.push(flavor.hit(name, damage))
+    return { ...unchanged, enemies }
+  }
+  // Slain: award XP and apply any level-up (which fully heals).
+  const gained = target.xp
+  messages.push(flavor.slain(name, damage, gained))
+  const lv = applyXp(
+    state.base,
+    state.level,
+    state.xp,
+    state.hp,
+    gained,
+    messages,
+    state.inventory,
+    state.equipment,
+  )
+  return {
+    enemies,
+    kills: state.kills + 1,
+    level: lv.level,
+    xp: lv.xp,
+    maxHp: lv.maxHp,
+    attacks: lv.attacks,
+    defense: lv.defense,
+    hp: lv.hp,
+  }
+}
+
 function reducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'configure':
@@ -170,50 +252,26 @@ function reducer(state: GameState, action: GameAction): GameState {
         return s
       }
 
-      // All combat randomness flows through this one advancing seed, so the
+      // All combat randomness flows through one roller seeded from state, so the
       // whole turn stays a pure function of (state, action).
-      let rngState = state.rngState
-      const roll = () => {
-        const r = nextRng(rngState)
-        rngState = r.state
-        return r.value
-      }
+      const rng = makeRoller(state.rngState)
 
       if (targetBat) {
-        // Bump-to-attack resolves the hero's melee profile: to-hit, then damage.
-        const name = ENEMY_INFO[targetBat.kind].name
-        const { hit, damage } = resolveAttack(state.attacks.melee, roll)
-        if (hit) {
-          enemies = state.enemies
-            .map((e) => (e.id === targetBat.id ? { ...e, hp: e.hp - damage } : e))
-            .filter((e) => e.hp > 0)
-          const slain = enemies.length < state.enemies.length
-          kills = state.kills + (slain ? 1 : 0)
-          if (slain) {
-            const gained = targetBat.xp
-            messages.push(`You strike the ${name} for ${damage} — slain! (+${gained} XP)`)
-            const lv = applyXp(
-              state.base,
-              level,
-              xp,
-              hp,
-              gained,
-              messages,
-              inventory,
-              state.equipment,
-            )
-            level = lv.level
-            xp = lv.xp
-            maxHp = lv.maxHp
-            attacks = lv.attacks
-            defense = lv.defense
-            hp = lv.hp
-          } else {
-            messages.push(`You strike the ${name} for ${damage}.`)
-          }
-        } else {
-          messages.push(`You swing at the ${name} and miss.`)
-        }
+        // Bump-to-attack resolves the hero's melee profile against the foe.
+        const a = resolveHeroAttack(state, targetBat, state.attacks.melee, rng.roll, messages, {
+          hit: (name, dmg) => `You strike the ${name} for ${dmg}.`,
+          slain: (name, dmg, gained) =>
+            `You strike the ${name} for ${dmg} — slain! (+${gained} XP)`,
+          miss: (name) => `You swing at the ${name} and miss.`,
+        })
+        enemies = a.enemies
+        kills = a.kills
+        level = a.level
+        xp = a.xp
+        maxHp = a.maxHp
+        attacks = a.attacks
+        defense = a.defense
+        hp = a.hp
       } else if (tileAt(state.dungeon, target.x, target.y) === 'wall') {
         // Bumping a wall is not a turn — nothing happens, and nothing is logged.
         return state
@@ -229,8 +287,8 @@ function reducer(state: GameState, action: GameAction): GameState {
             `You pry open the chest — ${10 + state.depth * 8} gold and a Health Potion!`,
           )
           inventory = [...inventory, { id: nextItemId++, kind: 'healthPotion' }]
-          if (roll() < 0.5) {
-            const pool = roll() < 0.5 ? WEAPON_KINDS : ARMOR_KINDS
+          if (rng.roll() < 0.5) {
+            const pool = rng.roll() < 0.5 ? WEAPON_KINDS : ARMOR_KINDS
             const tier = Math.min(pool.length - 1, 1 + Math.floor(state.depth / 2))
             const kind = pool[tier]
             inventory = [...inventory, { id: nextItemId++, kind }]
@@ -262,7 +320,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       // Light up the room the hero just stepped into (a no-op if already known).
       const revealedRooms = reveal(state.revealedRooms, roomAt(dungeon.rooms, player.x, player.y))
 
-      const phase = runEnemyPhase(dungeon, player, enemies, hp, defense, roll, messages)
+      const phase = runEnemyPhase(dungeon, player, enemies, hp, defense, rng.roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
@@ -285,7 +343,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         status,
         turns: state.turns + 1,
         revealedRooms,
-        rngState,
+        rngState: rng.state(),
         seen: litSeen(player),
         // Stepping ends any aim that was somehow still open.
         aiming: false,
@@ -334,12 +392,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         }
       }
       const messages: string[] = []
-      let rngState = state.rngState
-      const roll = () => {
-        const r = nextRng(rngState)
-        rngState = r.state
-        return r.value
-      }
+      const rng = makeRoller(state.rngState)
       const healed = Math.min(state.maxHp, state.hp + ITEMS[item.kind].heal)
       messages.push(`You drink a ${ITEMS[item.kind].name} and recover ${healed - state.hp} HP.`)
       const inventory = state.inventory.filter((i) => i.id !== item.id)
@@ -349,7 +402,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         state.enemies,
         healed,
         state.defense,
-        roll,
+        rng.roll,
         messages,
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
@@ -361,7 +414,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         enemies: phase.enemies,
         status,
         turns: state.turns + 1,
-        rngState,
+        rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
       }
     }
@@ -425,76 +478,43 @@ function reducer(state: GameState, action: GameAction): GameState {
         return { ...state, aiming: false, targetId: null }
       }
 
-      let rngState = state.rngState
-      const roll = () => {
-        const r = nextRng(rngState)
-        rngState = r.state
-        return r.value
-      }
+      const rng = makeRoller(state.rngState)
       const messages: string[] = []
-      let enemies = state.enemies
-      let kills = state.kills
-      let level = state.level
-      let xp = state.xp
-      let maxHp = state.maxHp
-      let attacks = state.attacks
-      let defense = state.defense
-      let hp = state.hp
 
       // The hero looses an arrow: resolve the ranged profile, then enemies act.
-      const name = ENEMY_INFO[target.kind].name
-      const { hit, damage } = resolveAttack(state.attacks.ranged, roll)
-      if (hit) {
-        enemies = state.enemies
-          .map((e) => (e.id === target.id ? { ...e, hp: e.hp - damage } : e))
-          .filter((e) => e.hp > 0)
-        const slain = enemies.length < state.enemies.length
-        kills = state.kills + (slain ? 1 : 0)
-        if (slain) {
-          const gained = target.xp
-          messages.push(`You shoot the ${name} for ${damage} — slain! (+${gained} XP)`)
-          const lv = applyXp(
-            state.base,
-            level,
-            xp,
-            hp,
-            gained,
-            messages,
-            state.inventory,
-            state.equipment,
-          )
-          level = lv.level
-          xp = lv.xp
-          maxHp = lv.maxHp
-          attacks = lv.attacks
-          defense = lv.defense
-          hp = lv.hp
-        } else {
-          messages.push(`You shoot the ${name} for ${damage}.`)
-        }
-      } else {
-        messages.push(`Your arrow misses the ${name}.`)
-      }
+      const a = resolveHeroAttack(state, target, state.attacks.ranged, rng.roll, messages, {
+        hit: (name, dmg) => `You shoot the ${name} for ${dmg}.`,
+        slain: (name, dmg, gained) => `You shoot the ${name} for ${dmg} — slain! (+${gained} XP)`,
+        miss: (name) => `Your arrow misses the ${name}.`,
+      })
 
-      const phase = runEnemyPhase(state.dungeon, state.player, enemies, hp, defense, roll, messages)
+      const phase = runEnemyPhase(
+        state.dungeon,
+        state.player,
+        a.enemies,
+        a.hp,
+        a.defense,
+        rng.roll,
+        messages,
+      )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
       return {
         ...state,
         hp: Math.max(0, phase.hp),
-        maxHp,
-        attacks,
-        defense,
-        level,
-        xp,
+        maxHp: a.maxHp,
+        attacks: a.attacks,
+        defense: a.defense,
+        level: a.level,
+        xp: a.xp,
         enemies: phase.enemies,
-        kills,
+        kills: a.kills,
         status,
         turns: state.turns + 1,
         aiming: false,
         targetId: null,
-        rngState,
+        rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
       }
     }

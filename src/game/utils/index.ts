@@ -13,6 +13,7 @@ export { resolveAttack } from './resolveAttack'
 export { manhattan } from './manhattan'
 export { nextRng } from './nextRng'
 export { makeRng } from './makeRng'
+export { makeRoller } from './makeRoller'
 
 export { roomAt } from './roomAt'
 export { tileAt } from './tileAt'
