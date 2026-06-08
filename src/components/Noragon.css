@@ -58,7 +58,8 @@
 @media (min-width: 960px) {
   .noragon__layout {
     display: grid;
-    grid-template-columns: minmax(12rem, 1fr) min(58vh, 460px) minmax(13rem, 1fr);
+    /* Middle (board) column twice the width of each side column. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
     align-items: start;
     gap: 1.25rem;
   }
@@ -115,10 +116,9 @@
 .noragon__stage {
   position: relative;
   width: 100%;
-  /* Cap the board by viewport height so it never shoves the panels off-screen,
-     and keep the tiles modest. The board inside fills this width. In the wide
-     grid this matches the middle column; when stacked it centers. */
-  max-width: min(58vh, 460px);
+  /* Fill the middle column, but cap by viewport height so a tall board never
+     shoves the panels off-screen; the board centers within whatever's left. */
+  max-width: min(58vh, 100%);
   margin: 0 auto;
 }
 
