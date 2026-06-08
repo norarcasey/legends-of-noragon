@@ -42,3 +42,8 @@ jobs:
 
       - name: Build library
         run: npm run build:lib
+
+      - name: Check domain model is up to date
+        run: |
+          npm run docs:model
+          git diff --exit-code docs/DOMAIN_MODEL.md

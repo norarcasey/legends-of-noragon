@@ -131,6 +131,13 @@ The whole level — the hero's step plus every enemy's response — is one pure
 reducer transition per `move`, so it behaves identically under React
 StrictMode and is trivial to drive headlessly in tests.
 
+### Domain model
+
+Every type the game defines — and how they connect — is mapped in
+[docs/DOMAIN_MODEL.md](docs/DOMAIN_MODEL.md) as a Mermaid class diagram. It's
+generated straight from the source by `npm run docs:model` (CI fails if it drifts
+from the types), so it always reflects the current `src/game/*.ts` declarations.
+
 ## Roadmap
 
 You explore a seed-generated dungeon, fight bats and goblins, and grab the

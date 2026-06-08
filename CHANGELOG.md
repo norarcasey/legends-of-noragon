@@ -49,6 +49,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Domain model docs: `npm run docs:model` generates
+  [docs/DOMAIN_MODEL.md](docs/DOMAIN_MODEL.md) — a Mermaid class diagram of every
+  `interface`/`type` in `src/game/*.ts` and how they connect (inheritance +
+  associations) — straight from the source via the TypeScript parser. CI
+  regenerates it and fails if the committed copy is stale, so it never drifts.
 - Initial release of Noragon — An embeddable React turn-based top-down dungeon crawler.
 - `<Noragon />` component: renders a hardcoded three-room dungeon as a block
   grid; move the hero with the arrow keys / WASD, bump bats to slay them, and
