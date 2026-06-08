@@ -1188,4 +1188,27 @@ describe('Inventory grouping', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Drink' }))
     expect(drunk).toBe(5)
   })
+
+  it('orders rows equipped first, then consumables, then spare gear', () => {
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'dagger' }, // spare weapon (unequipped)
+          { id: 1, kind: 'healthPotion' }, // consumable
+          { id: 2, kind: 'shortSword' }, // equipped weapon
+          { id: 3, kind: 'leather' }, // equipped armor
+        ]}
+        equipment={{ weapon: 2, armor: 3 }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+      />,
+    )
+    const names = screen.getAllByTestId('inventory-item').map((li) => li.textContent ?? '')
+    // Equipped gear (sword, leather) → consumable (potion) → spare (dagger).
+    expect(names[0]).toContain('Short Sword')
+    expect(names[1]).toContain('Leather Armor')
+    expect(names[2]).toContain('Health Potion')
+    expect(names[3]).toContain('Dagger')
+  })
 })
