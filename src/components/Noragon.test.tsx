@@ -4,7 +4,7 @@ import { Noragon } from './Noragon'
 import { Inventory } from './Inventory'
 import { useNoragon } from './../game/useNoragon'
 import type { NoragonApi, UseNoragonOptions } from './../game/useNoragon'
-import { ENEMY_INFO } from '../game/enemies'
+import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
 import type { Direction, Point, TileType } from '../game/types'
 
@@ -1131,6 +1131,65 @@ describe('useNoragon — loot & equipment', () => {
       'healthPotion',
       'shortSword',
     ])
+  })
+})
+
+describe('enemy depth scaling', () => {
+  const KINDS = ['bat', 'spider', 'goblin', 'orc', 'troll'] as const
+
+  it('returns the bestiary baseline at depth 1', () => {
+    for (const kind of KINDS) {
+      const base = ENEMY_INFO[kind]
+      expect(enemyStatsAt(kind, 1)).toEqual({
+        maxHp: base.maxHp,
+        accuracy: base.accuracy,
+        damage: base.damage,
+        xp: base.xp,
+      })
+    }
+  })
+
+  it('makes the same kind tougher and worth more the deeper it appears', () => {
+    const shallow = enemyStatsAt('troll', 1)
+    const deep = enemyStatsAt('troll', 6)
+    expect(deep.maxHp).toBeGreaterThan(shallow.maxHp)
+    expect(deep.damage).toBeGreaterThan(shallow.damage)
+    expect(deep.accuracy).toBeGreaterThanOrEqual(shallow.accuracy)
+    expect(deep.xp).toBeGreaterThan(shallow.xp)
+  })
+
+  it('never scales accuracy past the cap', () => {
+    expect(enemyStatsAt('spider', 100).accuracy).toBeLessThanOrEqual(0.95)
+  })
+
+  it('spawns foes with their depth-scaled stats, stiffening as the run descends', () => {
+    // A god-mode hero so we can clear levels and descend deterministically.
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 9999,
+        attacks: { melee: { accuracy: 1, minDamage: 99, maxDamage: 99 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    // Depth 1: every foe carries exactly its baseline stats.
+    expect(result.current.enemies.length).toBeGreaterThan(0)
+    for (const foe of result.current.enemies) {
+      expect({ maxHp: foe.maxHp, accuracy: foe.accuracy, damage: foe.damage, xp: foe.xp }).toEqual(
+        enemyStatsAt(foe.kind, 1),
+      )
+    }
+
+    descendToDepth(result, 3)
+    expect(result.current.run.depth).toBe(3)
+    // Depth 3: every foe carries its depth-3 (tougher) stats.
+    for (const foe of result.current.enemies) {
+      expect({ maxHp: foe.maxHp, accuracy: foe.accuracy, damage: foe.damage, xp: foe.xp }).toEqual(
+        enemyStatsAt(foe.kind, 3),
+      )
+      // And a depth-3 foe is at least as sturdy as a depth-1 one of its kind.
+      expect(foe.maxHp).toBeGreaterThanOrEqual(enemyStatsAt(foe.kind, 1).maxHp)
+    }
   })
 })
 

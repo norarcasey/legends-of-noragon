@@ -20,7 +20,7 @@ export type {
   Room,
   TileType,
 } from './game/types'
-export { ENEMY_INFO } from './game/enemies'
+export { ENEMY_DEPTH_SCALING, ENEMY_INFO, enemyStatsAt } from './game/enemies'
 export type { EnemyInfo, EnemyKind } from './game/enemies'
 export { ITEMS } from './game/items'
 export type { ItemCategory, ItemDef, ItemKind } from './game/items'

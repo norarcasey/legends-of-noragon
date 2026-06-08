@@ -13,7 +13,7 @@ import type {
   Room,
   TileType,
 } from './types'
-import { ENEMY_INFO } from './enemies'
+import { ENEMY_INFO, enemyStatsAt } from './enemies'
 import type { EnemyKind } from './enemies'
 import { ARMOR_KINDS, ITEMS, STARTING_GOLD, WEAPON_KINDS } from './items'
 import type { ItemDef, ItemKind } from './items'
@@ -370,10 +370,18 @@ function roomAt(rooms: Room[], x: number, y: number): number | null {
   return null
 }
 
-/** Spawn an enemy of `kind` at full health for the tile it was placed on. */
-function spawnEnemy(rooms: Room[], kind: EnemyKind, id: number, x: number, y: number): Enemy {
-  const { maxHp } = ENEMY_INFO[kind]
-  return { id, kind, x, y, hp: maxHp, maxHp, room: roomAt(rooms, x, y) ?? 0 }
+/** Spawn an enemy of `kind` at full health for the tile it was placed on, with
+ *  its combat stats scaled to the `depth` it appears at (deeper = a bit tougher). */
+function spawnEnemy(
+  rooms: Room[],
+  kind: EnemyKind,
+  id: number,
+  x: number,
+  y: number,
+  depth: number,
+): Enemy {
+  const { maxHp, accuracy, damage, xp } = enemyStatsAt(kind, depth)
+  return { id, kind, x, y, hp: maxHp, maxHp, accuracy, damage, xp, room: roomAt(rooms, x, y) ?? 0 }
 }
 
 /**
@@ -602,7 +610,7 @@ function generateDungeon(seed: number, depth: number): Dungeon {
       if (free.length === 0) break
       const spot = free.splice(rng.int(free.length), 1)[0]
       taken.add(`${spot.x},${spot.y}`)
-      enemies.push(spawnEnemy(rooms, kind, enemyId++, spot.x, spot.y))
+      enemies.push(spawnEnemy(rooms, kind, enemyId++, spot.x, spot.y, depth))
     }
   }
   // Foes come from a pool that escalates with threat = a room's distance from the
@@ -942,10 +950,11 @@ function runEnemyPhase(
     }
     if (manhattan(foe, player) === 1) {
       // Adjacent: the foe rolls to land its attack — armor soaks a flat amount,
-      // never below zero. This fires even when the hero stands in a doorway.
+      // never below zero. Accuracy/damage are the foe's own depth-scaled stats;
+      // the bestiary still supplies its name and verb. Fires even in a doorway.
       const info = ENEMY_INFO[foe.kind]
-      if (roll() < info.accuracy) {
-        const dealt = Math.max(0, info.damage - defense)
+      if (roll() < foe.accuracy) {
+        const dealt = Math.max(0, foe.damage - defense)
         nextHp -= dealt
         messages.push(
           dealt > 0
@@ -1036,7 +1045,7 @@ function reducer(state: GameState, action: GameAction): GameState {
           const slain = enemies.length < state.enemies.length
           kills = state.kills + (slain ? 1 : 0)
           if (slain) {
-            const gained = ENEMY_INFO[targetBat.kind].xp
+            const gained = targetBat.xp
             messages.push(`You strike the ${name} for ${damage} — slain! (+${gained} XP)`)
             const lv = applyXp(
               state.base,
@@ -1274,7 +1283,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         const slain = enemies.length < state.enemies.length
         kills = state.kills + (slain ? 1 : 0)
         if (slain) {
-          const gained = ENEMY_INFO[target.kind].xp
+          const gained = target.xp
           messages.push(`You shoot the ${name} for ${damage} — slain! (+${gained} XP)`)
           const lv = applyXp(
             state.base,

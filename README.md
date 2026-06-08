@@ -43,7 +43,9 @@ Combat:
   horror: **Bats** (3 HP) and **Spiders** (fragile but fast and accurate) early,
   then **Goblins** (8 HP) and **Orcs** (12 HP, hit for 3), up to lumbering
   **Trolls** (20 HP, slam for 5) deep down. Rooms farther from the entrance — and
-  deeper levels — hold more and tougher foes, and the vault is always guarded.
+  deeper levels — hold more and tougher foes, and the vault is always guarded. The
+  same kinds also stiffen as you descend: a depth-5 goblin has more HP, hits a
+  little harder and more often, and is worth more XP than the one by the entrance.
 
 You begin with a kit — a **Short Sword**, **Traveler's Clothes**, a **Health
 Potion**, and a little **gold**. Your equipped weapon adds to your melee damage

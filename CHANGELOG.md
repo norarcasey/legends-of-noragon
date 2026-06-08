@@ -8,6 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Enemies of the same kind now stiffen as the run descends: each foe's max HP,
+  damage, accuracy (capped), and slay XP scale up modestly per depth from its
+  bestiary baseline, baked onto the foe when it spawns. A depth-5 goblin is a bit
+  tougher than the one by the entrance. Tunable via `ENEMY_DEPTH_SCALING`, applied
+  by the new `enemyStatsAt(kind, depth)`; `ENEMY_INFO` is now the depth-1 template.
 - Pressing **Enter** from a stopped dungeon (the idle screen or after death) now
   begins a fresh run, the same as clicking the Enter / Delve again button.
 - The Pack panel orders rows equipped gear first, then consumables, then spare

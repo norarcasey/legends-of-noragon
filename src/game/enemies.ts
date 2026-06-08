@@ -79,3 +79,43 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     xp: 40,
   },
 }
+
+/**
+ * How much a foe's combat stats grow per level of depth below the first. Modest,
+ * so the same kinds stiffen gradually as you descend rather than spiking: deeper
+ * bats and goblins hit a touch harder, take a few more blows, and are worth a bit
+ * more XP. `ENEMY_INFO` holds the depth-1 baseline; {@link enemyStatsAt} applies
+ * this on top.
+ */
+export const ENEMY_DEPTH_SCALING = {
+  /** Fractional bonus to max HP per depth (e.g. 0.15 → +15% per level down). */
+  hpPerDepth: 0.15,
+  /** Fractional bonus to a landed hit's damage per depth. */
+  damagePerDepth: 0.12,
+  /** Flat bonus to accuracy per depth, before the cap. */
+  accuracyPerDepth: 0.01,
+  /** Fractional bonus to slay XP per depth — tougher foes are worth more. */
+  xpPerDepth: 0.1,
+  /** Accuracy never scales past this, however deep the run goes. */
+  accuracyCap: 0.95,
+}
+
+/** A foe kind's combat stats at a given dungeon `depth` (1 = the entrance),
+ *  scaled up from its {@link ENEMY_INFO} baseline. Rounds HP/damage/XP to whole
+ *  numbers and clamps accuracy. Pure and deterministic. */
+export function enemyStatsAt(
+  kind: EnemyKind,
+  depth: number,
+): { maxHp: number; accuracy: number; damage: number; xp: number } {
+  const info = ENEMY_INFO[kind]
+  const d = Math.max(0, depth - 1)
+  return {
+    maxHp: Math.round(info.maxHp * (1 + d * ENEMY_DEPTH_SCALING.hpPerDepth)),
+    damage: Math.round(info.damage * (1 + d * ENEMY_DEPTH_SCALING.damagePerDepth)),
+    accuracy: Math.min(
+      ENEMY_DEPTH_SCALING.accuracyCap,
+      info.accuracy + d * ENEMY_DEPTH_SCALING.accuracyPerDepth,
+    ),
+    xp: Math.round(info.xp * (1 + d * ENEMY_DEPTH_SCALING.xpPerDepth)),
+  }
+}

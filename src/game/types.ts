@@ -99,6 +99,13 @@ export interface Enemy {
   hp: number
   /** Maximum hit points, for the health bar on the enemy's card. */
   maxHp: number
+  /** Chance (0–1) this foe lands an attack — its `ENEMY_INFO` base scaled by the
+   *  depth it spawned at. */
+  accuracy: number
+  /** Flat damage a landed attack deals, scaled by spawn depth. */
+  damage: number
+  /** XP the hero earns for slaying this foe, scaled by spawn depth. */
+  xp: number
   /** The room this enemy patrols; it only acts while the hero is in it. */
   room: number
 }
