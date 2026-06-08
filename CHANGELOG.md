@@ -8,6 +8,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Internal refactor: the self-contained pure helpers that lived in `useNoragon.ts`
+  now sit one-per-file under `src/game/utils/` — combat/stat math (`xpToNext`,
+  `leveledProfile`, `statsAt`, `equippedDef`, `deriveCombat`, `applyXp`,
+  `resolveAttack`, `manhattan`, `nextRng`, `makeRng`), dungeon/combat helpers
+  (`roomAt`, `tileAt`, `reveal`, `blankSeen`, `markLit`, `computeVisible`,
+  `roomsByDoor`, `chaseStep`, `isActiveFoe`, `activeEnemiesOf`, `spawnEnemy`,
+  `runEnemyPhase`, `logLines`, `generateDungeon`), and the shared constants
+  (`LEVELING`, `DELTA`/`DIR_NAME`). Each has a co-located unit test (the suite grew
+  from 53 to 121 tests). `useNoragon.ts` keeps the reducer, `makeInitial`,
+  `descend`, and the hook, importing the helpers via a `utils/` barrel. No
+  behavior change.
 - Five new foes join the bestiary: the **Kobold** (weak early scrapper) and
   **Dire Wolf** (fast, accurate pack hunter) on the early floors, the **Skeleton**
   (sturdy undead, depth 3+), the **Ogre** (heavy bruiser between orc and troll,

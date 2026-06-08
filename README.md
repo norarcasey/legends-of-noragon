@@ -131,7 +131,10 @@ const game = useNoragon({
 
 The whole level — the hero's step plus every enemy's response — is one pure
 reducer transition per `move`, so it behaves identically under React
-StrictMode and is trivial to drive headlessly in tests.
+StrictMode and is trivial to drive headlessly in tests. The reducer's
+self-contained helpers (combat/stat math, dungeon spatial queries, the enemy
+phase, map generation) live one-per-file under `src/game/utils/`, each with a
+co-located unit test.
 
 ### Domain model
 
