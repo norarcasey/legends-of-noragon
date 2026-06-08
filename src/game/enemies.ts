@@ -88,14 +88,14 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
  * this on top.
  */
 export const ENEMY_DEPTH_SCALING = {
-  /** Fractional bonus to max HP per depth (e.g. 0.15 → +15% per level down). */
-  hpPerDepth: 0.15,
+  /** Fractional bonus to max HP per depth (e.g. 0.08 → +8% per level down). */
+  hpPerDepth: 0.08,
   /** Fractional bonus to a landed hit's damage per depth. */
-  damagePerDepth: 0.12,
+  damagePerDepth: 0.06,
   /** Flat bonus to accuracy per depth, before the cap. */
-  accuracyPerDepth: 0.01,
+  accuracyPerDepth: 0.005,
   /** Fractional bonus to slay XP per depth — tougher foes are worth more. */
-  xpPerDepth: 0.1,
+  xpPerDepth: 0.06,
   /** Accuracy never scales past this, however deep the run goes. */
   accuracyCap: 0.95,
 }
