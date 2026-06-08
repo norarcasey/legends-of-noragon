@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Internal refactor: all type and interface declarations moved out of
+  `useNoragon.ts` (now logic only) into `types.ts`, and the overlapping stat
+  shapes collapsed into a composed family — `HeroStats` (renamed from
+  `HeroConfig`), then `CombatStats` extends it with `defense`, then
+  `LeveledStats` extends that with `level`/`xp`/`hp` — removing two anonymous
+  inline return types. No behavior or public-API change; the same types are
+  still exported from the package barrel.
 - The Pack panel gained a **Drop** action on every item row (a free menu action,
   exposed as `drop(itemId)` on the hook) that discards the item; dropping a worn
   piece unequips it and re-derives the hero's combat stats first. The Activity Log

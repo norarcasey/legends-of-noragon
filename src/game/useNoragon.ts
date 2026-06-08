@@ -2,134 +2,29 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import type {
   AttackProfile,
   AttackProfiles,
+  CombatStats,
   Direction,
+  Dungeon,
   Enemy,
   Equipment,
   FloorItem,
+  GameAction,
+  GameState,
   GameStatus,
+  HeroStats,
   InventoryItem,
+  LeveledStats,
   LogEntry,
+  NoragonApi,
   Point,
   Room,
   TileType,
+  UseNoragonOptions,
 } from './types'
 import { ENEMY_INFO, enemyStatsAt } from './enemies'
 import type { EnemyKind } from './enemies'
 import { ARMOR_KINDS, ITEMS, STARTING_GOLD, WEAPON_KINDS } from './items'
 import type { ItemDef, ItemKind } from './items'
-
-export interface UseNoragonOptions {
-  /** The hero's starting (and maximum) hit points. Default `6`. */
-  maxHp?: number
-  /** Override any attack profiles; each provided kind replaces its default.
-   *  Only `melee` affects play today — `ranged`/`spell` are reserved for later. */
-  attacks?: Partial<AttackProfiles>
-  /** Seed for the combat RNG. Omit for a fresh random run each `start`; pass a
-   *  fixed number for deterministic, reproducible combat (used in tests). */
-  seed?: number
-}
-
-/** The dungeon grid the hero is exploring — dimensions, tiles, fog, and loot. */
-export interface BoardView {
-  /** Dungeon width in tiles. */
-  cols: number
-  /** Dungeon height in tiles. */
-  rows: number
-  /** The static tile grid, row-major (`tiles[y][x]`). */
-  tiles: TileType[][]
-  /** Per-tile fog-of-war mask (`visible[y][x]`): a tile is shown once a room it
-   *  borders has been discovered. Undiscovered tiles render as fog. */
-  visible: boolean[][]
-  /** Loot lying on the current level's floor (picked up by walking onto it). */
-  floorItems: FloorItem[]
-}
-
-/** The hero: where they stand, their vitals and combat stats, gear, and progress. */
-export interface HeroView {
-  /** The hero's tile position. */
-  position: Point
-  /** Current hit points. */
-  hp: number
-  /** Maximum hit points. */
-  maxHp: number
-  /** The hero's current character level (starts at 1). */
-  level: number
-  /** XP earned toward the next level. */
-  xp: number
-  /** XP required to advance from the current level to the next. */
-  xpToNext: number
-  /** The hero's attack profiles, one per kind, at the current level — including
-   *  the equipped weapon's bonus. Only `melee`/`ranged` are used in play today. */
-  attacks: AttackProfiles
-  /** Flat damage reduction from the equipped armor. */
-  defense: number
-  /** Gold the hero is carrying. */
-  gold: number
-  /** Everything the hero is carrying (equipped or not). */
-  inventory: InventoryItem[]
-  /** Which inventory item fills each equipment slot. */
-  equipment: Equipment
-  /** Whether the hero is standing on a downward stairway. */
-  onStairs: boolean
-}
-
-/** The run as a whole: how it's going and how far it's gotten. */
-export interface RunView {
-  status: GameStatus
-  /** How deep the run has gone (1 at the entrance, +1 per stairway descended). */
-  depth: number
-  /** Enemies slain so far this level. */
-  kills: number
-  /** Turns the hero has taken. */
-  turns: number
-}
-
-export interface NoragonApi {
-  /** The dungeon grid: dimensions, tiles, fog mask, and floor loot. */
-  board: BoardView
-  /** The hero's position, vitals, combat stats, gear, and progression. */
-  hero: HeroView
-  /** Run-level state: status, depth, and tallies. */
-  run: RunView
-  /** Living enemies currently on the grid. */
-  enemies: Enemy[]
-  /** The subset of `enemies` that are active — sharing the hero's room. These
-   *  are the ones taking turns, and the ones shown as cards. */
-  activeEnemies: Enemy[]
-  /** The room id the hero currently stands in, or `null` if in a doorway. */
-  currentRoom: number | null
-  /** Ids of rooms the hero has entered; their tiles and contents are revealed. */
-  revealedRooms: number[]
-  /** Whether the hero is aiming a ranged attack. */
-  aiming: boolean
-  /** Id of the enemy in the crosshairs while aiming, else `null`. */
-  targetId: number | null
-  /** A running log of what happened each turn, oldest entry first. */
-  log: LogEntry[]
-  /** Lay out a fresh dungeon and begin playing. */
-  start: () => void
-  /** Lay out a fresh dungeon without starting (returns to `idle`). */
-  reset: () => void
-  /** Step the hero one tile. Bumping an enemy attacks it; a wall is ignored. */
-  move: (dir: Direction) => void
-  /** Take the stairs down to the next, deeper level. No-op unless on stairs. */
-  descend: () => void
-  /** Equip a carried weapon or armor by its inventory item id. */
-  equip: (itemId: number) => void
-  /** Drink a carried potion by its inventory item id (costs a turn). */
-  drink: (itemId: number) => void
-  /** Discard a carried item by its inventory item id. Unequips it first if worn.
-   *  Free (no turn); the item is gone for good. */
-  drop: (itemId: number) => void
-  /** Enter ranged-aiming mode, targeting the nearest enemy in the room. */
-  aimStart: () => void
-  /** While aiming, move the crosshairs to another enemy (`+1` next, `-1` prev). */
-  aimCycle: (delta: number) => void
-  /** Leave aiming mode without firing. */
-  aimCancel: () => void
-  /** Loose a ranged attack at the targeted enemy; costs the turn. */
-  fire: () => void
-}
 
 const DEFAULTS = { maxHp: 12 }
 
@@ -173,7 +68,7 @@ function leveledProfile(p: AttackProfile, bonus: number): AttackProfile {
 
 /** The hero's current max HP and attack profiles at a given level, derived from
  *  their base (level-1) profile so stats never drift. */
-function statsAt(base: HeroConfig, level: number): { maxHp: number; attacks: AttackProfiles } {
+function statsAt(base: HeroStats, level: number): HeroStats {
   const bonus = level - 1
   return {
     maxHp: base.maxHp + bonus * LEVELING.hpPerLevel,
@@ -192,16 +87,10 @@ function equippedDef(inventory: InventoryItem[], id: number | null): ItemDef | n
   return item ? ITEMS[item.kind] : null
 }
 
-interface CombatStats {
-  maxHp: number
-  attacks: AttackProfiles
-  defense: number
-}
-
 /** The hero's effective combat stats: leveled base, plus the equipped weapon's
  *  melee bonus and the equipped armor's flat defense. */
 function deriveCombat(
-  base: HeroConfig,
+  base: HeroStats,
   level: number,
   inventory: InventoryItem[],
   equipment: Equipment,
@@ -229,7 +118,7 @@ function deriveCombat(
  * from `base` plus equipped gear. Pushes a log line per level gained. Pure.
  */
 function applyXp(
-  base: HeroConfig,
+  base: HeroStats,
   level: number,
   xp: number,
   hp: number,
@@ -237,14 +126,7 @@ function applyXp(
   messages: string[],
   inventory: InventoryItem[],
   equipment: Equipment,
-): {
-  level: number
-  xp: number
-  maxHp: number
-  attacks: AttackProfiles
-  defense: number
-  hp: number
-} {
+): LeveledStats {
   let lvl = level
   let prog = xp + gained
   let nextHp = hp
@@ -346,23 +228,6 @@ function makeRng(seed: number) {
     return r.value
   }
   return { next, int: (n: number) => Math.floor(next() * n) }
-}
-
-/**
- * A fully-realized dungeon level. Everything spatial lives here so it can be
- * generated per game (from the seed) and carried in state — nothing reaches for
- * a module-level map. Today {@link generateDungeon} emits a fixed layout; a
- * future version will build it procedurally behind this same shape.
- */
-interface Dungeon {
-  cols: number
-  rows: number
-  tiles: TileType[][]
-  rooms: Room[]
-  playerStart: Point
-  enemies: Enemy[]
-  /** Loot scattered on the floor, awaiting pickup. */
-  items: FloorItem[]
 }
 
 /** The room containing a tile, or `null` for walls / doorways between rooms. */
@@ -741,75 +606,10 @@ function markLit(seen: boolean[][], dungeon: Dungeon, p: Point): void {
 // The whole level lives in one reducer, so each turn — the hero's step plus
 // every enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
-// same discipline that the other games in this family rely on.
-/** The hero's *base* (level-1) profile, carried so reset/start can rebuild it and
- *  level-ups can derive current stats from it without drift. */
-interface HeroConfig {
-  maxHp: number
-  attacks: AttackProfiles
-}
+// same discipline that the other games in this family rely on. The state and
+// action shapes (GameState, GameAction) live in ./types alongside the rest.
 
-interface GameState extends HeroConfig {
-  /** The run's seed; deeper levels are generated from it + their depth. */
-  seed: number
-  /** How deep the run is — 1 at the entrance, +1 per stairway descended. */
-  depth: number
-  /** The generated level for the current depth; spatial helpers read from it. */
-  dungeon: Dungeon
-  /** The hero's base (level-1) profile; current `maxHp`/`attacks` derive from it. */
-  base: HeroConfig
-  /** Current character level (starts at 1). */
-  level: number
-  /** XP earned toward the next level. */
-  xp: number
-  player: Point
-  hp: number
-  /** Flat damage reduction from equipped armor. */
-  defense: number
-  /** Gold the hero is carrying. */
-  gold: number
-  /** Everything the hero is carrying (equipped or not). */
-  inventory: InventoryItem[]
-  /** Which inventory item fills each equipment slot. */
-  equipment: Equipment
-  /** Next id to mint for a picked-up inventory item. */
-  nextItemId: number
-  /** Loot still lying on this level's floor. */
-  floorItems: FloorItem[]
-  enemies: Enemy[]
-  status: GameStatus
-  kills: number
-  turns: number
-  revealedRooms: number[]
-  log: LogEntry[]
-  /** Next id to hand out for a log entry; keeps keys stable and monotonic. */
-  nextLogId: number
-  /** Current PRNG state driving combat rolls; advanced purely each transition. */
-  rngState: number
-  /** Whether the hero is in ranged-aiming mode (arrows cycle targets, not move). */
-  aiming: boolean
-  /** Id of the enemy currently in the crosshairs while aiming, else `null`. */
-  targetId: number | null
-  /** Tiles the hero's torch has lit (`seen[y][x]`); keeps explored corridors
-   *  visible even though no room reveals them. */
-  seen: boolean[][]
-}
-
-type GameAction =
-  | { type: 'configure'; config: HeroConfig; seed: number }
-  | { type: 'reset'; seed: number }
-  | { type: 'start'; seed: number }
-  | { type: 'move'; dir: Direction }
-  | { type: 'descend' }
-  | { type: 'equip'; itemId: number }
-  | { type: 'drink'; itemId: number }
-  | { type: 'drop'; itemId: number }
-  | { type: 'aimStart' }
-  | { type: 'aimCycle'; delta: number }
-  | { type: 'aimCancel' }
-  | { type: 'fire' }
-
-function makeInitial(config: HeroConfig, seed: number): GameState {
+function makeInitial(config: HeroStats, seed: number): GameState {
   const depth = 1
   const dungeon = generateDungeon(seed, depth)
   const seen = blankSeen(dungeon)
@@ -856,7 +656,7 @@ function makeInitial(config: HeroConfig, seed: number): GameState {
 }
 
 /** Pull the hero's base profile back out so reset/start begins at level 1 again. */
-function configOf(state: GameState): HeroConfig {
+function configOf(state: GameState): HeroStats {
   return state.base
 }
 

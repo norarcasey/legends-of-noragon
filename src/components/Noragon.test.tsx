@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
 import { Inventory } from './Inventory'
 import { useNoragon } from './../game/useNoragon'
-import type { NoragonApi, UseNoragonOptions } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
-import type { Direction, Point, TileType } from '../game/types'
+import type { Direction, NoragonApi, Point, TileType, UseNoragonOptions } from '../game/types'
 
 const DELTA: Record<Direction, Point> = {
   up: { x: 0, y: -1 },
