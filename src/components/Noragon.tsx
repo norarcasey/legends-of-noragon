@@ -74,6 +74,14 @@ export function Noragon({
         return
       }
 
+      // From a stopped dungeon (idle or after death), Enter begins a fresh run —
+      // the same as clicking the Enter / Delve again button.
+      if (status !== 'playing' && e.key === 'Enter') {
+        e.preventDefault()
+        start()
+        return
+      }
+
       // ---- Normal play ----
       if (status === 'playing' && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault()

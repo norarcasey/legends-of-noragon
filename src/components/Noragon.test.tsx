@@ -216,6 +216,14 @@ describe('<Noragon />', () => {
     expect(screen.getByTestId('player')).toBeInTheDocument()
   })
 
+  it('starts the dungeon when Enter is pressed from the idle screen', () => {
+    render(<Noragon seed={7} />)
+    expect(screen.getByText('Descend into the dungeon of Noragon')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Enter' })
+    expect(screen.queryByText('Descend into the dungeon of Noragon')).not.toBeInTheDocument()
+    expect(screen.getByTestId('player')).toBeInTheDocument()
+  })
+
   it('records each turn in the activity log', () => {
     render(<Noragon seed={7} />)
     // The hero starts at a room centre, so a step east is always onto floor.
