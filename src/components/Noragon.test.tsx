@@ -1278,4 +1278,26 @@ describe('Inventory grouping', () => {
     expect(names[2]).toContain('Health Potion')
     expect(names[3]).toContain('Dagger')
   })
+
+  it('orders the unequipped spares alphabetically by name', () => {
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'plate' }, // "Plate Armor"
+          { id: 1, kind: 'battleAxe' }, // "Battle Axe"
+          { id: 2, kind: 'dagger' }, // "Dagger"
+          { id: 3, kind: 'chainmail' }, // "Chainmail"
+        ]}
+        equipment={{ weapon: null, armor: null }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+      />,
+    )
+    const names = screen.getAllByTestId('inventory-item').map((li) => li.textContent ?? '')
+    expect(names[0]).toContain('Battle Axe')
+    expect(names[1]).toContain('Chainmail')
+    expect(names[2]).toContain('Dagger')
+    expect(names[3]).toContain('Plate Armor')
+  })
 })

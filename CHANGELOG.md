@@ -16,7 +16,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Pressing **Enter** from a stopped dungeon (the idle screen or after death) now
   begins a fresh run, the same as clicking the Enter / Delve again button.
 - The Pack panel orders rows equipped gear first, then consumables, then spare
-  (unequipped) gear — so what's worn and what's quaffable sit at the top.
+  (unequipped) gear — so what's worn and what's quaffable sit at the top. The
+  spare gear is sorted alphabetically by name.
 - The Pack panel now collapses stackable items into a single counted row
   (`Health Potion (3)`) instead of one line per copy, keeping the inventory short.
   Items carry a `stackable` flag (`ITEMS`): consumables stack, while gear stays

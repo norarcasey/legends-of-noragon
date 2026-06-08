@@ -26,7 +26,9 @@ export function Inventory({ inventory, equipment, gold, onEquip, onDrink }: Inve
   // kind, preserving first-seen order so the pack list stays stable in use.
   const gear = inventory.filter((i) => !ITEMS[i.kind].stackable)
   const equipped = gear.filter(isEquipped)
-  const unequipped = gear.filter((i) => !isEquipped(i))
+  const unequipped = gear
+    .filter((i) => !isEquipped(i))
+    .sort((a, b) => ITEMS[a.kind].name.localeCompare(ITEMS[b.kind].name))
   const stacks: { kind: ItemKind; items: InventoryItem[] }[] = []
   for (const item of inventory) {
     if (!ITEMS[item.kind].stackable) continue
