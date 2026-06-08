@@ -94,7 +94,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 2,
     verb: 'strikes',
     xp: 10,
-    minDepth: 2,
+    minDepth: 3,
   },
   goblin: {
     name: 'Goblin',
@@ -118,7 +118,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 3,
     verb: 'cleaves',
     xp: 18,
-    minDepth: 2,
+    minDepth: 3,
   },
   ogre: {
     name: 'Ogre',
@@ -130,7 +130,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 4,
     verb: 'clubs',
     xp: 28,
-    minDepth: 3,
+    minDepth: 4,
   },
   troll: {
     name: 'Troll',
@@ -142,7 +142,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 5,
     verb: 'smashes',
     xp: 40,
-    minDepth: 3,
+    minDepth: 4,
   },
   wraith: {
     name: 'Wraith',
@@ -154,7 +154,7 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     damage: 5,
     verb: 'rends',
     xp: 45,
-    minDepth: 4,
+    minDepth: 5,
   },
 }
 

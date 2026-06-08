@@ -902,7 +902,7 @@ describe('useNoragon — descending', () => {
 
 describe('useNoragon — new enemies', () => {
   it('seeds spiders early and unlocks orcs by the depth they allow', () => {
-    // Depth 1: spiders show up, but orcs (min depth 2) and trolls (min depth 3)
+    // Depth 1: spiders show up, but orcs (min depth 3) and trolls (min depth 4)
     // are gated out.
     const shallow = new Set<string>()
     for (let seed = 1; seed <= 80; seed++) {
@@ -915,7 +915,7 @@ describe('useNoragon — new enemies', () => {
     expect(shallow.has('orc')).toBe(false)
     expect(shallow.has('troll')).toBe(false)
 
-    // By depth 2, orcs start appearing (god-mode hero so we can descend; stop at
+    // By depth 3, orcs start appearing (god-mode hero so we can descend; stop at
     // the first seed that proves it).
     let sawOrc = false
     for (let seed = 1; seed <= 30 && !sawOrc; seed++) {
@@ -927,7 +927,7 @@ describe('useNoragon — new enemies', () => {
         }),
       )
       act(() => result.current.start())
-      descendToDepth(result, 2)
+      descendToDepth(result, 3)
       if (result.current.enemies.some((e) => e.kind === 'orc')) sawOrc = true
       unmount()
     }
@@ -1207,7 +1207,7 @@ describe('enemy depth scaling', () => {
   })
 
   it('keeps foes below their minimum spawn depth out of the shallow floors', () => {
-    // Depth 1: no orcs (min depth 2) and no trolls (min depth 3) anywhere.
+    // Depth 1: no orcs (min depth 3) and no trolls (min depth 4) anywhere.
     for (const seed of SEEDS) {
       const { result } = renderHook(() => useNoragon({ seed }))
       act(() => result.current.start())
@@ -1216,7 +1216,8 @@ describe('enemy depth scaling', () => {
       }
     }
 
-    // Descend to depth 2 (god-mode hero): orcs may now appear, but never a troll.
+    // Descend to depth 2 (god-mode hero): still no foes gated to depth 3+ (orcs,
+    // skeletons) and certainly no trolls.
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 9999,

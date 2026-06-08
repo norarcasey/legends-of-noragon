@@ -10,8 +10,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Five new foes join the bestiary: the **Kobold** (weak early scrapper) and
   **Dire Wolf** (fast, accurate pack hunter) on the early floors, the **Skeleton**
-  (sturdy undead, depth 2+), the **Ogre** (heavy bruiser between orc and troll,
-  depth 3+), and the **Wraith** (deadly, very accurate, depth 4+). Each has its
+  (sturdy undead, depth 3+), the **Ogre** (heavy bruiser between orc and troll,
+  depth 4+), and the **Wraith** (deadly, very accurate, depth 5+). Each has its
   own colour, glyph, stats, and minimum spawn depth, and they're woven into the
   threat-scaled spawn pools and the vault-guardian roster.
 - Internal refactor: all type and interface declarations moved out of
@@ -27,8 +27,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   now sits above the Pack in the side panel.
 - Each enemy kind now has a minimum spawn depth (`minDepth` in `ENEMY_INFO`), so
   the heavy hitters stay off the early floors: bats, spiders, and goblins from
-  depth 1, orcs from depth 2, trolls from depth 3. Spawn pools (including the
-  vault guardian) filter out any kind too strong for the current depth.
+  depth 1, skeletons and orcs from depth 3, ogres and trolls from depth 4, wraiths
+  from depth 5. Spawn pools (including the vault guardian) filter out any kind too
+  strong for the current depth.
 - Enemies of the same kind now stiffen as the run descends: each foe's max HP,
   damage, accuracy (capped), and slay XP scale up modestly per depth from its
   bestiary baseline, baked onto the foe when it spawns. A depth-5 goblin is a bit

@@ -45,7 +45,8 @@ Combat:
   **Trolls** (20 HP, slam for 5), and deadly **Wraiths** deep down. Each kind has
   a minimum spawn depth, so the heavy hitters stay off the early floors — bats,
   kobolds, spiders, dire wolves, and goblins from the entrance, skeletons and orcs
-  from depth 2, ogres from depth 3, wraiths from depth 4. Rooms farther from the
+  from depth 3, ogres and trolls from depth 4, wraiths from depth 5. Rooms farther
+  from the
   entrance — and deeper levels — hold more and tougher foes, and the vault is
   always guarded. The
   same kinds also stiffen as you descend: a depth-5 goblin has more HP, hits a
