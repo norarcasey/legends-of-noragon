@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Theming is now a complete, documented CSS-variable contract: the ~18 colours
+  that were still hardcoded in the stylesheet (targeting red, the HP-bar gradient,
+  button ink, the activity-log highlight tones, the aim banner, loot/muted text)
+  are folded into `--noragon-*` tokens, so overriding the variables retheme the
+  whole component. The README gains a **Theming** section listing the tokens with
+  a sample override. (A few translucent glow/scrim effects stay fixed by design.)
 - The UI is now exported as composable parts — `Board`, `Stats`, `EnemyCards`,
   `ActivityLog`, `Inventory` — plus a `NoragonRoot` themed wrapper, so embedders
   can keep the built-in look while arranging their own layout (driven by

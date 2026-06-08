@@ -104,6 +104,40 @@ export function App() {
 | `intro`          | `ReactNode`               | —                      | Content for the top of the left info column (above the enemy cards) — e.g. a description.                   |
 | `footer`         | `ReactNode`               | —                      | Content for the bottom of the left info column (below the enemy cards) — e.g. a credit or footnote.         |
 
+### Theming
+
+Every colour is a CSS custom property on the `.noragon` root, so you retheme by
+overriding the `--noragon-*` variables — no build step, no fork. Scope your
+overrides to `.noragon` (or your own wrapper / a `NoragonRoot` / `className`):
+
+```css
+.noragon {
+  --noragon-accent: #7e57c2; /* gold → purple: buttons, highlights, hints */
+  --noragon-player: #00e5ff;
+  --noragon-log-gold: #ffd54f;
+}
+```
+
+The tokens, by group:
+
+- **Surfaces** — `--noragon-bg`, `--noragon-wall`, `--noragon-wall-edge`,
+  `--noragon-floor`, `--noragon-floor-line`, `--noragon-corridor`.
+- **Tiles & hero** — `--noragon-door`, `--noragon-chest`, `--noragon-stairs`,
+  `--noragon-player`, `--noragon-loot`.
+- **Enemies** (one per kind) — `--noragon-bat`, `--noragon-kobold`,
+  `--noragon-spider`, `--noragon-direWolf`, `--noragon-skeleton`,
+  `--noragon-goblin`, `--noragon-orc`, `--noragon-ogre`, `--noragon-troll`,
+  `--noragon-wraith`.
+- **UI & text** — `--noragon-accent`, `--noragon-text`, `--noragon-muted`,
+  `--noragon-on-accent` (ink on coloured buttons), `--noragon-target`,
+  `--noragon-hp-bar-from`, `--noragon-hp-bar-to`, `--noragon-aim-bg`,
+  `--noragon-aim-ink`.
+- **Activity-log highlights** — `--noragon-log-gold`, `--noragon-log-bad`,
+  `--noragon-log-good`, `--noragon-log-level`, `--noragon-log-death`.
+
+(A few translucent glow/scrim effects — the targeting halo and the overlay dims —
+are left as fixed values so overlays stay legible over any palette.)
+
 ### Headless engine
 
 The game logic lives in a framework-free hook if you want to build your own UI:
