@@ -1,0 +1,165 @@
+classDiagram
+  direction LR
+  class Point {
+    +x : number
+    +y : number
+  }
+  class Direction {
+    <<enumeration>>
+    up
+    down
+    left
+    right
+  }
+  class TileType {
+    <<enumeration>>
+    wall
+    floor
+    corridor
+    door
+    chest
+    stairs
+  }
+  class Room {
+    +id : number
+    +name : string
+    +x0 : number
+    +y0 : number
+    +x1 : number
+    +y1 : number
+  }
+  class LogEntry {
+    +id : number
+    +text : string
+  }
+  class InventoryItem {
+    +id : number
+    +kind : ItemKind
+  }
+  class FloorItem {
+    +id : number
+    +x : number
+    +y : number
+    +kind : ItemKind / gold
+    +amount : number
+  }
+  class Equipment {
+    +weapon : number / null
+    +armor : number / null
+  }
+  class AttackKind {
+    <<enumeration>>
+    melee
+    ranged
+    spell
+  }
+  class AttackProfile {
+    +accuracy : number
+    +minDamage : number
+    +maxDamage : number
+  }
+  class AttackProfiles {
+    <<type>>
+    Record«AttackKind, AttackProfile»
+  }
+  class Enemy {
+    +id : number
+    +kind : EnemyKind
+    +x : number
+    +y : number
+    +hp : number
+    +maxHp : number
+    +accuracy : number
+    +damage : number
+    +xp : number
+    +room : number
+  }
+  class GameStatus {
+    <<enumeration>>
+    idle
+    playing
+    dead
+  }
+  class HeroStats {
+    +maxHp : number
+    +attacks : AttackProfiles
+  }
+  class CombatStats {
+    +defense : number
+  }
+  class LeveledStats {
+    +level : number
+    +xp : number
+    +hp : number
+  }
+  class Dungeon {
+    +cols : number
+    +rows : number
+    +tiles : TileType[][]
+    +rooms : Room[]
+    +playerStart : Point
+    +enemies : Enemy[]
+    +items : FloorItem[]
+  }
+  class EnemyKind {
+    <<enumeration>>
+    bat
+    spider
+    goblin
+    orc
+    troll
+  }
+  class EnemyInfo {
+    +name : string
+    +description : string
+    +glyph : string
+    +maxHp : number
+    +accuracy : number
+    +damage : number
+    +verb : string
+    +xp : number
+    +minDepth : number
+  }
+  class ItemCategory {
+    <<enumeration>>
+    weapon
+    armor
+    potion
+  }
+  class ItemKind {
+    <<enumeration>>
+    dagger
+    shortSword
+    longSword
+    battleAxe
+    clothes
+    leather
+    chainmail
+    plate
+    healthPotion
+  }
+  class ItemDef {
+    +name : string
+    +glyph : string
+    +category : ItemCategory
+    +meleeDamage : number
+    +meleeAccuracy : number
+    +defense : number
+    +heal : number
+    +value : number
+    +stackable : boolean
+  }
+  InventoryItem --> ItemKind : kind
+  FloorItem --> ItemKind : kind
+  AttackProfiles --> AttackKind
+  AttackProfiles --> AttackProfile
+  Enemy --> EnemyKind : kind
+  HeroStats --> AttackProfiles : attacks
+  HeroStats <|-- CombatStats
+  CombatStats <|-- LeveledStats
+  Dungeon --> TileType : tiles
+  Dungeon --> Room : rooms
+  Dungeon --> Point : playerStart
+  Dungeon --> Enemy : enemies
+  Dungeon --> FloorItem : items
+  ItemDef --> ItemCategory : category

@@ -1,0 +1,86 @@
+classDiagram
+  direction LR
+  class GameState {
+    +seed : number
+    +depth : number
+    +dungeon : Dungeon
+    +base : HeroStats
+    +level : number
+    +xp : number
+    +player : Point
+    +hp : number
+    +defense : number
+    +gold : number
+    +inventory : InventoryItem[]
+    +equipment : Equipment
+    +nextItemId : number
+    +floorItems : FloorItem[]
+    +enemies : Enemy[]
+    +status : GameStatus
+    +kills : number
+    +turns : number
+    +revealedRooms : number[]
+    +log : LogEntry[]
+    +nextLogId : number
+    +rngState : number
+    +aiming : boolean
+    +targetId : number / null
+    +seen : boolean[][]
+  }
+  class GameAction {
+    <<union>>
+    configure
+    reset
+    start
+    move
+    descend
+    equip
+    drink
+    drop
+    aimStart
+    aimCycle
+    aimCancel
+    fire
+  }
+  class HeroStats {
+    <<external>>
+  }
+  class Dungeon {
+    <<external>>
+  }
+  class Point {
+    <<external>>
+  }
+  class InventoryItem {
+    <<external>>
+  }
+  class Equipment {
+    <<external>>
+  }
+  class FloorItem {
+    <<external>>
+  }
+  class Enemy {
+    <<external>>
+  }
+  class GameStatus {
+    <<external>>
+  }
+  class LogEntry {
+    <<external>>
+  }
+  class Direction {
+    <<external>>
+  }
+  HeroStats <|-- GameState
+  GameState --> Dungeon : dungeon
+  GameState --> HeroStats : base
+  GameState --> Point : player
+  GameState --> InventoryItem : inventory
+  GameState --> Equipment : equipment
+  GameState --> FloorItem : floorItems
+  GameState --> Enemy : enemies
+  GameState --> GameStatus : status
+  GameState --> LogEntry : log
+  GameAction --> HeroStats
+  GameAction --> Direction

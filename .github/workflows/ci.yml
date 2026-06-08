@@ -23,7 +23,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        # CI only regenerates the diagram *text* (to check freshness), never the
+        # SVGs, so skip Puppeteer's Chromium download to keep installs fast.
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
 
       - name: Lint
         run: npm run lint
@@ -44,6 +48,10 @@ jobs:
         run: npm run build:lib
 
       - name: Check domain model is up to date
+        # Regenerate only the deterministic text (Mermaid sources + the page) —
+        # not the SVGs, whose ids/metrics aren't reproducible — and fail if it
+        # drifts from the types. SVGs are refreshed locally by `npm run docs:model`.
         run: |
-          npm run docs:model
-          git diff --exit-code docs/DOMAIN_MODEL.md
+          node scripts/generate-domain-model.mjs
+          npx prettier --write docs/DOMAIN_MODEL.md
+          git diff --exit-code docs/DOMAIN_MODEL.md docs/domain-model/*.mmd

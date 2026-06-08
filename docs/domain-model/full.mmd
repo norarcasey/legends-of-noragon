@@ -1,0 +1,288 @@
+classDiagram
+  direction LR
+  class Point {
+    +x : number
+    +y : number
+  }
+  class Direction {
+    <<enumeration>>
+    up
+    down
+    left
+    right
+  }
+  class TileType {
+    <<enumeration>>
+    wall
+    floor
+    corridor
+    door
+    chest
+    stairs
+  }
+  class Room {
+    +id : number
+    +name : string
+    +x0 : number
+    +y0 : number
+    +x1 : number
+    +y1 : number
+  }
+  class LogEntry {
+    +id : number
+    +text : string
+  }
+  class InventoryItem {
+    +id : number
+    +kind : ItemKind
+  }
+  class FloorItem {
+    +id : number
+    +x : number
+    +y : number
+    +kind : ItemKind / gold
+    +amount : number
+  }
+  class Equipment {
+    +weapon : number / null
+    +armor : number / null
+  }
+  class AttackKind {
+    <<enumeration>>
+    melee
+    ranged
+    spell
+  }
+  class AttackProfile {
+    +accuracy : number
+    +minDamage : number
+    +maxDamage : number
+  }
+  class AttackProfiles {
+    <<type>>
+    Record«AttackKind, AttackProfile»
+  }
+  class Enemy {
+    +id : number
+    +kind : EnemyKind
+    +x : number
+    +y : number
+    +hp : number
+    +maxHp : number
+    +accuracy : number
+    +damage : number
+    +xp : number
+    +room : number
+  }
+  class GameStatus {
+    <<enumeration>>
+    idle
+    playing
+    dead
+  }
+  class HeroStats {
+    +maxHp : number
+    +attacks : AttackProfiles
+  }
+  class CombatStats {
+    +defense : number
+  }
+  class LeveledStats {
+    +level : number
+    +xp : number
+    +hp : number
+  }
+  class Dungeon {
+    +cols : number
+    +rows : number
+    +tiles : TileType[][]
+    +rooms : Room[]
+    +playerStart : Point
+    +enemies : Enemy[]
+    +items : FloorItem[]
+  }
+  class UseNoragonOptions {
+    +maxHp? : number
+    +attacks? : Partial«AttackProfiles»
+    +seed? : number
+  }
+  class BoardView {
+    +cols : number
+    +rows : number
+    +tiles : TileType[][]
+    +visible : boolean[][]
+    +floorItems : FloorItem[]
+  }
+  class HeroView {
+    +position : Point
+    +hp : number
+    +maxHp : number
+    +level : number
+    +xp : number
+    +xpToNext : number
+    +attacks : AttackProfiles
+    +defense : number
+    +gold : number
+    +inventory : InventoryItem[]
+    +equipment : Equipment
+    +onStairs : boolean
+  }
+  class RunView {
+    +status : GameStatus
+    +depth : number
+    +kills : number
+    +turns : number
+  }
+  class NoragonApi {
+    +board : BoardView
+    +hero : HeroView
+    +run : RunView
+    +enemies : Enemy[]
+    +activeEnemies : Enemy[]
+    +currentRoom : number / null
+    +revealedRooms : number[]
+    +aiming : boolean
+    +targetId : number / null
+    +log : LogEntry[]
+    +start : () ↦ void
+    +reset : () ↦ void
+    +move : () ↦ void
+    +descend : () ↦ void
+    +equip : () ↦ void
+    +drink : () ↦ void
+    +drop : () ↦ void
+    +aimStart : () ↦ void
+    +aimCycle : () ↦ void
+    +aimCancel : () ↦ void
+    +fire : () ↦ void
+  }
+  class GameState {
+    +seed : number
+    +depth : number
+    +dungeon : Dungeon
+    +base : HeroStats
+    +level : number
+    +xp : number
+    +player : Point
+    +hp : number
+    +defense : number
+    +gold : number
+    +inventory : InventoryItem[]
+    +equipment : Equipment
+    +nextItemId : number
+    +floorItems : FloorItem[]
+    +enemies : Enemy[]
+    +status : GameStatus
+    +kills : number
+    +turns : number
+    +revealedRooms : number[]
+    +log : LogEntry[]
+    +nextLogId : number
+    +rngState : number
+    +aiming : boolean
+    +targetId : number / null
+    +seen : boolean[][]
+  }
+  class GameAction {
+    <<union>>
+    configure
+    reset
+    start
+    move
+    descend
+    equip
+    drink
+    drop
+    aimStart
+    aimCycle
+    aimCancel
+    fire
+  }
+  class EnemyKind {
+    <<enumeration>>
+    bat
+    spider
+    goblin
+    orc
+    troll
+  }
+  class EnemyInfo {
+    +name : string
+    +description : string
+    +glyph : string
+    +maxHp : number
+    +accuracy : number
+    +damage : number
+    +verb : string
+    +xp : number
+    +minDepth : number
+  }
+  class ItemCategory {
+    <<enumeration>>
+    weapon
+    armor
+    potion
+  }
+  class ItemKind {
+    <<enumeration>>
+    dagger
+    shortSword
+    longSword
+    battleAxe
+    clothes
+    leather
+    chainmail
+    plate
+    healthPotion
+  }
+  class ItemDef {
+    +name : string
+    +glyph : string
+    +category : ItemCategory
+    +meleeDamage : number
+    +meleeAccuracy : number
+    +defense : number
+    +heal : number
+    +value : number
+    +stackable : boolean
+  }
+  InventoryItem --> ItemKind : kind
+  FloorItem --> ItemKind : kind
+  AttackProfiles --> AttackKind
+  AttackProfiles --> AttackProfile
+  Enemy --> EnemyKind : kind
+  HeroStats --> AttackProfiles : attacks
+  HeroStats <|-- CombatStats
+  CombatStats <|-- LeveledStats
+  Dungeon --> TileType : tiles
+  Dungeon --> Room : rooms
+  Dungeon --> Point : playerStart
+  Dungeon --> Enemy : enemies
+  Dungeon --> FloorItem : items
+  UseNoragonOptions --> AttackProfiles : attacks
+  BoardView --> TileType : tiles
+  BoardView --> FloorItem : floorItems
+  HeroView --> Point : position
+  HeroView --> AttackProfiles : attacks
+  HeroView --> InventoryItem : inventory
+  HeroView --> Equipment : equipment
+  RunView --> GameStatus : status
+  NoragonApi --> BoardView : board
+  NoragonApi --> HeroView : hero
+  NoragonApi --> RunView : run
+  NoragonApi --> Enemy : enemies, activeEnemies
+  NoragonApi --> LogEntry : log
+  NoragonApi --> Direction : move
+  HeroStats <|-- GameState
+  GameState --> Dungeon : dungeon
+  GameState --> HeroStats : base
+  GameState --> Point : player
+  GameState --> InventoryItem : inventory
+  GameState --> Equipment : equipment
+  GameState --> FloorItem : floorItems
+  GameState --> Enemy : enemies
+  GameState --> GameStatus : status
+  GameState --> LogEntry : log
+  GameAction --> HeroStats
+  GameAction --> Direction
+  ItemDef --> ItemCategory : category

@@ -1,0 +1,101 @@
+classDiagram
+  direction LR
+  class UseNoragonOptions {
+    +maxHp? : number
+    +attacks? : Partial«AttackProfiles»
+    +seed? : number
+  }
+  class BoardView {
+    +cols : number
+    +rows : number
+    +tiles : TileType[][]
+    +visible : boolean[][]
+    +floorItems : FloorItem[]
+  }
+  class HeroView {
+    +position : Point
+    +hp : number
+    +maxHp : number
+    +level : number
+    +xp : number
+    +xpToNext : number
+    +attacks : AttackProfiles
+    +defense : number
+    +gold : number
+    +inventory : InventoryItem[]
+    +equipment : Equipment
+    +onStairs : boolean
+  }
+  class RunView {
+    +status : GameStatus
+    +depth : number
+    +kills : number
+    +turns : number
+  }
+  class NoragonApi {
+    +board : BoardView
+    +hero : HeroView
+    +run : RunView
+    +enemies : Enemy[]
+    +activeEnemies : Enemy[]
+    +currentRoom : number / null
+    +revealedRooms : number[]
+    +aiming : boolean
+    +targetId : number / null
+    +log : LogEntry[]
+    +start : () ↦ void
+    +reset : () ↦ void
+    +move : () ↦ void
+    +descend : () ↦ void
+    +equip : () ↦ void
+    +drink : () ↦ void
+    +drop : () ↦ void
+    +aimStart : () ↦ void
+    +aimCycle : () ↦ void
+    +aimCancel : () ↦ void
+    +fire : () ↦ void
+  }
+  class AttackProfiles {
+    <<external>>
+  }
+  class TileType {
+    <<external>>
+  }
+  class FloorItem {
+    <<external>>
+  }
+  class Point {
+    <<external>>
+  }
+  class InventoryItem {
+    <<external>>
+  }
+  class Equipment {
+    <<external>>
+  }
+  class GameStatus {
+    <<external>>
+  }
+  class Enemy {
+    <<external>>
+  }
+  class LogEntry {
+    <<external>>
+  }
+  class Direction {
+    <<external>>
+  }
+  UseNoragonOptions --> AttackProfiles : attacks
+  BoardView --> TileType : tiles
+  BoardView --> FloorItem : floorItems
+  HeroView --> Point : position
+  HeroView --> AttackProfiles : attacks
+  HeroView --> InventoryItem : inventory
+  HeroView --> Equipment : equipment
+  RunView --> GameStatus : status
+  NoragonApi --> BoardView : board
+  NoragonApi --> HeroView : hero
+  NoragonApi --> RunView : run
+  NoragonApi --> Enemy : enemies, activeEnemies
+  NoragonApi --> LogEntry : log
+  NoragonApi --> Direction : move

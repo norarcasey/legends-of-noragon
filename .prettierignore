@@ -2,3 +2,7 @@ dist
 coverage
 node_modules
 package-lock.json
+
+# Generated Mermaid sources (.mmd) and renders (.svg). The page at
+# docs/DOMAIN_MODEL.md is still Prettier-formatted; only this subtree is exempt.
+docs/domain-model
