@@ -30,6 +30,10 @@ export interface ItemDef {
   heal: number
   /** Gold value, for display (and future shops). */
   value: number
+  /** Whether identical copies collapse into one counted stack in the pack.
+   *  Consumables stack; gear stays per-item so distinct pieces (and, later,
+   *  same-kind pieces with different stats) remain individually equippable. */
+  stackable: boolean
 }
 
 const weapon = (
@@ -46,6 +50,7 @@ const weapon = (
   defense: 0,
   heal: 0,
   value,
+  stackable: false,
 })
 
 const armor = (name: string, defense: number, value: number): ItemDef => ({
@@ -57,6 +62,7 @@ const armor = (name: string, defense: number, value: number): ItemDef => ({
   defense,
   heal: 0,
   value,
+  stackable: false,
 })
 
 export const ITEMS: Record<ItemKind, ItemDef> = {
@@ -77,6 +83,7 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     defense: 0,
     heal: 10,
     value: 8,
+    stackable: true,
   },
 }
 

@@ -340,6 +340,11 @@
   flex: 1;
 }
 
+.noragon__item-count {
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
 .noragon__item-tag {
   font-size: 0.7rem;
   letter-spacing: 0.05em;

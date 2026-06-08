@@ -1,6 +1,7 @@
 import { render, renderHook, act, fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
+import { Inventory } from './Inventory'
 import { useNoragon } from './../game/useNoragon'
 import type { NoragonApi, UseNoragonOptions } from './../game/useNoragon'
 import { ENEMY_INFO } from '../game/enemies'
@@ -1122,5 +1123,69 @@ describe('useNoragon — loot & equipment', () => {
       'healthPotion',
       'shortSword',
     ])
+  })
+})
+
+describe('Inventory grouping', () => {
+  const noop = () => {}
+
+  it('collapses identical stackable potions into one counted row', () => {
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'healthPotion' },
+          { id: 1, kind: 'healthPotion' },
+          { id: 2, kind: 'healthPotion' },
+        ]}
+        equipment={{ weapon: null, armor: null }}
+        gold={0}
+        onEquip={noop}
+        onDrink={noop}
+      />,
+    )
+    // One row for the three potions, showing the count, with a single Drink button.
+    const rows = screen.getAllByTestId('inventory-item')
+    expect(rows).toHaveLength(1)
+    expect(screen.getByText('(3)')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Drink' })).toHaveLength(1)
+  })
+
+  it('keeps gear as one row per item, even when the kind matches', () => {
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'shortSword' },
+          { id: 1, kind: 'shortSword' },
+        ]}
+        equipment={{ weapon: 0, armor: null }}
+        gold={0}
+        onEquip={noop}
+        onDrink={noop}
+      />,
+    )
+    // Two separate rows — the equipped one tagged, the spare still equippable.
+    expect(screen.getAllByTestId('inventory-item')).toHaveLength(2)
+    expect(screen.getByText('Equipped')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Equip' })).toHaveLength(1)
+  })
+
+  it('drinks the first potion of a stack', () => {
+    let drunk: number | null = null
+    render(
+      <Inventory
+        inventory={[
+          { id: 5, kind: 'healthPotion' },
+          { id: 6, kind: 'healthPotion' },
+        ]}
+        equipment={{ weapon: null, armor: null }}
+        gold={0}
+        onEquip={noop}
+        onDrink={(id) => {
+          drunk = id
+        }}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Drink' }))
+    expect(drunk).toBe(5)
   })
 })

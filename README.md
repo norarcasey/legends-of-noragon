@@ -51,7 +51,9 @@ and armor subtracts flat **defense** from every hit you take. Loot lies on the
 floor (gold piles `$`, potions `!`, weapons `/`, armor `]`) — walk onto it to
 pick it up — and chests cough up gold and a potion (sometimes gear). Open the
 **Pack** panel to equip better gear or **drink** a potion (or just press `Q` to
-quaff). Your gold and pack carry down the stairs with you.
+quaff). Stackable items like potions collapse into one counted row (`Health
+Potion (3)`), while gear stays listed per-item so you can equip a specific piece.
+Your gold and pack carry down the stairs with you.
 
 Slaying foes earns **XP** (goblins give more than bats). Fill the bar and you
 **level up**: your max HP

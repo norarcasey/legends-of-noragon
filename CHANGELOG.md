@@ -8,6 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The Pack panel now collapses stackable items into a single counted row
+  (`Health Potion (3)`) instead of one line per copy, keeping the inventory short.
+  Items carry a `stackable` flag (`ITEMS`): consumables stack, while gear stays
+  listed per-item so distinct pieces — and, later, same-kind pieces with
+  different stats — remain individually equippable.
 - The `useNoragon` hook's return value is now grouped for clarity instead of one
   flat object: spatial state lives under `game.board` (`cols`, `rows`, `tiles`,
   `visible`, `floorItems`), the character under `game.hero` (`position` — the old
