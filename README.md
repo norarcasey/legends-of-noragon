@@ -40,11 +40,12 @@ Combat:
   or the arrow keys switch targets, **F**/**Enter** looses an arrow, **Esc**
   cancels) and soften foes from a distance.
 - Foes roll their own chance to hit back, and the bestiary climbs from fodder to
-  horror: **Bats** (3 HP) and **Spiders** (fragile but fast and accurate) early,
-  then **Goblins** (8 HP) and **Orcs** (12 HP, hit for 3), up to lumbering
-  **Trolls** (20 HP, slam for 5) deep down. Each kind has a minimum spawn depth,
-  so the heavy hitters stay off the early floors — bats, spiders, and goblins from
-  the entrance, orcs from depth 2, trolls from depth 3. Rooms farther from the
+  horror: **Bats**, **Kobolds**, **Spiders**, and **Dire Wolves** early, then
+  **Skeletons**, **Goblins**, and **Orcs**, up to hulking **Ogres**, lumbering
+  **Trolls** (20 HP, slam for 5), and deadly **Wraiths** deep down. Each kind has
+  a minimum spawn depth, so the heavy hitters stay off the early floors — bats,
+  kobolds, spiders, dire wolves, and goblins from the entrance, skeletons and orcs
+  from depth 2, ogres from depth 3, wraiths from depth 4. Rooms farther from the
   entrance — and deeper levels — hold more and tougher foes, and the vault is
   always guarded. The
   same kinds also stiffen as you descend: a depth-5 goblin has more HP, hits a

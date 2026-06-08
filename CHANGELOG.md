@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Five new foes join the bestiary: the **Kobold** (weak early scrapper) and
+  **Dire Wolf** (fast, accurate pack hunter) on the early floors, the **Skeleton**
+  (sturdy undead, depth 2+), the **Ogre** (heavy bruiser between orc and troll,
+  depth 3+), and the **Wraith** (deadly, very accurate, depth 4+). Each has its
+  own colour, glyph, stats, and minimum spawn depth, and they're woven into the
+  threat-scaled spawn pools and the vault-guardian roster.
 - Internal refactor: all type and interface declarations moved out of
   `useNoragon.ts` (now logic only) into `types.ts`, and the overlapping stat
   shapes collapsed into a composed family — `HeroStats` (renamed from

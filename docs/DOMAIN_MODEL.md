@@ -135,10 +135,15 @@ classDiagram
   class EnemyKind {
     <<enumeration>>
     bat
+    kobold
     spider
+    direWolf
+    skeleton
     goblin
     orc
+    ogre
     troll
+    wraith
   }
   class EnemyInfo {
     +name : string
@@ -605,10 +610,15 @@ classDiagram
   class EnemyKind {
     <<enumeration>>
     bat
+    kobold
     spider
+    direWolf
+    skeleton
     goblin
     orc
+    ogre
     troll
+    wraith
   }
   class EnemyInfo {
     +name : string

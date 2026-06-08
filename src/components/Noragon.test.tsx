@@ -935,17 +935,41 @@ describe('useNoragon — new enemies', () => {
   })
 
   it('sends trolls to guard the deepest vaults', () => {
-    const { result } = renderHook(() =>
-      useNoragon({
-        maxHp: 9999,
-        attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
-        seed: 7,
-      }),
-    )
-    act(() => result.current.start())
-    descendToDepth(result, 4)
-    expect(result.current.run.depth).toBeGreaterThanOrEqual(4)
-    expect(result.current.enemies.some((e) => e.kind === 'troll')).toBe(true)
+    // Deep pools are randomized, so scan seeds until one proves a troll reaches
+    // depth 4 (they're common down there, so this resolves almost immediately).
+    let sawTroll = false
+    for (let seed = 1; seed <= 12 && !sawTroll; seed++) {
+      const { result, unmount } = renderHook(() =>
+        useNoragon({
+          maxHp: 9999,
+          attacks: { melee: { accuracy: 1, minDamage: 30, maxDamage: 30 } },
+          seed,
+        }),
+      )
+      act(() => result.current.start())
+      descendToDepth(result, 4)
+      if (result.current.run.depth >= 4 && result.current.enemies.some((e) => e.kind === 'troll')) {
+        sawTroll = true
+      }
+      unmount()
+    }
+    expect(sawTroll).toBe(true)
+  })
+
+  it('unlocks the newer foes only at the depths their minDepth allows', () => {
+    // Depth 1, many seeds: the depth-1 newcomers (kobold, dire wolf) turn up,
+    // while skeleton (2), ogre (3), and wraith (4) are gated out.
+    const shallow = new Set<string>()
+    for (let seed = 1; seed <= 80; seed++) {
+      const { result, unmount } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      for (const e of result.current.enemies) shallow.add(e.kind)
+      unmount()
+    }
+    expect(shallow.has('kobold') || shallow.has('direWolf')).toBe(true)
+    expect(shallow.has('skeleton')).toBe(false)
+    expect(shallow.has('ogre')).toBe(false)
+    expect(shallow.has('wraith')).toBe(false)
   })
 })
 

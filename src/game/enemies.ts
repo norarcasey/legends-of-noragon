@@ -2,7 +2,17 @@
 // combat stats. Framework-free so the engine and the React layer can share it.
 
 /** Every enemy kind the game knows about, roughly weakest → strongest. */
-export type EnemyKind = 'bat' | 'spider' | 'goblin' | 'orc' | 'troll'
+export type EnemyKind =
+  | 'bat'
+  | 'kobold'
+  | 'spider'
+  | 'direWolf'
+  | 'skeleton'
+  | 'goblin'
+  | 'orc'
+  | 'ogre'
+  | 'troll'
+  | 'wraith'
 
 /** Everything that defines an enemy kind: how it reads and how it fights. */
 export interface EnemyInfo {
@@ -38,6 +48,18 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     xp: 4,
     minDepth: 1,
   },
+  kobold: {
+    name: 'Kobold',
+    description:
+      'A scrappy little cave-dweller that jabs with a crude spear and bolts the moment things turn.',
+    glyph: '𝕜',
+    maxHp: 4,
+    accuracy: 0.7,
+    damage: 1,
+    verb: 'jabs',
+    xp: 5,
+    minDepth: 1,
+  },
   spider: {
     name: 'Spider',
     description:
@@ -49,6 +71,30 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     verb: 'bites',
     xp: 6,
     minDepth: 1,
+  },
+  direWolf: {
+    name: 'Dire Wolf',
+    description:
+      'A huge wolf that hunts the dark in a pack — fast, and unerring once it has your scent.',
+    glyph: '𝕨',
+    maxHp: 6,
+    accuracy: 0.8,
+    damage: 2,
+    verb: 'bites',
+    xp: 9,
+    minDepth: 1,
+  },
+  skeleton: {
+    name: 'Skeleton',
+    description:
+      'A rattling undead warrior — no flesh to tire and no fear to break, so it never gives ground.',
+    glyph: '𝕩',
+    maxHp: 6,
+    accuracy: 0.7,
+    damage: 2,
+    verb: 'strikes',
+    xp: 10,
+    minDepth: 2,
   },
   goblin: {
     name: 'Goblin',
@@ -74,6 +120,18 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     xp: 18,
     minDepth: 2,
   },
+  ogre: {
+    name: 'Ogre',
+    description:
+      'A hulking brute with a tree-trunk club — slow to swing, but it caves in armor when it lands.',
+    glyph: '𝕣',
+    maxHp: 16,
+    accuracy: 0.65,
+    damage: 4,
+    verb: 'clubs',
+    xp: 28,
+    minDepth: 3,
+  },
   troll: {
     name: 'Troll',
     description:
@@ -85,6 +143,18 @@ export const ENEMY_INFO: Record<EnemyKind, EnemyInfo> = {
     verb: 'smashes',
     xp: 40,
     minDepth: 3,
+  },
+  wraith: {
+    name: 'Wraith',
+    description:
+      'A cold, half-there specter whose touch finds the gaps in any guard. Little substance, much menace.',
+    glyph: '𝕪',
+    maxHp: 14,
+    accuracy: 0.85,
+    damage: 5,
+    verb: 'rends',
+    xp: 45,
+    minDepth: 4,
   },
 }
 

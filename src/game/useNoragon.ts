@@ -493,12 +493,12 @@ function generateDungeon(seed: number, depth: number): Dungeon {
   const rollKinds = (threat: number): EnemyKind[] => {
     const pool = eligible(
       threat >= 4
-        ? ['goblin', 'orc', 'troll']
+        ? ['goblin', 'orc', 'ogre', 'troll', 'wraith']
         : threat >= 3
-          ? ['spider', 'goblin', 'orc']
+          ? ['spider', 'goblin', 'skeleton', 'orc', 'ogre']
           : threat >= 2
-            ? ['bat', 'spider', 'goblin']
-            : ['bat', 'spider'],
+            ? ['bat', 'spider', 'direWolf', 'skeleton', 'goblin']
+            : ['bat', 'kobold', 'spider', 'direWolf'],
     )
     const count = threat >= 4 ? 3 : threat >= 2 ? 2 : 1
     const kinds: EnemyKind[] = []
@@ -512,7 +512,11 @@ function generateDungeon(seed: number, depth: number): Dungeon {
       placeIn(
         roomOf(cell),
         eligible(
-          depth >= 4 ? ['troll', 'orc'] : depth >= 2 ? ['orc', 'goblin'] : ['goblin', 'bat'],
+          depth >= 4
+            ? ['troll', 'wraith', 'orc']
+            : depth >= 2
+              ? ['orc', 'ogre', 'goblin']
+              : ['goblin', 'skeleton', 'bat'],
         ),
       )
       continue
