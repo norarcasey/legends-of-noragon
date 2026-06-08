@@ -1,19 +1,16 @@
 import type { CSSProperties } from 'react'
-import type { Enemy, FloorItem, Point, TileType } from '../game/types'
+import type { BoardView, Enemy, Point, TileType } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
 import { ITEMS } from '../game/items'
 
-interface BoardProps {
-  cols: number
-  rows: number
-  tiles: TileType[][]
-  /** The hero's tile position, drawn on top of whatever tile they stand on. */
+export interface BoardProps {
+  /** The board slice from the hook (`game.board`): dimensions, tiles, fog mask,
+   *  and floor loot. */
+  board: BoardView
+  /** The hero's tile position (`game.hero.position`), drawn over its tile. */
   hero: Point
+  /** Living enemies on the grid (`game.enemies`). */
   enemies: Enemy[]
-  /** Loot on the floor, drawn on its tile when visible. */
-  floorItems: FloorItem[]
-  /** Fog-of-war mask (`visible[y][x]`); undiscovered tiles render as fog. */
-  visible: boolean[][]
   /** Whether the hero is aiming; when true the targeted enemy shows a reticle. */
   aiming: boolean
   /** Id of the targeted enemy while aiming, else `null`. */
@@ -34,17 +31,8 @@ const TILE_GLYPH: Record<TileType, string> = {
  * are drawn on top of whatever tile they stand on, so the whole grid is a single
  * pass over `tiles` with the entities looked up per cell.
  */
-export function Board({
-  cols,
-  rows,
-  tiles,
-  hero,
-  enemies,
-  floorItems,
-  visible,
-  aiming,
-  targetId,
-}: BoardProps) {
+export function Board({ board, hero, enemies, aiming, targetId }: BoardProps) {
+  const { cols, rows, tiles, visible, floorItems } = board
   // `--noragon-cols` lets the CSS scale the glyph size to the column count, so
   // tiles stay legible whatever the (eventually procedural) board dimensions are.
   const gridStyle: CSSProperties & Record<string, string | number> = {

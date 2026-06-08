@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import type { LogEntry } from '../game/types'
 import { splitLog } from './logHighlights'
 
-interface ActivityLogProps {
-  /** The log lines, oldest first; nothing renders when empty. */
+export interface ActivityLogProps {
+  /** The log lines (`game.log`), oldest first; nothing renders when empty. */
   entries: LogEntry[]
 }
 

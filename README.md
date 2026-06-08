@@ -138,6 +138,58 @@ self-contained helpers (combat/stat math, dungeon spatial queries, the enemy
 phase, map generation) live one-per-file under `src/game/utils/`, each with a
 co-located unit test.
 
+### Compose your own layout
+
+Between the all-in-one `<Noragon />` and the fully headless hook sits a middle
+tier: keep the built-in look but arrange it yourself. The UI is exported as parts
+— `Board`, `Stats`, `EnemyCards`, `ActivityLog`, `Inventory` — each taking a slice
+of the `useNoragon()` return. Wrap them in `NoragonRoot`, which carries the theme
+(the `.noragon` styles and colour variables every part reads), and import the
+stylesheet:
+
+```tsx
+import {
+  useNoragon,
+  NoragonRoot,
+  Board,
+  Stats,
+  EnemyCards,
+  ActivityLog,
+  Inventory,
+} from '@norarcasey/legends-of-noragon'
+import '@norarcasey/legends-of-noragon/style.css'
+
+export function MyDungeon() {
+  const game = useNoragon()
+  return (
+    <NoragonRoot>
+      <Stats hero={game.hero} run={game.run} />
+      <Board
+        board={game.board}
+        hero={game.hero.position}
+        enemies={game.enemies}
+        aiming={game.aiming}
+        targetId={game.targetId}
+      />
+      <EnemyCards enemies={game.activeEnemies} targetId={game.aiming ? game.targetId : null} />
+      <ActivityLog entries={game.log} />
+      <Inventory
+        inventory={game.hero.inventory}
+        equipment={game.hero.equipment}
+        gold={game.hero.gold}
+        onEquip={game.equip}
+        onDrink={game.drink}
+        onDrop={game.drop}
+      />
+    </NoragonRoot>
+  )
+}
+```
+
+The parts are presentational only — wiring keyboard input (via the hook's
+`move`/`fire`/etc.) and any start/over overlay is up to you; `<Noragon />` is the
+turnkey arrangement of these same parts if you'd rather not.
+
 ### Domain model
 
 Every type the game defines — and how they connect — is mapped in

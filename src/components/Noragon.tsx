@@ -6,7 +6,8 @@ import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
 import { Inventory } from './Inventory'
-import './Noragon.css'
+import { NoragonRoot } from './NoragonRoot'
+import { Stats } from './Stats'
 
 export interface NoragonProps {
   /** The hero's starting (and maximum) hit points. Default `6`. */
@@ -55,7 +56,6 @@ export function Noragon({
   const { board, hero, run } = game
   const { status } = run
   const { onStairs } = hero
-  const melee = hero.attacks.melee
   const { aiming, start, move, descend, equip, drink, drop, aimStart, aimCycle, aimCancel, fire } =
     game
   const firstPotion = hero.inventory.find((i) => i.kind === 'healthPotion')
@@ -144,10 +144,7 @@ export function Noragon({
   const isOver = status === 'dead'
 
   return (
-    <section
-      className={`noragon${className ? ` ${className}` : ''}`}
-      aria-label={title ?? 'Legends of Noragon dungeon crawler'}
-    >
+    <NoragonRoot className={className} ariaLabel={title ?? 'Legends of Noragon dungeon crawler'}>
       {title !== null && <h2 className="noragon__title">{title}</h2>}
 
       <div className="noragon__layout">
@@ -163,13 +160,9 @@ export function Noragon({
 
         <div className="noragon__stage">
           <Board
-            cols={board.cols}
-            rows={board.rows}
-            tiles={board.tiles}
+            board={board}
             hero={hero.position}
             enemies={game.enemies}
-            floorItems={board.floorItems}
-            visible={board.visible}
             aiming={aiming}
             targetId={game.targetId}
           />
@@ -210,50 +203,7 @@ export function Noragon({
         </div>
 
         <aside className="noragon__panel">
-          <dl className="noragon__stats" aria-live="polite">
-            <div className="noragon__stat">
-              <dt>Depth</dt>
-              <dd>{run.depth}</dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>Level</dt>
-              <dd>{hero.level}</dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>XP</dt>
-              <dd>
-                {hero.xp}/{hero.xpToNext}
-              </dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>HP</dt>
-              <dd>
-                {hero.hp}/{hero.maxHp}
-              </dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>Melee</dt>
-              <dd>{Math.round(melee.accuracy * 100)}%</dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>Damage</dt>
-              <dd>
-                {melee.minDamage}–{melee.maxDamage}
-              </dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>Defense</dt>
-              <dd>{hero.defense}</dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>Gold</dt>
-              <dd>{hero.gold}</dd>
-            </div>
-            <div className="noragon__stat">
-              <dt>Slain</dt>
-              <dd>{run.kills}</dd>
-            </div>
-          </dl>
+          <Stats hero={hero} run={run} />
 
           {status !== 'idle' && <ActivityLog entries={game.log} />}
 
@@ -269,7 +219,7 @@ export function Noragon({
           )}
         </aside>
       </div>
-    </section>
+    </NoragonRoot>
   )
 }
 

@@ -2,12 +2,18 @@ import { ITEMS } from '../game/items'
 import type { ItemKind } from '../game/items'
 import type { Equipment, InventoryItem } from '../game/types'
 
-interface InventoryProps {
+export interface InventoryProps {
+  /** The hero's carried items (`game.hero.inventory`). */
   inventory: InventoryItem[]
+  /** Which item fills each equipment slot (`game.hero.equipment`). */
   equipment: Equipment
+  /** Gold carried (`game.hero.gold`). */
   gold: number
+  /** Equip a weapon/armor by id (`game.equip`). */
   onEquip: (itemId: number) => void
+  /** Drink a potion by id (`game.drink`). */
   onDrink: (itemId: number) => void
+  /** Discard an item by id (`game.drop`). */
   onDrop: (itemId: number) => void
 }
 

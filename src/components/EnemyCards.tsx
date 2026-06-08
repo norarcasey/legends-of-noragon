@@ -1,8 +1,9 @@
 import { ENEMY_INFO } from '../game/enemies'
 import type { Enemy } from '../game/types'
 
-interface EnemyCardsProps {
-  /** The active enemies to show cards for; nothing renders when empty. */
+export interface EnemyCardsProps {
+  /** The active enemies to show cards for (`game.activeEnemies`); nothing renders
+   *  when empty. */
   enemies: Enemy[]
   /** Id of the enemy currently targeted while aiming; its card is highlighted. */
   targetId?: number | null

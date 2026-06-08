@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The UI is now exported as composable parts — `Board`, `Stats`, `EnemyCards`,
+  `ActivityLog`, `Inventory` — plus a `NoragonRoot` themed wrapper, so embedders
+  can keep the built-in look while arranging their own layout (driven by
+  `useNoragon()`). Each part takes a granular slice of the hook's return; the
+  all-in-one `Noragon` is now composed from these same parts (the stats readout
+  was extracted into a `Stats` component). Their prop types are exported too.
 - Three-column layout on wide screens: the left info column holds the enemy cards
   (plus optional `intro`/`footer` slots), the middle column is the board, and the
   right panel holds the stats, activity log, and pack. It collapses to a single
