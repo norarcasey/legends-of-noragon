@@ -32,9 +32,9 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
   // A stream distinct from the combat RNG, varied per depth so each level differs.
   const rng = makeRng((seed ^ 0x9e3779b9 ^ (depth * 0x85ebca6b)) >>> 0)
 
-  // Variable map size: a 2–3 × 2–3 grid of room slots.
-  const gridCols = 2 + rng.int(2)
-  const gridRows = 2 + rng.int(2)
+  // Variable map size: a 3–4 × 3–4 grid of room slots.
+  const gridCols = 3 + rng.int(2)
+  const gridRows = 3 + rng.int(2)
   const cellCount = gridCols * gridRows
   const cols = gridCols * CELL + 1
   const rows = gridRows * CELL + 1

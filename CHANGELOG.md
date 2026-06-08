@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Bigger levels: the room grid grew from 2–3×2–3 to 3–4×3–4 (roughly double the
+  rooms and corridors), rooms themselves are larger (`MAX_ROOM` 4→5, `CELL` 7→8,
+  so chambers span 3–5 tiles), and a level keeps at least 6 rooms (`MIN_CELLS`
+  4→6). Boards now run ~25×25 to ~33×33 tiles; the corridor geometry is unchanged.
 - Internal refactor: the reducer's `move` and `fire` turns shared near-identical
   attack/level-up logic and each hand-rolled the combat PRNG; that's now factored
   into a `resolveHeroAttack` helper (one path for melee and ranged, parameterized

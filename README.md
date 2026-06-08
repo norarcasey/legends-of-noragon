@@ -20,7 +20,7 @@ npm run build:lib  # build the embeddable component library
 
 Every run is a **procedurally generated dungeon** — rooms joined by doorways and
 winding corridors, built from the run's seed. No two runs are alike: the **map
-size** varies (2×2 up to 3×3 rooms), the **footprint is irregular** (some cells
+size** varies (3×3 up to 4×4 rooms), the **footprint is irregular** (some cells
 are missing, giving L-shapes and notches), **room sizes vary** (cramped closets
 next to open halls), and the rooms are linked by **corridors** that twist through
 the dark between them. You start safe in **the entry hall**; the farthest room (a

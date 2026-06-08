@@ -52,11 +52,11 @@ export const DIR_NAME: Record<Direction, string> = {
 // CELL×CELL slot (a MAX_ROOM interior plus one wall). Rooms vary from MIN_ROOM
 // to MAX_ROOM tiles; an irregular footprint may omit cells but never shrinks
 // below MIN_CELLS rooms. See `utils/generateDungeon.ts` for how these are used.
-export const CELL = 7
-export const MAX_ROOM = 4
+export const CELL = 8
+export const MAX_ROOM = 5
 export const MIN_ROOM = 3
 /** Never shrink an irregular footprint below this many rooms. */
-export const MIN_CELLS = 4
+export const MIN_CELLS = 6
 
 /** Atmospheric names for the rooms between the entrance and the vault. */
 export const ROOM_NAMES = [
