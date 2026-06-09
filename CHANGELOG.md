@@ -23,7 +23,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Shops: every level now has a safe **shop room** with a **merchant** (`商`).
+- Shops: every level now has a safe **shop room** with a **merchant** (`⚖`).
   Bump the merchant to open their stall — an overlay over the board — and **buy**
   randomly stocked gear (a couple of potions plus weapons/armor/rings/amulets) or
   **sell** your own wares; prices are marked up to buy (~1.25×) and halved to

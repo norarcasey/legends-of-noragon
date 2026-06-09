@@ -27,7 +27,7 @@ the dark between them. Rooms are strewn with impassable **rubble** (`▲`) — c
 that both you and your foes must move around, so positioning matters in a fight.
 You start safe in **the entry hall**; the farthest room (a
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
-(`>`). One room is a safe **shop** — bump the **merchant** (`商`) to open their
+(`>`). One room is a safe **shop** — bump the **merchant** (`⚖`) to open their
 stall and **buy** random gear or **sell** your wares (prices are marked up to
 buy, halved to sell); leave with **Esc**. A run is an **endless descent**: clear or sneak through each level, take
 the stairs to a deeper, tougher one, and see how far down you can get before you

@@ -6,6 +6,10 @@
   flex-wrap: wrap;
   gap: 0.4rem 1rem;
   margin: 0;
+  /* Fixed width so a longer value (e.g. XP) never reflows the column and shifts
+     the board beside it. Wide enough for the longest readouts. */
+  flex: none;
+  width: 7rem;
 }
 
 .noragon__stat {
@@ -27,4 +31,5 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--noragon-accent);
+  white-space: nowrap;
 }
