@@ -65,19 +65,21 @@ export function Noragon({
   // tallies up top, the moment-to-moment combat numbers along the bottom.
   const melee = hero.attacks.melee
   const ranged = hero.attacks.ranged
-  const topStats: [string, string | number][] = [
+  const topLeftStats: [string, string | number][] = [
     ['Depth', run.depth],
-    ['Level', hero.level],
-    ['XP', `${hero.xp}/${hero.xpToNext}`],
-    ['Gold', hero.gold],
     ['Slain', run.kills],
   ]
-  const bottomStats: [string, string | number][] = [
+  const topRightStats: [string, string | number][] = [
     ['HP', `${hero.hp}/${hero.maxHp}`],
-    ['Defense', hero.defense],
-    ['Melee', `${Math.round(melee.accuracy * 100)}%`],
+    ['Gold', hero.gold],
+    ['XP', `${hero.xp}/${hero.xpToNext}`],
+  ]
+  const bottomStats: [string, string | number][] = [
+    ['Level', hero.level],
     ['Damage', `${melee.minDamage}–${melee.maxDamage}`],
+    ['Melee', `${Math.round(melee.accuracy * 100)}%`],
     ['Range', `${Math.round(ranged.accuracy * 100)}%`],
+    ['Defense', hero.defense],
   ]
   const chip = ([k, v]: [string, string | number]) => (
     <span className="noragon__chip" key={k}>
@@ -122,7 +124,8 @@ export function Noragon({
           />
 
           <div className="noragon__chrome noragon__chrome--top" aria-live="polite">
-            {topStats.map(chip)}
+            <div className="noragon__chrome-group">{topLeftStats.map(chip)}</div>
+            <div className="noragon__chrome-group">{topRightStats.map(chip)}</div>
           </div>
           <div className="noragon__chrome noragon__chrome--bottom" aria-live="polite">
             {bottomStats.map(chip)}

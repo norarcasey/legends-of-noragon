@@ -125,12 +125,20 @@
 
 .noragon__chrome--top {
   top: 0;
-  justify-content: flex-start;
+  /* Two groups: tallies anchored left, vitals anchored right. */
+  justify-content: space-between;
 }
 
 .noragon__chrome--bottom {
   bottom: 0;
   justify-content: center;
+}
+
+.noragon__chrome-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.7rem;
 }
 
 .noragon__chip {
