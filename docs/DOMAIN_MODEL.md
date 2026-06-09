@@ -63,6 +63,13 @@ classDiagram
     +id : number
     +text : string
   }
+  class CombatFloat {
+    +id : number
+    +x : number
+    +y : number
+    +amount : number
+    +tone : damage / heal
+  }
   class InventoryItem {
     +id : number
     +kind : ItemKind
@@ -230,6 +237,8 @@ classDiagram
     +revealedRooms : number[]
     +log : LogEntry[]
     +nextLogId : number
+    +effects : CombatFloat[]
+    +nextEffectId : number
     +rngState : number
     +aiming : boolean
     +targetId : number / null
@@ -277,6 +286,9 @@ classDiagram
   class LogEntry {
     <<external>>
   }
+  class CombatFloat {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -290,6 +302,7 @@ classDiagram
   GameState --> Enemy : enemies
   GameState --> GameStatus : status
   GameState --> LogEntry : log
+  GameState --> CombatFloat : effects
   GameAction --> HeroStats
   GameAction --> Direction
 ```
@@ -344,6 +357,7 @@ classDiagram
     +aiming : boolean
     +targetId : number / null
     +log : LogEntry[]
+    +effects : CombatFloat[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -383,6 +397,9 @@ classDiagram
   class LogEntry {
     <<external>>
   }
+  class CombatFloat {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -399,6 +416,7 @@ classDiagram
   NoragonApi --> RunView : run
   NoragonApi --> Enemy : enemies, activeEnemies
   NoragonApi --> LogEntry : log
+  NoragonApi --> CombatFloat : effects
   NoragonApi --> Direction : move
 ```
 
@@ -440,6 +458,13 @@ classDiagram
   class LogEntry {
     +id : number
     +text : string
+  }
+  class CombatFloat {
+    +id : number
+    +x : number
+    +y : number
+    +amount : number
+    +tone : damage / heal
   }
   class InventoryItem {
     +id : number
@@ -553,6 +578,7 @@ classDiagram
     +aiming : boolean
     +targetId : number / null
     +log : LogEntry[]
+    +effects : CombatFloat[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -587,6 +613,8 @@ classDiagram
     +revealedRooms : number[]
     +log : LogEntry[]
     +nextLogId : number
+    +effects : CombatFloat[]
+    +nextEffectId : number
     +rngState : number
     +aiming : boolean
     +targetId : number / null
@@ -686,6 +714,7 @@ classDiagram
   NoragonApi --> RunView : run
   NoragonApi --> Enemy : enemies, activeEnemies
   NoragonApi --> LogEntry : log
+  NoragonApi --> CombatFloat : effects
   NoragonApi --> Direction : move
   HeroStats <|-- GameState
   GameState --> Dungeon : dungeon
@@ -697,6 +726,7 @@ classDiagram
   GameState --> Enemy : enemies
   GameState --> GameStatus : status
   GameState --> LogEntry : log
+  GameState --> CombatFloat : effects
   GameAction --> HeroStats
   GameAction --> Direction
   ItemDef --> ItemCategory : category
@@ -711,6 +741,7 @@ classDiagram
 | `TileType`          | enum      | domain | `src/game/types.ts`   |
 | `Room`              | interface | domain | `src/game/types.ts`   |
 | `LogEntry`          | interface | domain | `src/game/types.ts`   |
+| `CombatFloat`       | interface | domain | `src/game/types.ts`   |
 | `InventoryItem`     | interface | domain | `src/game/types.ts`   |
 | `FloorItem`         | interface | domain | `src/game/types.ts`   |
 | `Equipment`         | interface | domain | `src/game/types.ts`   |

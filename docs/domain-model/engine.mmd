@@ -22,6 +22,8 @@ classDiagram
     +revealedRooms : number[]
     +log : LogEntry[]
     +nextLogId : number
+    +effects : CombatFloat[]
+    +nextEffectId : number
     +rngState : number
     +aiming : boolean
     +targetId : number / null
@@ -69,6 +71,9 @@ classDiagram
   class LogEntry {
     <<external>>
   }
+  class CombatFloat {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -82,5 +87,6 @@ classDiagram
   GameState --> Enemy : enemies
   GameState --> GameStatus : status
   GameState --> LogEntry : log
+  GameState --> CombatFloat : effects
   GameAction --> HeroStats
   GameAction --> Direction

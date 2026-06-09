@@ -43,6 +43,7 @@ classDiagram
     +aiming : boolean
     +targetId : number / null
     +log : LogEntry[]
+    +effects : CombatFloat[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -82,6 +83,9 @@ classDiagram
   class LogEntry {
     <<external>>
   }
+  class CombatFloat {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -98,4 +102,5 @@ classDiagram
   NoragonApi --> RunView : run
   NoragonApi --> Enemy : enemies, activeEnemies
   NoragonApi --> LogEntry : log
+  NoragonApi --> CombatFloat : effects
   NoragonApi --> Direction : move
