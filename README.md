@@ -217,6 +217,13 @@ export function MyDungeon() {
         enemies={game.enemies}
         aiming={game.aiming}
         targetId={game.targetId}
+        // Optional — pass these to get the aim/stairs banners and start/death
+        // overlay over the board; omit them to render just the grid.
+        status={game.run.status}
+        depth={game.run.depth}
+        onStairs={game.hero.onStairs}
+        onStart={game.start}
+        onDescend={game.descend}
       />
       <EnemyCards enemies={game.activeEnemies} targetId={game.aiming ? game.targetId : null} />
       <ActivityLog entries={game.log} />

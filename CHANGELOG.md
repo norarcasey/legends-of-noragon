@@ -31,6 +31,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The `Board` component now ships the overlays that belong over the grid — the
+  aim banner, the stairs prompt, and the start/death overlay — inside its own
+  positioning context, so a standalone `<Board>` renders them too. They're
+  optional and toggle on the state passed in (`status`, `depth`, `onStairs`,
+  `onStart`, `onDescend`); omit those props to render just the grid. The markup
+  and CSS moved out of the `Noragon` wrapper into `Board`.
 - The stats readout now sits as a column beside the board (in the middle column)
   rather than wrapped into the right panel. The aim/stairs banners and the
   start/death overlay are scoped to the board (a `noragon__board-wrap` positioning
