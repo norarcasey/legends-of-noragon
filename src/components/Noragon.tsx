@@ -68,53 +68,58 @@ export function Noragon({
         </aside>
 
         <div className="noragon__stage">
-          <Board
-            board={board}
-            hero={hero.position}
-            enemies={game.enemies}
-            aiming={aiming}
-            targetId={game.targetId}
-          />
+          {/* The board and its overlays share a positioning context, so the
+              aim/stairs banners and the start/death overlay cover only the board
+              — not the Stats column beside it. */}
+          <div className="noragon__board-wrap">
+            <Board
+              board={board}
+              hero={hero.position}
+              enemies={game.enemies}
+              aiming={aiming}
+              targetId={game.targetId}
+            />
 
-          {aiming && (
-            <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
-              Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
-              <kbd>Esc</kbd> cancel
-            </div>
-          )}
+            {aiming && (
+              <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
+                Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
+                <kbd>Esc</kbd> cancel
+              </div>
+            )}
 
-          {status === 'playing' && onStairs && !aiming && (
-            <div className="noragon__stairs-banner" role="status" data-testid="stairs-banner">
-              <span>
-                A stairway leads down. Press <kbd>&gt;</kbd> to descend.
-              </span>
-              <button type="button" className="noragon__descend-button" onClick={descend}>
-                Descend ▾
-              </button>
-            </div>
-          )}
+            {status === 'playing' && onStairs && !aiming && (
+              <div className="noragon__stairs-banner" role="status" data-testid="stairs-banner">
+                <span>
+                  A stairway leads down. Press <kbd>&gt;</kbd> to descend.
+                </span>
+                <button type="button" className="noragon__descend-button" onClick={descend}>
+                  Descend ▾
+                </button>
+              </div>
+            )}
 
-          {status !== 'playing' && (
-            <div className="noragon__overlay" role="status">
-              {status === 'idle' && (
-                <p className="noragon__message">Descend into the dungeon of Noragon</p>
-              )}
-              {status === 'dead' && (
-                <p className="noragon__message">You died at depth {run.depth}. 💀</p>
-              )}
-              <button type="button" className="noragon__button" onClick={start}>
-                {isOver ? 'Delve again' : 'Enter'}
-              </button>
-              <p className="noragon__hint">
-                Arrow keys / WASD to move, F to aim (Enter to fire) — take the stairs to descend
-              </p>
-            </div>
-          )}
+            {status !== 'playing' && (
+              <div className="noragon__overlay" role="status">
+                {status === 'idle' && (
+                  <p className="noragon__message">Descend into the dungeon of Noragon</p>
+                )}
+                {status === 'dead' && (
+                  <p className="noragon__message">You died at depth {run.depth}. 💀</p>
+                )}
+                <button type="button" className="noragon__button" onClick={start}>
+                  {isOver ? 'Delve again' : 'Enter'}
+                </button>
+                <p className="noragon__hint">
+                  Arrow keys / WASD to move, F to aim (Enter to fire) — take the stairs to descend
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Stats hero={hero} run={run} />
         </div>
 
         <aside className="noragon__panel">
-          <Stats hero={hero} run={run} />
-
           {status !== 'idle' && <ActivityLog entries={game.log} />}
 
           {status !== 'idle' && (

@@ -31,6 +31,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The stats readout now sits as a column beside the board (in the middle column)
+  rather than wrapped into the right panel. The aim/stairs banners and the
+  start/death overlay are scoped to the board (a `noragon__board-wrap` positioning
+  context) so they cover only the grid, not the stats beside it.
 - The component stylesheet is split per component (`NoragonRoot.css`,
   `Board.css`, `Stats.css`, `EnemyCards.css`, `Inventory.css`, `ActivityLog.css`,
   `themes.css`, and a slimmer `Noragon.css` for layout + chrome), each imported by

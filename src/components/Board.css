@@ -3,11 +3,22 @@
 /* ---- Board ---- */
 .noragon__stage {
   position: relative;
+  display: flex;
+
   width: 100%;
   /* Fill the middle column, but cap by viewport height so a tall board never
      shoves the panels off-screen; the board centers within whatever's left. */
-  max-width: min(58vh, 100%);
+  max-width: min(68vh, 100%);
   margin: 0 auto;
+  gap: 1rem;
+}
+
+/* Wraps the board and its overlays so the banners/overlay anchor to the board
+   alone — not the whole stage, which also holds the Stats column. */
+.noragon__board-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
 .noragon__board {
