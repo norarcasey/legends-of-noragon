@@ -22,6 +22,13 @@ export function runEnemyPhase(
   engaged: number[] = [],
 ): { enemies: Enemy[]; hp: number; misses: number } {
   const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
+  // Rubble blocks foes too — treat each pile as permanently occupied so a chaser
+  // steps around it (via its other axis) rather than onto it.
+  for (let y = 0; y < dungeon.rows; y++) {
+    for (let x = 0; x < dungeon.cols; x++) {
+      if (dungeon.tiles[y][x] === 'rubble') occupied.add(`${x},${y}`)
+    }
+  }
   const moved: Enemy[] = []
   let nextHp = hp
   // How many adjacent foes whiffed this phase, so the reducer can float a "miss".

@@ -23,6 +23,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Room obstacles: rooms are now strewn with impassable **rubble** (`▲`) — single
+  isolated piles, kept off each room's central cross so doorways stay connected
+  and the level is always solvable. Both the hero and foes must path around them
+  (a chaser steps around a pile rather than onto it), so combat has cover and
+  positioning to play with. A new `rubble` `TileType` and `--noragon-rubble` token.
 - Rings and amulets: two new equipment slots with small always-on boosts. Rings
   of Protection (+1 defense), Power (+1 melee damage), and Precision (+accuracy),
   plus an Amulet of Health (+5 max HP) and an Amulet of Valor (+damage & accuracy)

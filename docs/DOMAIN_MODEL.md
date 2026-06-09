@@ -50,6 +50,7 @@ classDiagram
     door
     chest
     stairs
+    rubble
   }
   class Room {
     +id : number
@@ -476,6 +477,7 @@ classDiagram
     door
     chest
     stairs
+    rubble
   }
   class Room {
     +id : number

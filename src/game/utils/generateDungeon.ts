@@ -231,6 +231,43 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
   tiles[chestAt.y][chestAt.x] = 'chest'
   if (chestAt.x + 1 <= chestRoom.x1) tiles[chestAt.y][chestAt.x + 1] = 'stairs'
 
+  // Scatter impassable rubble inside non-start rooms so combat has cover to
+  // fight around. Each pile is a single tile kept off the room's central cross
+  // (so the door mouths stay connected) and never orthogonally adjacent to
+  // another pile (so an isolated pillar can never wall a corner off).
+  for (const cell of cells) {
+    if (cell === startCell) continue
+    const room = roomOf(cell)
+    const c = center(room)
+    const spots: Point[] = []
+    for (let y = room.y0; y <= room.y1; y++) {
+      for (let x = room.x0; x <= room.x1; x++) {
+        if (x !== c.x && y !== c.y && tiles[y][x] === 'floor') spots.push({ x, y })
+      }
+    }
+    for (let i = spots.length - 1; i > 0; i--) {
+      const j = rng.int(i + 1)
+      const tmp = spots[i]
+      spots[i] = spots[j]
+      spots[j] = tmp
+    }
+    const cap = Math.max(1, Math.floor(spots.length / 4))
+    let placed = 0
+    for (const s of spots) {
+      if (placed >= cap) break
+      const adjacent =
+        tiles[s.y][s.x - 1] === 'rubble' ||
+        tiles[s.y][s.x + 1] === 'rubble' ||
+        tiles[s.y - 1][s.x] === 'rubble' ||
+        tiles[s.y + 1][s.x] === 'rubble'
+      if (adjacent) continue
+      if (rng.next() < 0.5) {
+        tiles[s.y][s.x] = 'rubble'
+        placed++
+      }
+    }
+  }
+
   // Scatter enemies by depth onto free interior floor tiles.
   const taken = new Set<string>([`${playerStart.x},${playerStart.y}`])
   const enemies: Enemy[] = []

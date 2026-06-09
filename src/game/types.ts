@@ -20,8 +20,9 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
  *  - `door`     — walkable; the threshold where a corridor meets a room.
  *  - `chest`    — walkable; stepping onto it completes the level (loot/trap later).
  *  - `stairs`   — walkable; the way down to the next level (inert in the MVP).
+ *  - `rubble`   — impassable obstacle inside a room; cover to fight around.
  */
-export type TileType = 'wall' | 'floor' | 'corridor' | 'door' | 'chest' | 'stairs'
+export type TileType = 'wall' | 'floor' | 'corridor' | 'door' | 'chest' | 'stairs' | 'rubble'
 
 /**
  * A rectangular room, in inclusive interior tile coordinates. Enemies only act

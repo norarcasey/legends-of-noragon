@@ -47,7 +47,7 @@ function findTile(tiles: TileType[][], type: TileType): Point | null {
 function bfsDir(tiles: TileType[][], from: Point, to: Point, blockChest = false): Direction | null {
   const walkable = (x: number, y: number) => {
     const t = tiles[y]?.[x]
-    if (!t || t === 'wall') return false
+    if (!t || t === 'wall' || t === 'rubble') return false
     if (blockChest && t === 'chest') return false
     return true
   }
@@ -1482,6 +1482,22 @@ describe('Board combat floats', () => {
       <Board board={board} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
     )
     expect(container.querySelector('.noragon__float')).toBeNull()
+  })
+
+  it('draws a rubble obstacle tile', () => {
+    const tiles = board.tiles.map((row) => [...row])
+    tiles[1][1] = 'rubble'
+    const rubbleBoard = { ...board, tiles }
+    const { container } = render(
+      <Board
+        board={rubbleBoard}
+        hero={{ x: 0, y: 0 }}
+        enemies={[]}
+        aiming={false}
+        targetId={null}
+      />,
+    )
+    expect(container.querySelector('.noragon__tile--rubble')?.textContent).toBe('▲')
   })
 
   it('draws floor loot as a generic satchel, not its specific kind', () => {

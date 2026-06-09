@@ -23,7 +23,9 @@ winding corridors, built from the run's seed. No two runs are alike: the **map
 size** varies (3×3 up to 4×4 rooms), the **footprint is irregular** (some cells
 are missing, giving L-shapes and notches), **room sizes vary** (cramped closets
 next to open halls), and the rooms are linked by **corridors** that twist through
-the dark between them. You start safe in **the entry hall**; the farthest room (a
+the dark between them. Rooms are strewn with impassable **rubble** (`▲`) — cover
+that both you and your foes must move around, so positioning matters in a fight.
+You start safe in **the entry hall**; the farthest room (a
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
 (`>`). A run is an **endless descent**: clear or sneak through each level, take
 the stairs to a deeper, tougher one, and see how far down you can get before you

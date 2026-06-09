@@ -212,6 +212,13 @@
   font-weight: 700;
 }
 
+/* An impassable rubble pile — a raised block on the room floor to fight around. */
+.noragon__tile--rubble {
+  background: var(--noragon-floor);
+  color: var(--noragon-rubble);
+  box-shadow: inset 0 0 0 2px var(--noragon-rubble);
+}
+
 .noragon__tile--player {
   color: var(--noragon-player);
   text-shadow: 0 0 6px currentColor;

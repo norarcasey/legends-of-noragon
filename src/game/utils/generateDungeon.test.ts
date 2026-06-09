@@ -6,7 +6,8 @@ const SEEDS = [1, 7, 42, 99, 256, 4242]
 
 const countTiles = (d: Dungeon, t: TileType) => d.tiles.flat().filter((x) => x === t).length
 
-/** Flood-fill over walkable (non-wall) tiles from the start; can we reach `to`? */
+/** Flood-fill over walkable tiles (not wall, not impassable rubble) from the
+ *  start; can we reach `to`? */
 function reaches(d: Dungeon, from: Point, to: Point): boolean {
   const key = (p: Point) => `${p.x},${p.y}`
   const seen = new Set([key(from)])
@@ -25,7 +26,7 @@ function reaches(d: Dungeon, from: Point, to: Point): boolean {
       const nx = c.x + dlt.x
       const ny = c.y + dlt.y
       const tile = d.tiles[ny]?.[nx]
-      if (!tile || tile === 'wall' || seen.has(`${nx},${ny}`)) continue
+      if (!tile || tile === 'wall' || tile === 'rubble' || seen.has(`${nx},${ny}`)) continue
       seen.add(`${nx},${ny}`)
       queue.push({ x: nx, y: ny })
     }
@@ -65,6 +66,46 @@ describe('generateDungeon', () => {
       expect(chest).not.toBeNull()
       if (chest) expect(reaches(d, d.playerStart, chest)).toBe(true)
     }
+  })
+
+  it('drops impassable rubble that is isolated and never seals off the level', () => {
+    let total = 0
+    for (const seed of SEEDS) {
+      const d = generateDungeon(seed, 2)
+      const startRoom = d.rooms.find(
+        (r) =>
+          d.playerStart.x >= r.x0 &&
+          d.playerStart.x <= r.x1 &&
+          d.playerStart.y >= r.y0 &&
+          d.playerStart.y <= r.y1,
+      )
+      for (let y = 0; y < d.rows; y++) {
+        for (let x = 0; x < d.cols; x++) {
+          if (d.tiles[y][x] !== 'rubble') continue
+          total++
+          // Each pile stands alone — no orthogonally adjacent rubble — so a
+          // single block can never wall a corner off.
+          expect(d.tiles[y][x - 1]).not.toBe('rubble')
+          expect(d.tiles[y][x + 1]).not.toBe('rubble')
+          expect(d.tiles[y - 1][x]).not.toBe('rubble')
+          expect(d.tiles[y + 1][x]).not.toBe('rubble')
+          // The safe entry hall stays clear of obstacles.
+          if (startRoom) {
+            const inStart =
+              x >= startRoom.x0 && x <= startRoom.x1 && y >= startRoom.y0 && y <= startRoom.y1
+            expect(inStart).toBe(false)
+          }
+        }
+      }
+      // The chest stays reachable even with rubble in the way (reaches() blocks it).
+      let chest: Point | null = null
+      for (let y = 0; y < d.rows; y++) {
+        for (let x = 0; x < d.cols; x++) if (d.tiles[y][x] === 'chest') chest = { x, y }
+      }
+      if (chest) expect(reaches(d, d.playerStart, chest)).toBe(true)
+    }
+    // Rubble actually appears across the sampled levels.
+    expect(total).toBeGreaterThan(0)
   })
 
   it('spawns no enemy on the start tile', () => {

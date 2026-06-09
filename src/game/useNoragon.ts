@@ -303,8 +303,11 @@ function reducer(state: GameState, action: GameAction): GameState {
             tone: 'damage',
           })
         }
-      } else if (tileAt(state.dungeon, target.x, target.y) === 'wall') {
-        // Bumping a wall is not a turn — nothing happens, and nothing is logged.
+      } else if (
+        tileAt(state.dungeon, target.x, target.y) === 'wall' ||
+        tileAt(state.dungeon, target.x, target.y) === 'rubble'
+      ) {
+        // Bumping a wall or a rubble pile is not a turn — nothing happens.
         return state
       } else {
         const tile = tileAt(state.dungeon, target.x, target.y)
