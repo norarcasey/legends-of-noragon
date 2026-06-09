@@ -38,7 +38,9 @@ Combat:
   whiff).
 - **Ranged** — press **F** to take aim (the nearest foe is auto-targeted; **Tab**
   or the arrow keys switch targets, **Enter** looses an arrow, and **F** again or
-  **Esc** cancels for free) and soften foes from a distance.
+  **Esc** cancels for free) and soften foes from a distance. You can even fire an
+  **opportunity shot from a doorway** — peek into the next room, loose an arrow at
+  what's inside, and that room then takes its turn.
 - Foes roll their own chance to hit back, and the bestiary climbs from fodder to
   horror: **Bats**, **Kobolds**, **Spiders**, and **Dire Wolves** early, then
   **Skeletons**, **Goblins**, and **Orcs**, up to hulking **Ogres**, lumbering

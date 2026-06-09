@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Doorway opportunity shot: standing in a doorway, the hero can now aim and fire
+  into the room being peeked (previously firing required sharing the room). The
+  shot draws a response — that room's foes take their turn afterward — while
+  merely walking up to or standing in the doorway stays a safe peek. The combat
+  helpers (`isActiveFoe`, `activeEnemiesOf`, `runEnemyPhase`) gained an optional
+  `engaged` rooms argument to model it.
 - A shipped example theme: add the `noragon--parchment` class (e.g.
   `<Noragon className="noragon--parchment" />`) for a warm, light, aged-paper
   palette. It overrides the `--noragon-*` tokens, doubling as proof the theming

@@ -19,13 +19,14 @@ export function runEnemyPhase(
   defense: number,
   roll: () => number,
   messages: string[],
+  engaged: number[] = [],
 ): { enemies: Enemy[]; hp: number } {
   const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
   const moved: Enemy[] = []
   let nextHp = hp
 
   for (const foe of enemies) {
-    if (!isActiveFoe(dungeon.rooms, player, foe)) {
+    if (!isActiveFoe(dungeon.rooms, player, foe, engaged)) {
       moved.push(foe)
       continue
     }

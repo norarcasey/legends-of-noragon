@@ -24,6 +24,7 @@ import {
   computeVisible,
   deriveCombat,
   generateDungeon,
+  isActiveFoe,
   logLines,
   makeRoller,
   manhattan,
@@ -443,7 +444,14 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'aimStart': {
       if (state.status !== 'playing') return state
-      const actives = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
+      // Standing in a doorway engages the peeked room(s), so the hero can aim
+      // into the room beyond and loose an opportunity shot from the threshold.
+      const actives = activeEnemiesOf(
+        state.dungeon.rooms,
+        state.player,
+        state.enemies,
+        roomsByDoor(state.dungeon, state.player),
+      )
       if (actives.length === 0) {
         return {
           ...state,
@@ -459,7 +467,14 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'aimCycle': {
       if (!state.aiming) return state
-      const actives = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
+      // Standing in a doorway engages the peeked room(s), so the hero can aim
+      // into the room beyond and loose an opportunity shot from the threshold.
+      const actives = activeEnemiesOf(
+        state.dungeon.rooms,
+        state.player,
+        state.enemies,
+        roomsByDoor(state.dungeon, state.player),
+      )
       if (actives.length === 0) return { ...state, aiming: false, targetId: null }
       const current = actives.findIndex((e) => e.id === state.targetId)
       const base = current === -1 ? 0 : current
@@ -471,10 +486,13 @@ function reducer(state: GameState, action: GameAction): GameState {
       return { ...state, aiming: false, targetId: null }
     case 'fire': {
       if (state.status !== 'playing' || !state.aiming) return state
+      // The peeked rooms when standing in a doorway — fired into as an
+      // opportunity shot, and roused to respond afterward.
+      const engaged = roomsByDoor(state.dungeon, state.player)
       const target = state.enemies.find((e) => e.id === state.targetId)
-      const room = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
-      // Target must still be a live enemy in the hero's room.
-      if (!target || target.room !== room) {
+      // Target must still be a foe the hero can actually shoot — in the room, a
+      // peeked room from a doorway, or adjacent.
+      if (!target || !isActiveFoe(state.dungeon.rooms, state.player, target, engaged)) {
         return { ...state, aiming: false, targetId: null }
       }
 
@@ -496,6 +514,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         a.defense,
         rng.roll,
         messages,
+        engaged,
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')

@@ -79,4 +79,15 @@ describe('runEnemyPhase', () => {
     expect(r.enemies[0]).toEqual(idle)
     expect(messages).toHaveLength(0)
   })
+
+  it('rouses a foe in an engaged (doorway-peeked) room', () => {
+    // Hero on a gap tile (no room), foe in room 0 but not adjacent.
+    const hero = { x: 6, y: 2 }
+    const f = foe(0, 4, 4, 0)
+    // Dormant by default — not the hero's room, not adjacent.
+    expect(runEnemyPhase(dungeon, hero, [f], 20, 0, rolls(), [], []).enemies[0]).toEqual(f)
+    // Engaging room 0 (a doorway shot) makes it chase a step closer.
+    const roused = runEnemyPhase(dungeon, hero, [f], 20, 0, rolls(), [], [0])
+    expect(roused.enemies[0]).not.toEqual(f)
+  })
 })

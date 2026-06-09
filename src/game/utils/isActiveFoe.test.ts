@@ -32,4 +32,12 @@ describe('isActiveFoe', () => {
   it('is inactive when in a different room and not adjacent', () => {
     expect(isActiveFoe(rooms, { x: 6, y: 6 }, foe(1, 1, 0))).toBe(false)
   })
+
+  it('is active when its room is engaged (doorway peek) even if far and roomless', () => {
+    // Hero on a gap tile (no room), foe deep in room 1 and not adjacent.
+    const hero = { x: 4, y: 4 }
+    const far = foe(7, 7, 1)
+    expect(isActiveFoe(rooms, hero, far)).toBe(false) // not engaged → dormant
+    expect(isActiveFoe(rooms, hero, far, [1])).toBe(true) // room 1 engaged → active
+  })
 })
