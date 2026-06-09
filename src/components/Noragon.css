@@ -131,11 +131,16 @@
 
 .noragon__chrome--bottom {
   bottom: 0;
-  /* Stat row on top, the aim/stairs prompt wired in beneath it. */
+  justify-content: center;
+}
+
+/* The middle column: the framed board with its prompt stacked just beneath. */
+.noragon__center {
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.3rem;
+  gap: 0.5rem;
 }
 
 .noragon__chrome-group {
@@ -146,29 +151,30 @@
   gap: 0.15rem 0.7rem;
 }
 
-/* The aim / descend prompt, sitting under the bottom stat row. */
-.noragon__chrome-banner {
-  pointer-events: auto;
+/* The aim / descend prompt, sitting just below the framed board (matching its
+   width), not over it. */
+.noragon__prompt {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.72rem;
+  max-width: min(70vh, 100%);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--noragon-banner-bg);
   color: var(--noragon-text);
 }
 
-.noragon__chrome-banner--aim {
+.noragon__prompt--aim {
   background: var(--noragon-aim-bg);
   color: var(--noragon-aim-ink);
 }
 
-.noragon__chrome-banner kbd {
+.noragon__prompt kbd {
   font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
   background: var(--noragon-wall);
   border-radius: 3px;
