@@ -23,6 +23,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The full-board overlays — the start/death screen and the merchant's shop — now
+  cover the entire board frame, chrome included, in the all-in-one layout
+  (previously they covered only the grid). The start/death screen is extracted as
+  a new exported `Overlay` component; `<Board>` still renders both for standalone
+  use, while `<Noragon>` renders them at the frame level.
 - Static board frame with in-frame stats: the board now sits in a fixed square
   frame whose border and dark fill never change with the level's size — the grid
   is borderless and letterboxes inside, blending into the fill until uncovered,

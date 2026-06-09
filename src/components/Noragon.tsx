@@ -6,6 +6,8 @@ import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
 import { Inventory } from './Inventory'
 import { NoragonRoot } from './NoragonRoot'
+import { Overlay } from './Overlay'
+import { Shop } from './Shop'
 import { useNoragonKeyboard } from './useNoragonKeyboard'
 import './Noragon.css'
 
@@ -124,12 +126,6 @@ export function Noragon({
               effects={game.effects}
               projectiles={game.projectiles}
               fadingEnemies={game.fadingEnemies}
-              shop={shop}
-              status={status}
-              depth={run.depth}
-              onStairs={onStairs}
-              onStart={start}
-              onDescend={descend}
               banners={false}
             />
 
@@ -140,6 +136,10 @@ export function Noragon({
             <div className="noragon__chrome noragon__chrome--bottom" aria-live="polite">
               <div className="noragon__chrome-group">{bottomStats.map(chip)}</div>
             </div>
+
+            {/* Full-frame overlays — cover the board and its chrome. */}
+            <Overlay status={status} depth={run.depth} onStart={start} />
+            {shop ? <Shop {...shop} /> : null}
           </div>
 
           {/* Prompts hang off the bottom of the frame, connected to it. */}

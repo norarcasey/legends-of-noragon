@@ -9,6 +9,7 @@ import type {
   TileType,
 } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
+import { Overlay } from './Overlay'
 import { Shop } from './Shop'
 import type { ShopProps } from './Shop'
 import './Board.css'
@@ -261,20 +262,7 @@ export function Board({
         </div>
       )}
 
-      {status != null && status !== 'playing' && onStart && (
-        <div className="noragon__overlay" role="status">
-          {status === 'idle' && (
-            <p className="noragon__message">Descend into the dungeon of Noragon</p>
-          )}
-          {status === 'dead' && <p className="noragon__message">You died at depth {depth}. 💀</p>}
-          <button type="button" className="noragon__button" onClick={onStart}>
-            {status === 'dead' ? 'Delve again' : 'Enter'}
-          </button>
-          <p className="noragon__hint">
-            Arrow keys / WASD to move, F to aim (Enter to fire) — take the stairs to descend
-          </p>
-        </div>
-      )}
+      {onStart && status != null && <Overlay status={status} depth={depth} onStart={onStart} />}
 
       {shop ? <Shop {...shop} /> : null}
     </div>

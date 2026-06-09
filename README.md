@@ -197,7 +197,7 @@ co-located unit test.
 
 Between the all-in-one `<Noragon />` and the fully headless hook sits a middle
 tier: keep the built-in look but arrange it yourself. The UI is exported as parts
-— `Board`, `Stats`, `EnemyCards`, `ActivityLog`, `Inventory`, `Shop` — each taking a slice
+— `Board`, `Stats`, `EnemyCards`, `ActivityLog`, `Inventory`, `Shop`, `Overlay` — each taking a slice
 of the `useNoragon()` return. Wrap them in `NoragonRoot`, which carries the theme
 (the `.noragon` styles and colour variables every part reads), and import the
 stylesheet:
