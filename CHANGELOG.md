@@ -23,6 +23,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Stylized dividers between the three layout columns — a vertical rule that
+  fades at both ends with a small diamond finial at its centre, themeable via a
+  new `--noragon-divider` token. Shown only in the wide 3-column grid.
 - Shops: every level now has a safe **shop room** with a **merchant** (`⚖`).
   Bump the merchant to open their stall — an overlay over the board — and **buy**
   randomly stocked gear (a couple of potions plus weapons/armor/rings/amulets) or

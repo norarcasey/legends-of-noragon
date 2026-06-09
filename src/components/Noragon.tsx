@@ -77,6 +77,8 @@ export function Noragon({
           {footer != null && <div className="noragon__note">{footer}</div>}
         </aside>
 
+        <div className="noragon__divider" aria-hidden />
+
         <div className="noragon__stage">
           <Board
             board={board}
@@ -97,6 +99,8 @@ export function Noragon({
 
           <Stats hero={hero} run={run} />
         </div>
+
+        <div className="noragon__divider" aria-hidden />
 
         <aside className="noragon__panel">
           {status !== 'idle' && <ActivityLog entries={game.log} />}

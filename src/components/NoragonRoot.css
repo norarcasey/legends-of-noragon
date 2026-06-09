@@ -37,6 +37,8 @@
   --noragon-target: #ff5252;
   /* Dark ink for text on accent / coloured button backgrounds. */
   --noragon-on-accent: #0b0d14;
+  /* Ornamental rule between the three layout columns. */
+  --noragon-divider: #4a5168;
   /* Health-bar gradient. */
   --noragon-hp-bar-from: #e53935;
   --noragon-hp-bar-to: #ff7043;

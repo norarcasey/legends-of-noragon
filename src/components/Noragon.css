@@ -17,13 +17,51 @@
   align-items: stretch;
 }
 
+/* Ornamental rules between the columns — only shown in the 3-column grid. */
+.noragon__divider {
+  display: none;
+}
+
 @media (min-width: 960px) {
   .noragon__layout {
     display: grid;
-    /* Middle (board) column twice the width of each side column. */
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    /* Middle (board) column twice the width of each side column, with a thin
+       divider track (sized to the rule) in each gutter. */
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 2fr) auto minmax(0, 1fr);
     align-items: start;
     gap: 1.25rem;
+  }
+
+  .noragon__divider {
+    display: block;
+    /* Span the full height of the tallest column. */
+    align-self: stretch;
+    position: relative;
+    width: 2px;
+    /* A vertical rule that fades at both ends, with a gap in the middle for the
+       diamond finial. */
+    background: linear-gradient(
+      to bottom,
+      transparent 0,
+      var(--noragon-divider) 8%,
+      var(--noragon-divider) 45%,
+      transparent 45%,
+      transparent 55%,
+      var(--noragon-divider) 55%,
+      var(--noragon-divider) 92%,
+      transparent 100%
+    );
+  }
+
+  .noragon__divider::before {
+    content: '◆';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--noragon-divider);
   }
 }
 

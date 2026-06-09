@@ -143,13 +143,14 @@ The tokens, by group:
 - **Surfaces** — `--noragon-bg`, `--noragon-wall`, `--noragon-wall-edge`,
   `--noragon-floor`, `--noragon-floor-line`, `--noragon-corridor`.
 - **Tiles & hero** — `--noragon-door`, `--noragon-chest`, `--noragon-stairs`,
-  `--noragon-player`, `--noragon-loot`.
+  `--noragon-rubble`, `--noragon-merchant`, `--noragon-player`, `--noragon-loot`.
 - **Enemies** (one per kind) — `--noragon-bat`, `--noragon-kobold`,
   `--noragon-spider`, `--noragon-direWolf`, `--noragon-skeleton`,
   `--noragon-goblin`, `--noragon-orc`, `--noragon-ogre`, `--noragon-troll`,
   `--noragon-wraith`.
 - **UI & text** — `--noragon-accent`, `--noragon-text`, `--noragon-muted`,
-  `--noragon-on-accent` (ink on coloured buttons), `--noragon-target`,
+  `--noragon-on-accent` (ink on coloured buttons), `--noragon-divider` (the rule
+  between columns), `--noragon-target`, `--noragon-arrow`, `--noragon-impact`,
   `--noragon-hp-bar-from`, `--noragon-hp-bar-to`, `--noragon-aim-bg`,
   `--noragon-aim-ink`.
 - **Activity-log highlights** — `--noragon-log-gold`, `--noragon-log-bad`,
