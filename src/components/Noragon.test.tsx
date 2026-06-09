@@ -672,10 +672,10 @@ describe('useNoragon — combat', () => {
     })
   })
 
-  it('lands the arrow where the target ends up, not the tile it left', () => {
-    // A light hit (1 dmg) so the foe is likely to survive and take its step,
-    // exercising the case the engine guards against: the arrow tracking a foe
-    // that moves on the same turn instead of stranding on the tile it left.
+  it('lands the arrow where the target stood when struck, not where it moves to', () => {
+    // A light hit (1 dmg) so the foe is likely to survive and take its step. The
+    // arrow, burst, and number stay on the tile it was struck on; the view holds
+    // the foe there through the flight, then it glides on — the hit reads first.
     const { result } = renderHook(() =>
       useNoragon({
         maxHp: 99,
@@ -691,17 +691,43 @@ describe('useNoragon — combat', () => {
     if (targetId == null) throw new Error('no target')
     const before = result.current.enemies.find((e) => e.id === targetId)
     if (!before) throw new Error('no target enemy')
+    const struck = { x: before.x, y: before.y }
 
     act(() => result.current.fire())
 
-    // The arrow, its burst, and its number all land on the target's final tile:
-    // where it moved to if it lived, else where it died.
-    const after = result.current.enemies.find((e) => e.id === targetId)
-    const land = after ?? before
-    expect(result.current.projectiles[0]).toMatchObject({ toX: land.x, toY: land.y })
+    // The arrow and its number land on the tile the foe occupied when hit.
+    expect(result.current.projectiles[0]).toMatchObject({ toX: struck.x, toY: struck.y })
     expect(
-      result.current.effects.some((f) => f.tone === 'damage' && f.x === land.x && f.y === land.y),
+      result.current.effects.some(
+        (f) => f.tone === 'damage' && f.x === struck.x && f.y === struck.y,
+      ),
     ).toBe(true)
+  })
+
+  it('keeps a slain foe one turn as a fading enemy where it fell', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { ranged: { accuracy: 1, minDamage: 50, maxDamage: 50 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    enterEnemyRoom(result)
+
+    act(() => result.current.aimStart())
+    const targetId = result.current.targetId
+    if (targetId == null) throw new Error('no target')
+    const before = result.current.enemies.find((e) => e.id === targetId)
+    if (!before) throw new Error('no target enemy')
+
+    act(() => result.current.fire())
+
+    // The kill removes it from the living set but keeps it fading where it fell.
+    expect(result.current.enemies.some((e) => e.id === targetId)).toBe(false)
+    expect(result.current.fadingEnemies).toContainEqual(
+      expect.objectContaining({ id: targetId, x: before.x, y: before.y }),
+    )
   })
 
   it('cycles the crosshairs among foes in the room', () => {

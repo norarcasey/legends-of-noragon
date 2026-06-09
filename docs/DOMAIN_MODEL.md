@@ -247,6 +247,7 @@ classDiagram
     +nextLogId : number
     +effects : CombatFloat[]
     +projectiles : Projectile[]
+    +fadingEnemies : Enemy[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -311,7 +312,7 @@ classDiagram
   GameState --> InventoryItem : inventory
   GameState --> Equipment : equipment
   GameState --> FloorItem : floorItems
-  GameState --> Enemy : enemies
+  GameState --> Enemy : enemies, fadingEnemies
   GameState --> GameStatus : status
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects
@@ -372,6 +373,7 @@ classDiagram
     +log : LogEntry[]
     +effects : CombatFloat[]
     +projectiles : Projectile[]
+    +fadingEnemies : Enemy[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -431,7 +433,7 @@ classDiagram
   NoragonApi --> BoardView : board
   NoragonApi --> HeroView : hero
   NoragonApi --> RunView : run
-  NoragonApi --> Enemy : enemies, activeEnemies
+  NoragonApi --> Enemy : enemies, activeEnemies, fadingEnemies
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles
@@ -606,6 +608,7 @@ classDiagram
     +log : LogEntry[]
     +effects : CombatFloat[]
     +projectiles : Projectile[]
+    +fadingEnemies : Enemy[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -642,6 +645,7 @@ classDiagram
     +nextLogId : number
     +effects : CombatFloat[]
     +projectiles : Projectile[]
+    +fadingEnemies : Enemy[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -740,7 +744,7 @@ classDiagram
   NoragonApi --> BoardView : board
   NoragonApi --> HeroView : hero
   NoragonApi --> RunView : run
-  NoragonApi --> Enemy : enemies, activeEnemies
+  NoragonApi --> Enemy : enemies, activeEnemies, fadingEnemies
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles
@@ -752,7 +756,7 @@ classDiagram
   GameState --> InventoryItem : inventory
   GameState --> Equipment : equipment
   GameState --> FloorItem : floorItems
-  GameState --> Enemy : enemies
+  GameState --> Enemy : enemies, fadingEnemies
   GameState --> GameStatus : status
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects

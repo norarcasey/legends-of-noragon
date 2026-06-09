@@ -88,6 +88,7 @@ function makeInitial(config: HeroStats, seed: number): GameState {
     nextLogId: 0,
     effects: [],
     projectiles: [],
+    fadingEnemies: [],
     nextEffectId: 0,
     rngState: seed >>> 0,
     aiming: false,
@@ -125,6 +126,8 @@ function descend(state: GameState, messages: string[]): GameState {
     seen,
     aiming: false,
     targetId: null,
+    projectiles: [],
+    fadingEnemies: [],
     turns: state.turns + 1,
     ...logLines(state.log, state.nextLogId, messages),
   }
@@ -388,6 +391,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         // No arrow this turn; clear any from a prior shot so impact timing on a
         // tile a past arrow targeted isn't mistaken for a ranged hit.
         projectiles: [],
+        fadingEnemies: [],
         nextEffectId,
         rngState: rng.state(),
         seen: litSeen(player),
@@ -481,6 +485,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         turns: state.turns + 1,
         effects: floats,
         projectiles: [],
+        fadingEnemies: [],
         nextEffectId,
         rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
@@ -588,28 +593,35 @@ function reducer(state: GameState, action: GameAction): GameState {
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
 
-      // Where the target ends up on-screen this turn: its post-move tile if it
-      // survived, else where it stood when struck. The arrow — and its burst and
-      // number — land here, so a hit on a foe that then steps away still reads as
-      // a hit, not a miss against the tile it just left.
-      const survivor = phase.enemies.find((e) => e.id === target.id)
-      const landX = survivor ? survivor.x : target.x
-      const landY = survivor ? survivor.y : target.y
+      // The arrow flies to where the target stood when struck, and its burst and
+      // number land there too. The view holds the foe at that tile until the
+      // arrow arrives, then plays out its move (it glides away) or death (it
+      // fades) — so the hit always reads before the foe reacts.
       const projectiles: Projectile[] = [
         {
           id: nextEffectId++,
           fromX: state.player.x,
           fromY: state.player.y,
-          toX: landX,
-          toY: landY,
+          toX: target.x,
+          toY: target.y,
           kind: 'arrow',
         },
       ]
       if (!a.hit) {
-        floats.push({ id: nextEffectId++, x: landX, y: landY, amount: 0, tone: 'miss' })
+        floats.push({ id: nextEffectId++, x: target.x, y: target.y, amount: 0, tone: 'miss' })
       } else if (a.damage > 0) {
-        floats.push({ id: nextEffectId++, x: landX, y: landY, amount: a.damage, tone: 'damage' })
+        floats.push({
+          id: nextEffectId++,
+          x: target.x,
+          y: target.y,
+          amount: a.damage,
+          tone: 'damage',
+        })
       }
+      // If the shot killed it, keep the foe one turn so the view can fade it out
+      // where it fell (after the arrow lands) rather than vanishing at launch.
+      const slain = !phase.enemies.some((e) => e.id === target.id)
+      const fadingEnemies = slain ? [{ ...target }] : []
 
       if (a.hp - phase.hp > 0) {
         floats.push({
@@ -645,6 +657,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         targetId: null,
         effects: floats,
         projectiles,
+        fadingEnemies,
         nextEffectId,
         rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
@@ -776,6 +789,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     log: state.log,
     effects: state.effects,
     projectiles: state.projectiles,
+    fadingEnemies: state.fadingEnemies,
     start,
     reset,
     move,

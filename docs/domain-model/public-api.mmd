@@ -45,6 +45,7 @@ classDiagram
     +log : LogEntry[]
     +effects : CombatFloat[]
     +projectiles : Projectile[]
+    +fadingEnemies : Enemy[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -104,7 +105,7 @@ classDiagram
   NoragonApi --> BoardView : board
   NoragonApi --> HeroView : hero
   NoragonApi --> RunView : run
-  NoragonApi --> Enemy : enemies, activeEnemies
+  NoragonApi --> Enemy : enemies, activeEnemies, fadingEnemies
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles

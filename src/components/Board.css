@@ -19,6 +19,9 @@
   position: relative;
   width: 100%;
   min-width: 0;
+  /* A sizing container (and carrier of --noragon-cols) so the enemy overlay,
+     which sits here rather than in the grid, can scale glyphs to the tiles. */
+  container-type: inline-size;
 }
 
 /* Floating combat numbers — a short rise-and-fade over the tile they belong to.
@@ -144,8 +147,14 @@
 @media (prefers-reduced-motion: reduce) {
   .noragon__float,
   .noragon__arrow,
-  .noragon__burst {
+  .noragon__burst,
+  .noragon__enemy--dying {
     animation-duration: 0.01ms;
+  }
+
+  .noragon__enemy--deferred {
+    transition-duration: 0s;
+    transition-delay: 0s;
   }
 }
 
@@ -208,47 +217,84 @@
   text-shadow: 0 0 6px currentColor;
 }
 
-.noragon__tile--enemy {
+/* Enemies live in an overlay above the grid (not in the tile cells) so they can
+   animate between tiles. Each is centred on its tile via inline left/top. */
+.noragon__enemy {
+  position: absolute;
+  /* Match the tile glyph size — board-wrap carries --noragon-cols + container. */
+  font-size: clamp(0.4rem, calc(66cqi / var(--noragon-cols, 13)), 1.05rem);
+  line-height: 1;
   text-shadow: 0 0 5px currentColor;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  user-select: none;
+  /* Instant by default; --deferred turns this into a delayed glide. */
+  transition:
+    left 0s,
+    top 0s;
 }
 
-.noragon__tile--bat {
+/* On a turn an arrow is in flight, hold each foe at its tile through the flight
+   (~0.24s) then glide it to its new tile, so the shot lands before foes react. */
+.noragon__enemy--deferred {
+  transition:
+    left 0.18s ease 0.24s,
+    top 0.18s ease 0.24s;
+}
+
+/* A slain foe fades out where it fell, after the arrow has landed. */
+.noragon__enemy--dying {
+  animation: noragon-enemy-die 0.3s ease-out 0.24s forwards;
+}
+
+@keyframes noragon-enemy-die {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
+.noragon__enemy--bat {
   color: var(--noragon-bat);
 }
 
-.noragon__tile--kobold {
+.noragon__enemy--kobold {
   color: var(--noragon-kobold);
 }
 
-.noragon__tile--spider {
+.noragon__enemy--spider {
   color: var(--noragon-spider);
 }
 
-.noragon__tile--direWolf {
+.noragon__enemy--direWolf {
   color: var(--noragon-direWolf);
 }
 
-.noragon__tile--skeleton {
+.noragon__enemy--skeleton {
   color: var(--noragon-skeleton);
 }
 
-.noragon__tile--goblin {
+.noragon__enemy--goblin {
   color: var(--noragon-goblin);
 }
 
-.noragon__tile--orc {
+.noragon__enemy--orc {
   color: var(--noragon-orc);
 }
 
-.noragon__tile--ogre {
+.noragon__enemy--ogre {
   color: var(--noragon-ogre);
 }
 
-.noragon__tile--troll {
+.noragon__enemy--troll {
   color: var(--noragon-troll);
 }
 
-.noragon__tile--wraith {
+.noragon__enemy--wraith {
   color: var(--noragon-wraith);
 }
 
@@ -265,12 +311,11 @@
   color: var(--noragon-spider);
 }
 
-.noragon__tile--target {
+.noragon__enemy--target {
   color: var(--noragon-target);
-  box-shadow:
-    inset 0 0 0 2px var(--noragon-target),
-    0 0 8px rgba(255, 82, 82, 0.7);
-  border-radius: 3px;
+  text-shadow:
+    0 0 6px var(--noragon-target),
+    0 0 11px rgba(255, 82, 82, 0.8);
 }
 
 /* ---- Aim banner ---- */

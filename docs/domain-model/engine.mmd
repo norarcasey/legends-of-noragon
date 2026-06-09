@@ -24,6 +24,7 @@ classDiagram
     +nextLogId : number
     +effects : CombatFloat[]
     +projectiles : Projectile[]
+    +fadingEnemies : Enemy[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -88,7 +89,7 @@ classDiagram
   GameState --> InventoryItem : inventory
   GameState --> Equipment : equipment
   GameState --> FloorItem : floorItems
-  GameState --> Enemy : enemies
+  GameState --> Enemy : enemies, fadingEnemies
   GameState --> GameStatus : status
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects

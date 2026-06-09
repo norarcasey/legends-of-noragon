@@ -28,6 +28,9 @@ export interface BoardProps {
   effects?: CombatFloat[]
   /** Projectiles (`game.projectiles`) to animate travelling to their target. */
   projectiles?: Projectile[]
+  /** Foes slain this turn (`game.fadingEnemies`) — drawn briefly so they fade
+   *  out where they fell instead of vanishing instantly. */
+  fadingEnemies?: Enemy[]
   /** Run status (`game.run.status`) — drives the start/death overlay and gates the
    *  stairs prompt. Omit to render just the grid (no status-driven overlays). */
   status?: GameStatus
@@ -66,6 +69,7 @@ export function Board({
   targetId,
   effects,
   projectiles,
+  fadingEnemies,
   status,
   depth,
   onStairs,
@@ -73,20 +77,27 @@ export function Board({
   onDescend,
 }: BoardProps) {
   const { cols, rows, tiles, visible, floorItems } = board
-  // `--noragon-cols` lets the CSS scale the glyph size to the column count, so
-  // tiles stay legible whatever the (eventually procedural) board dimensions are.
-  const gridStyle: CSSProperties & Record<string, string | number> = {
+  const gridStyle: CSSProperties = {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
     aspectRatio: `${cols} / ${rows}`,
+  }
+  // `--noragon-cols` lets the CSS scale glyphs to the column count so they stay
+  // legible at any board size. It lives on the wrap so both the grid tiles and
+  // the enemy overlay (a sibling of the grid) inherit it.
+  const wrapStyle: CSSProperties & Record<string, string | number> = {
     '--noragon-cols': cols,
   }
 
   const enemyAt = (x: number, y: number) => enemies.find((e) => e.x === x && e.y === y)
   const itemAt = (x: number, y: number) => floorItems.find((i) => i.x === x && i.y === y)
+  const centre = (x: number, y: number) => ({
+    left: `${((x + 0.5) / cols) * 100}%`,
+    top: `${((y + 0.5) / rows) * 100}%`,
+  })
 
   return (
-    <div className="noragon__board-wrap">
+    <div className="noragon__board-wrap" style={wrapStyle}>
       <div className="noragon__board" style={gridStyle} data-testid="board" aria-hidden>
         {tiles.flatMap((row, y) =>
           row.map((tile, x) => {
@@ -96,7 +107,8 @@ export function Board({
             if (!lit) {
               return <div key={`${x},${y}`} className="noragon__tile noragon__tile--hidden" />
             }
-            const foe = enemyAt(x, y)
+            // Enemies are drawn in their own overlay (so they can animate
+            // between tiles); a tile only hides loot a foe is standing on.
             const item = enemyAt(x, y) ? undefined : itemAt(x, y)
             let cls = `noragon__tile noragon__tile--${tile}`
             let glyph = TILE_GLYPH[tile]
@@ -105,11 +117,6 @@ export function Board({
               cls += ' noragon__tile--player'
               glyph = '☻'
               testid = 'player'
-            } else if (foe) {
-              cls += ` noragon__tile--enemy noragon__tile--${foe.kind}`
-              glyph = ENEMY_INFO[foe.kind].glyph
-              testid = `enemy-${foe.kind}`
-              if (aiming && foe.id === targetId) cls += ' noragon__tile--target'
             } else if (item) {
               cls += ` noragon__tile--loot noragon__tile--loot-${item.kind}`
               glyph = item.kind === 'gold' ? '$' : ITEMS[item.kind].glyph
@@ -123,6 +130,38 @@ export function Board({
           }),
         )}
       </div>
+
+      {enemies.map((e) => {
+        // Only foes on a lit tile show. `--deferred` (set while an arrow flies)
+        // holds a foe at its tile through the flight, then glides it to its new
+        // one — so a struck foe doesn't step away before the arrow lands.
+        if (!visible[e.y]?.[e.x]) return null
+        const targeted = aiming && e.id === targetId
+        return (
+          <span
+            key={e.id}
+            className={`noragon__enemy noragon__enemy--${e.kind}${
+              targeted ? ' noragon__enemy--target' : ''
+            }${projectiles?.length ? ' noragon__enemy--deferred' : ''}`}
+            style={centre(e.x, e.y)}
+            data-testid={`enemy-${e.kind}`}
+            aria-hidden
+          >
+            {ENEMY_INFO[e.kind].glyph}
+          </span>
+        )
+      })}
+
+      {fadingEnemies?.map((e) => (
+        <span
+          key={`dying-${e.id}`}
+          className={`noragon__enemy noragon__enemy--${e.kind} noragon__enemy--dying`}
+          style={centre(e.x, e.y)}
+          aria-hidden
+        >
+          {ENEMY_INFO[e.kind].glyph}
+        </span>
+      ))}
 
       {effects
         ?.filter((e) => e.tone === 'damage')

@@ -6,12 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.0] - 2026-06-04
 
-### Fixed
-
-- A fired arrow now lands on the foe it hit even when that foe steps on the same
-  turn: the arrow (and its burst and number) aim at the target's final tile —
-  where it moved to if it lived, or where it stood if it died — instead of the
-  tile it just left, which had made a clean hit look like a miss.
+- A fired arrow now lands before the foe reacts. Enemies render in their own
+  overlay above the grid, so a struck foe holds on the tile it was hit on
+  through the arrow's flight and only then plays out its turn — gliding to its
+  new tile, or fading out where it fell if slain — instead of having already
+  moved (which made a clean hit look like a miss). Enemy movement on a shot is
+  deferred via CSS; the engine still resolves the whole turn in one pure step.
 - Combat juice now plays in the right order: the impact burst leads the damage
   number (the ring blossoms, then the number rises out of it) instead of
   trailing it, and on a ranged hit both wait for the arrow to land rather than

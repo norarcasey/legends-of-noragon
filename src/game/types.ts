@@ -294,6 +294,9 @@ export interface NoragonApi {
   /** Projectiles loosed on the latest turn (e.g. a fired arrow), for the UI to
    *  animate travelling to their target. Replaced each turn. */
   projectiles: Projectile[]
+  /** Foes slain on the latest turn, kept for one turn so the UI can play them
+   *  out (fade) where they fell rather than vanishing instantly. */
+  fadingEnemies: Enemy[]
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
@@ -367,6 +370,9 @@ export interface GameState extends HeroStats {
   effects: CombatFloat[]
   /** Projectiles loosed this turn (a fired arrow); replaced each turn. */
   projectiles: Projectile[]
+  /** Foes slain this turn, kept one turn so the UI can fade them out where they
+   *  fell instead of popping away. Replaced each turn. */
+  fadingEnemies: Enemy[]
   /** Next id to mint for a combat float or projectile; monotonic so the UI
    *  animates each visual effect exactly once. */
   nextEffectId: number
