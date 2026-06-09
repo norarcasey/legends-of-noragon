@@ -11,10 +11,10 @@ export interface EnemyCardsProps {
 }
 
 /**
- * A row of cards for the enemies sharing the hero's room — each showing the
- * creature's name, a short description, and a health bar. Mirrors the engine's
- * notion of "active": only enemies that can actually act appear here. While
- * aiming, the targeted enemy's card is highlighted.
+ * A row of cards for the foes the hero is engaged with — those sharing its room,
+ * adjacent, or in a room peeked from a doorway — each showing the creature's
+ * name, a short description, and a health bar. While aiming, the targeted enemy's
+ * card is highlighted.
  */
 export function EnemyCards({ enemies, targetId = null }: EnemyCardsProps) {
   if (enemies.length === 0) return null

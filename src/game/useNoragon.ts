@@ -602,10 +602,16 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
   const fire = useCallback(() => dispatch({ type: 'fire' }), [])
 
-  // "Active" foes — sharing the hero's room or right beside them — are the ones
-  // that take turns, show as cards, and can be targeted. Same rule everywhere.
+  // "Active" foes — sharing the hero's room, right beside them, or in a room
+  // being peeked from a doorway — are the ones shown as cards and targetable.
+  // (Peeked foes only *act* once engaged by a shot; see the `fire` reducer case.)
   const currentRoom = roomAt(state.dungeon.rooms, state.player.x, state.player.y)
-  const activeEnemies = activeEnemiesOf(state.dungeon.rooms, state.player, state.enemies)
+  const activeEnemies = activeEnemiesOf(
+    state.dungeon.rooms,
+    state.player,
+    state.enemies,
+    roomsByDoor(state.dungeon, state.player),
+  )
   const onStairs = tileAt(state.dungeon, state.player.x, state.player.y) === 'stairs'
 
   // Fog: revealed rooms (plus a doorway peek) lit permanently, with the torch
