@@ -134,13 +134,19 @@
   justify-content: center;
 }
 
-/* The middle column: the framed board with its prompt stacked just beneath. */
+/* The middle column: the framed board with its prompt connected just beneath. */
 .noragon__center {
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+}
+
+/* When a prompt hangs below, square off the frame's bottom corners so the two
+   read as one continuous piece (the prompt rounds the bottom). */
+.noragon__center--prompted .noragon__stage {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .noragon__chrome-group {
@@ -151,8 +157,9 @@
   gap: 0.15rem 0.7rem;
 }
 
-/* The aim / descend prompt, sitting just below the framed board (matching its
-   width), not over it. */
+/* The aim / descend prompt, connected to the bottom of the framed board: same
+   width, flush against it (no gap), square top, rounded bottom — so the frame
+   and prompt look like one piece. */
 .noragon__prompt {
   display: flex;
   align-items: center;
@@ -160,11 +167,11 @@
   gap: 0.5rem;
   width: 100%;
   max-width: min(70vh, 100%);
-  padding: 0.35rem 0.6rem;
+  padding: 0.4rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 0 0 10px 10px;
   background: var(--noragon-banner-bg);
   color: var(--noragon-text);
 }
@@ -176,9 +183,16 @@
 
 .noragon__prompt kbd {
   font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  /* Light text on a dark chip for the (dark) stairs prompt. */
   background: var(--noragon-wall);
   border-radius: 3px;
   padding: 0 0.3em;
+}
+
+/* The aim prompt's ink is dark, so its chips darken the red bar instead (the
+   look the edge banner had) to keep the keys readable. */
+.noragon__prompt--aim kbd {
+  background: rgba(26, 6, 6, 0.18);
 }
 
 .noragon__chip {

@@ -88,6 +88,14 @@ export function Noragon({
     </span>
   )
 
+  // A prompt (if any) hangs off the bottom of the frame; flag the column so the
+  // frame's bottom corners square off and the two read as one connected piece.
+  const prompt: 'aim' | 'stairs' | null = aiming
+    ? 'aim'
+    : status === 'playing' && onStairs
+      ? 'stairs'
+      : null
+
   return (
     <NoragonRoot className={className} ariaLabel={title ?? 'Legends of Noragon dungeon crawler'}>
       {title !== null && <h2 className="noragon__title">{title}</h2>}
@@ -105,7 +113,7 @@ export function Noragon({
 
         <div className="noragon__divider" aria-hidden />
 
-        <div className="noragon__center">
+        <div className={`noragon__center${prompt ? ' noragon__center--prompted' : ''}`}>
           <div className="noragon__stage">
             <Board
               board={board}
@@ -134,8 +142,8 @@ export function Noragon({
             </div>
           </div>
 
-          {/* Prompts sit just below the framed board, not over it. */}
-          {aiming ? (
+          {/* Prompts hang off the bottom of the frame, connected to it. */}
+          {prompt === 'aim' ? (
             <div
               className="noragon__prompt noragon__prompt--aim"
               role="status"
@@ -144,7 +152,7 @@ export function Noragon({
               Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
               <kbd>Esc</kbd> cancel
             </div>
-          ) : status === 'playing' && onStairs ? (
+          ) : prompt === 'stairs' ? (
             <div className="noragon__prompt" role="status" data-testid="stairs-banner">
               <span>
                 A stairway leads down. Press <kbd>&gt;</kbd> to descend.
