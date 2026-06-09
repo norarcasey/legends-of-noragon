@@ -55,12 +55,15 @@ Combat:
   little harder and more often, and is worth more XP than the one by the entrance.
 
 You begin with a kit — a **Short Sword**, **Traveler's Clothes**, a **Health
-Potion**, and a little **gold**. Your equipped weapon adds to your melee damage
-and armor subtracts flat **defense** from every hit you take. Loot lies on the
-floor (gold piles `$`, potions `!`, weapons `/`, armor `]`) — walk onto it to
-pick it up — and chests cough up gold and a potion (sometimes gear). Open the
-**Pack** panel to equip better gear, **drink** a potion (or just press `Q` to
-quaff), or **drop** an item you don't want (dropping is free and discards it).
+Potion**, and a little **gold**. You wear one of each slot — **weapon**,
+**armor**, **ring**, **amulet**: the weapon adds to your melee damage, armor
+subtracts flat **defense** from every hit, and rings and amulets give small
+always-on boosts (a point of damage or defense, a little accuracy, or extra max
+HP). Loot lies on the floor as a mystery **satchel** (`💰`) — its contents are a
+surprise revealed only when you walk onto it and pick it up — and chests cough up
+gold and a potion (sometimes gear or a trinket). Open the **Pack** panel to equip
+better gear, **drink** a potion (or just press `Q` to quaff), or **drop** an item
+you don't want (dropping is free and discards it).
 Stackable items like potions collapse into one counted row (`Health Potion (3)`),
 while gear stays listed per-item so you can equip a specific piece. Your gold and
 pack carry down the stairs with you.
@@ -279,8 +282,9 @@ guarded chest. Planned next, in roughly the order it was dreamed up:
   `spell` profile (targeted the same way) and an arrow/quiver resource for ranged.
 - **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
   enemy evasion, criticals, line-of-sight/cover, and per-weapon damage profiles.
-- **More loot & equipment** — building on weapons/armor/potions/gold: shields,
-  rings and trinkets, a shop to spend gold, and chests that sometimes spring traps.
+- **More loot & equipment** — building on weapons/armor/rings/amulets/potions/gold:
+  shields, more trinket effects, a shop to spend gold, and chests that sometimes
+  spring traps.
 - **Run depth & payoff** — a boss/▼victory at a target depth, rest/heal sites,
   and run summaries, building on the endless-descent loop.
 - **Richer generation** — building on variable size / irregular footprint /

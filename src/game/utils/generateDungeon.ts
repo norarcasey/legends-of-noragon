@@ -1,7 +1,7 @@
 import type { Dungeon, Enemy, FloorItem, Point, Room, TileType } from '../types'
 import { ENEMY_INFO } from '../enemies'
 import type { EnemyKind } from '../enemies'
-import { ARMOR_KINDS, WEAPON_KINDS } from '../items'
+import { AMULET_KINDS, ARMOR_KINDS, RING_KINDS, WEAPON_KINDS } from '../items'
 import type { ItemKind } from '../items'
 import { CELL, MAX_ROOM, MIN_CELLS, MIN_ROOM, ROOM_NAMES } from '../constants'
 import { makeRng } from './makeRng'
@@ -317,6 +317,11 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
     if (rng.next() < 0.12) {
       const pool = rng.next() < 0.5 ? WEAPON_KINDS : ARMOR_KINDS
       dropIn(room, pool[tierIndex], 1)
+    }
+    // A rare trinket — a ring or amulet, picked at random (not tiered).
+    if (rng.next() < 0.07) {
+      const pool = rng.next() < 0.6 ? RING_KINDS : AMULET_KINDS
+      dropIn(room, pool[rng.int(pool.length)], 1)
     }
   }
 

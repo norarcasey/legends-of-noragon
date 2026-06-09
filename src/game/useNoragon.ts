@@ -17,7 +17,7 @@ import type {
   UseNoragonOptions,
 } from './types'
 import { ENEMY_INFO } from './enemies'
-import { ARMOR_KINDS, ITEMS, STARTING_GOLD, WEAPON_KINDS } from './items'
+import { AMULET_KINDS, ARMOR_KINDS, ITEMS, RING_KINDS, STARTING_GOLD, WEAPON_KINDS } from './items'
 import { DEFAULT_ATTACKS, DEFAULTS, DELTA, DIR_NAME } from './constants'
 import {
   activeEnemiesOf,
@@ -58,7 +58,7 @@ function makeInitial(config: HeroStats, seed: number): GameState {
   const clothes: InventoryItem = { id: 1, kind: 'clothes' }
   const potion: InventoryItem = { id: 2, kind: 'healthPotion' }
   const inventory: InventoryItem[] = [sword, clothes, potion]
-  const equipment: Equipment = { weapon: sword.id, armor: clothes.id }
+  const equipment: Equipment = { weapon: sword.id, armor: clothes.id, ring: null, amulet: null }
   const stats = deriveCombat(config, 1, inventory, equipment)
 
   return {
@@ -325,6 +325,13 @@ function reducer(state: GameState, action: GameAction): GameState {
             inventory = [...inventory, { id: nextItemId++, kind }]
             messages.push(`The chest also holds a ${ITEMS[kind].name}!`)
           }
+          // A rarer trinket — a ring or amulet, chosen at random.
+          if (rng.roll() < 0.25) {
+            const pool = rng.roll() < 0.6 ? RING_KINDS : AMULET_KINDS
+            const kind = pool[Math.floor(rng.roll() * pool.length)]
+            inventory = [...inventory, { id: nextItemId++, kind }]
+            messages.push(`A ${ITEMS[kind].name} glitters among the hoard!`)
+          }
           const tiles = dungeon.tiles.map((row) => [...row])
           tiles[player.y][player.x] = 'floor'
           dungeon = { ...dungeon, tiles }
@@ -415,8 +422,9 @@ function reducer(state: GameState, action: GameAction): GameState {
       const item = state.inventory.find((i) => i.id === action.itemId)
       if (!item) return state
       const def = ITEMS[item.kind]
-      if (def.category !== 'weapon' && def.category !== 'armor') return state
-      const slot: 'weapon' | 'armor' = def.category
+      if (def.category === 'potion') return state
+      // Weapon / armor / ring / amulet each have a slot named for the category.
+      const slot: 'weapon' | 'armor' | 'ring' | 'amulet' = def.category
       if (state.equipment[slot] === item.id) return state
       const equipment: Equipment = { ...state.equipment, [slot]: item.id }
       const c = deriveCombat(state.base, state.level, state.inventory, equipment)
@@ -501,6 +509,8 @@ function reducer(state: GameState, action: GameAction): GameState {
       const equipment: Equipment = {
         weapon: state.equipment.weapon === item.id ? null : state.equipment.weapon,
         armor: state.equipment.armor === item.id ? null : state.equipment.armor,
+        ring: state.equipment.ring === item.id ? null : state.equipment.ring,
+        amulet: state.equipment.amulet === item.id ? null : state.equipment.amulet,
       }
       const c = deriveCombat(state.base, state.level, inventory, equipment)
       return {

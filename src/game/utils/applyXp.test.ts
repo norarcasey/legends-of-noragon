@@ -13,7 +13,7 @@ const base: HeroStats = {
   },
 }
 const inv: InventoryItem[] = []
-const bare: Equipment = { weapon: null, armor: null }
+const bare: Equipment = { weapon: null, armor: null, ring: null, amulet: null }
 
 describe('applyXp', () => {
   it('accumulates XP without leveling below the threshold', () => {

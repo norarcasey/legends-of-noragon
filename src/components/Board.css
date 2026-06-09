@@ -298,17 +298,11 @@
   color: var(--noragon-wraith);
 }
 
+/* All floor loot is a single mystery satchel — no per-kind colour, so its
+   contents don't give themselves away before the hero picks it up. */
 .noragon__tile--loot {
   color: var(--noragon-loot);
   text-shadow: 0 0 4px currentColor;
-}
-
-.noragon__tile--loot-gold {
-  color: var(--noragon-chest);
-}
-
-.noragon__tile--loot-healthPotion {
-  color: var(--noragon-spider);
 }
 
 .noragon__enemy--target {

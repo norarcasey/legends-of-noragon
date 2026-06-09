@@ -23,6 +23,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Rings and amulets: two new equipment slots with small always-on boosts. Rings
+  of Protection (+1 defense), Power (+1 melee damage), and Precision (+accuracy),
+  plus an Amulet of Health (+5 max HP) and an Amulet of Valor (+damage & accuracy)
+  turn up as rare loot or in chests. The hero wears one ring and one amulet, and
+  their bonuses stack with the equipped weapon and armor. `Equipment` gains `ring`
+  and `amulet` slots, and `deriveCombat` now sums every worn piece's contribution.
+- Floor loot is now a mystery **satchel** (`💰`): every pickup looks the same on
+  the ground whatever it holds, and the contents are revealed only in the log
+  when the hero grabs it — so what you find is a surprise.
 - Impact bursts: a landed blow now flashes an expanding shockwave ring on the
   struck tile — your melee hits, your arrows (the ring waits for the arrow to
   arrive), and hits you take. Driven entirely from the existing combat floats,

@@ -35,7 +35,10 @@ export function Inventory({
   onDrop,
 }: InventoryProps) {
   const isEquipped = (item: InventoryItem) =>
-    equipment.weapon === item.id || equipment.armor === item.id
+    equipment.weapon === item.id ||
+    equipment.armor === item.id ||
+    equipment.ring === item.id ||
+    equipment.amulet === item.id
 
   // Gear keeps its own row each, split by whether it's worn; stackables group by
   // kind, preserving first-seen order so the pack list stays stable in use.

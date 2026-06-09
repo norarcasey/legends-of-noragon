@@ -7,7 +7,14 @@ import { Board } from './Board'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
-import type { Direction, NoragonApi, Point, TileType, UseNoragonOptions } from '../game/types'
+import type {
+  Direction,
+  FloorItem,
+  NoragonApi,
+  Point,
+  TileType,
+  UseNoragonOptions,
+} from '../game/types'
 
 const DELTA: Record<Direction, Point> = {
   up: { x: 0, y: -1 },
@@ -1477,6 +1484,19 @@ describe('Board combat floats', () => {
     expect(container.querySelector('.noragon__float')).toBeNull()
   })
 
+  it('draws floor loot as a generic satchel, not its specific kind', () => {
+    const floorItems: FloorItem[] = [{ id: 0, x: 2, y: 2, kind: 'longSword', amount: 1 }]
+    const lootBoard = { ...board, floorItems }
+    render(
+      <Board board={lootBoard} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
+    )
+    const loot = screen.getByTestId('loot')
+    // The satchel hides the contents — no weapon glyph giving the type away.
+    expect(loot.textContent).not.toBe(ITEMS.longSword.glyph)
+    // And nothing tagged with the kind-specific test id of the old behavior.
+    expect(screen.queryByTestId('loot-longSword')).not.toBeInTheDocument()
+  })
+
   it('renders a fired arrow aimed at its target', () => {
     const { container } = render(
       <Board
@@ -1536,7 +1556,7 @@ describe('Inventory grouping', () => {
           { id: 1, kind: 'healthPotion' },
           { id: 2, kind: 'healthPotion' },
         ]}
-        equipment={{ weapon: null, armor: null }}
+        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={noop}
@@ -1557,7 +1577,7 @@ describe('Inventory grouping', () => {
           { id: 0, kind: 'shortSword' },
           { id: 1, kind: 'shortSword' },
         ]}
-        equipment={{ weapon: 0, armor: null }}
+        equipment={{ weapon: 0, armor: null, ring: null, amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={noop}
@@ -1570,6 +1590,28 @@ describe('Inventory grouping', () => {
     expect(screen.getAllByRole('button', { name: 'Equip' })).toHaveLength(1)
   })
 
+  it('tags a worn ring as equipped and offers to equip a spare amulet', () => {
+    let equipped: number | null = null
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'ringOfProtection' }, // worn
+          { id: 1, kind: 'amuletOfHealth' }, // spare
+        ]}
+        equipment={{ weapon: null, armor: null, ring: 0, amulet: null }}
+        gold={0}
+        onEquip={(id) => {
+          equipped = id
+        }}
+        onDrink={noop}
+        onDrop={noop}
+      />,
+    )
+    expect(screen.getByText('Equipped')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Equip' }))
+    expect(equipped).toBe(1)
+  })
+
   it('drinks the first potion of a stack', () => {
     let drunk: number | null = null
     render(
@@ -1578,7 +1620,7 @@ describe('Inventory grouping', () => {
           { id: 5, kind: 'healthPotion' },
           { id: 6, kind: 'healthPotion' },
         ]}
-        equipment={{ weapon: null, armor: null }}
+        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={(id) => {
@@ -1600,7 +1642,7 @@ describe('Inventory grouping', () => {
           { id: 2, kind: 'shortSword' }, // equipped weapon
           { id: 3, kind: 'leather' }, // equipped armor
         ]}
-        equipment={{ weapon: 2, armor: 3 }}
+        equipment={{ weapon: 2, armor: 3, ring: null, amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
@@ -1624,7 +1666,7 @@ describe('Inventory grouping', () => {
           { id: 2, kind: 'dagger' }, // "Dagger"
           { id: 3, kind: 'chainmail' }, // "Chainmail"
         ]}
-        equipment={{ weapon: null, armor: null }}
+        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
@@ -1646,7 +1688,7 @@ describe('Inventory grouping', () => {
           { id: 9, kind: 'dagger' },
           { id: 10, kind: 'healthPotion' },
         ]}
-        equipment={{ weapon: null, armor: null }}
+        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}

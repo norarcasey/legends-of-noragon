@@ -92,6 +92,8 @@ classDiagram
   class Equipment {
     +weapon : number / null
     +armor : number / null
+    +ring : number / null
+    +amulet : number / null
   }
   class AttackKind {
     <<enumeration>>
@@ -175,6 +177,8 @@ classDiagram
     <<enumeration>>
     weapon
     armor
+    ring
+    amulet
     potion
   }
   class ItemKind {
@@ -187,6 +191,11 @@ classDiagram
     leather
     chainmail
     plate
+    ringOfProtection
+    ringOfPower
+    ringOfPrecision
+    amuletOfHealth
+    amuletOfValor
     healthPotion
   }
   class ItemDef {
@@ -196,6 +205,7 @@ classDiagram
     +meleeDamage : number
     +meleeAccuracy : number
     +defense : number
+    +maxHp : number
     +heal : number
     +value : number
     +stackable : boolean
@@ -508,6 +518,8 @@ classDiagram
   class Equipment {
     +weapon : number / null
     +armor : number / null
+    +ring : number / null
+    +amulet : number / null
   }
   class AttackKind {
     <<enumeration>>
@@ -695,6 +707,8 @@ classDiagram
     <<enumeration>>
     weapon
     armor
+    ring
+    amulet
     potion
   }
   class ItemKind {
@@ -707,6 +721,11 @@ classDiagram
     leather
     chainmail
     plate
+    ringOfProtection
+    ringOfPower
+    ringOfPrecision
+    amuletOfHealth
+    amuletOfValor
     healthPotion
   }
   class ItemDef {
@@ -716,6 +735,7 @@ classDiagram
     +meleeDamage : number
     +meleeAccuracy : number
     +defense : number
+    +maxHp : number
     +heal : number
     +value : number
     +stackable : boolean

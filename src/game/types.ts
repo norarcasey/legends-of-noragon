@@ -91,10 +91,13 @@ export interface FloorItem {
   amount: number
 }
 
-/** Which inventory item is equipped in each slot (by item id), or `null`. */
+/** Which inventory item is equipped in each slot (by item id), or `null`. The
+ *  hero wears one of each — weapon, armor, ring, amulet. */
 export interface Equipment {
   weapon: number | null
   armor: number | null
+  ring: number | null
+  amulet: number | null
 }
 
 /**

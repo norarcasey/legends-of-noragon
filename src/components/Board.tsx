@@ -9,7 +9,6 @@ import type {
   TileType,
 } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
-import { ITEMS } from '../game/items'
 import './Board.css'
 
 export interface BoardProps {
@@ -53,6 +52,10 @@ const TILE_GLYPH: Record<TileType, string> = {
   chest: '▣',
   stairs: '>',
 }
+
+/** Every floor pickup looks the same — a satchel — so its contents stay a
+ *  surprise until the hero grabs it (the log reveals what it was). */
+const LOOT_GLYPH = '💰'
 
 /**
  * Renders the dungeon as a fixed CSS grid of block tiles, plus the overlays that
@@ -118,9 +121,11 @@ export function Board({
               glyph = '☻'
               testid = 'player'
             } else if (item) {
-              cls += ` noragon__tile--loot noragon__tile--loot-${item.kind}`
-              glyph = item.kind === 'gold' ? '$' : ITEMS[item.kind].glyph
-              testid = `loot-${item.kind}`
+              // Loot reads as a generic satchel — its contents are a surprise
+              // revealed only in the log when the hero steps on it.
+              cls += ' noragon__tile--loot'
+              glyph = LOOT_GLYPH
+              testid = 'loot'
             }
             return (
               <div key={`${x},${y}`} className={cls} data-testid={testid}>
