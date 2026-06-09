@@ -1,9 +1,18 @@
-import type { Dungeon, Enemy, FloorItem, Point, Room, TileType } from '../types'
+import type {
+  Dungeon,
+  DungeonShop,
+  Enemy,
+  FloorItem,
+  Point,
+  Room,
+  ShopItem,
+  TileType,
+} from '../types'
 import { ENEMY_INFO } from '../enemies'
 import type { EnemyKind } from '../enemies'
 import { AMULET_KINDS, ARMOR_KINDS, RING_KINDS, WEAPON_KINDS } from '../items'
 import type { ItemKind } from '../items'
-import { CELL, MAX_ROOM, MIN_CELLS, MIN_ROOM, ROOM_NAMES } from '../constants'
+import { CELL, MAX_ROOM, MIN_CELLS, MIN_ROOM, ROOM_NAMES, SHOP } from '../constants'
 import { makeRng } from './makeRng'
 import { spawnEnemy } from './spawnEnemy'
 
@@ -138,6 +147,11 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
     if ((dist.get(c) ?? 0) > (dist.get(chestCell) ?? 0)) chestCell = c
   }
 
+  // One room becomes the merchant's shop — a safe stall, never the entrance or
+  // the vault. (There are always ≥ MIN_CELLS rooms, so a candidate exists.)
+  const shopChoices = cells.filter((c) => c !== startCell && c !== chestCell)
+  const shopCell = shopChoices.length > 0 ? shopChoices[rng.int(shopChoices.length)] : -1
+
   // Size and record each room: a random size, freely placed within its slot.
   // Connections are corridors (carved below), so rooms needn't touch any wall.
   const axis = (lo: number): [number, number] => {
@@ -231,12 +245,32 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
   tiles[chestAt.y][chestAt.x] = 'chest'
   if (chestAt.x + 1 <= chestRoom.x1) tiles[chestAt.y][chestAt.x + 1] = 'stairs'
 
+  // Stand a merchant at the centre of the shop room and stock the shelves: a
+  // couple of health potions plus a few random pieces of gear. Bumping the
+  // (impassable) merchant tile opens the shop. The room is left enemy-, rubble-,
+  // and loot-free below so it stays a safe stall.
+  let shop: DungeonShop | null = null
+  if (shopCell !== -1) {
+    const shopRoom = roomOf(shopCell)
+    const merchant = center(shopRoom)
+    tiles[merchant.y][merchant.x] = 'merchant'
+    const gearPool: ItemKind[] = [...WEAPON_KINDS, ...ARMOR_KINDS, ...RING_KINDS, ...AMULET_KINDS]
+    const stock: ShopItem[] = [
+      { id: 0, kind: 'healthPotion' },
+      { id: 1, kind: 'healthPotion' },
+    ]
+    while (stock.length < SHOP.stockSize) {
+      stock.push({ id: stock.length, kind: gearPool[rng.int(gearPool.length)] })
+    }
+    shop = { room: shopRoom.id, merchant, stock }
+  }
+
   // Scatter impassable rubble inside non-start rooms so combat has cover to
   // fight around. Each pile is a single tile kept off the room's central cross
   // (so the door mouths stay connected) and never orthogonally adjacent to
   // another pile (so an isolated pillar can never wall a corner off).
   for (const cell of cells) {
-    if (cell === startCell) continue
+    if (cell === startCell || cell === shopCell) continue
     const room = roomOf(cell)
     const c = center(room)
     const spots: Point[] = []
@@ -311,7 +345,7 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
     return kinds
   }
   for (const cell of cells) {
-    if (cell === startCell) continue
+    if (cell === startCell || cell === shopCell) continue
     if (cell === chestCell) {
       // The vault guardian grows nastier the deeper the run (within depth limits).
       placeIn(
@@ -347,7 +381,7 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
   }
   const tierIndex = Math.min(WEAPON_KINDS.length - 1, rng.int(2) + Math.floor((depth - 1) / 2))
   for (const cell of cells) {
-    if (cell === startCell) continue
+    if (cell === startCell || cell === shopCell) continue
     const room = roomOf(cell)
     if (rng.next() < 0.5) dropIn(room, 'gold', 3 + rng.int(6) + depth * 2)
     if (rng.next() < 0.2) dropIn(room, 'healthPotion', 1)
@@ -362,5 +396,5 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
     }
   }
 
-  return { cols, rows, tiles, rooms, playerStart, enemies, items }
+  return { cols, rows, tiles, rooms, playerStart, enemies, items, shop }
 }

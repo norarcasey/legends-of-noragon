@@ -23,6 +23,7 @@ import {
   activeEnemiesOf,
   applyXp,
   blankSeen,
+  buyPrice,
   computeVisible,
   deriveCombat,
   generateDungeon,
@@ -36,6 +37,7 @@ import {
   roomAt,
   roomsByDoor,
   runEnemyPhase,
+  sellPrice,
   tileAt,
   xpToNext,
 } from './utils'
@@ -89,6 +91,8 @@ function makeInitial(config: HeroStats, seed: number): GameState {
     effects: [],
     projectiles: [],
     fadingEnemies: [],
+    shopping: false,
+    shopStock: dungeon.shop ? dungeon.shop.stock.map((s) => ({ ...s })) : [],
     nextEffectId: 0,
     rngState: seed >>> 0,
     aiming: false,
@@ -128,6 +132,8 @@ function descend(state: GameState, messages: string[]): GameState {
     targetId: null,
     projectiles: [],
     fadingEnemies: [],
+    shopping: false,
+    shopStock: dungeon.shop ? dungeon.shop.stock.map((s) => ({ ...s })) : [],
     turns: state.turns + 1,
     ...logLines(state.log, state.nextLogId, messages),
   }
@@ -237,7 +243,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       return { ...fresh, status: 'playing', ...logLines(fresh.log, fresh.nextLogId, opening) }
     }
     case 'move': {
-      if (state.status !== 'playing') return state
+      if (state.status !== 'playing' || state.shopping) return state
 
       const delta = DELTA[action.dir]
       const target = { x: state.player.x + delta.x, y: state.player.y + delta.y }
@@ -303,6 +309,9 @@ function reducer(state: GameState, action: GameAction): GameState {
             tone: 'damage',
           })
         }
+      } else if (tileAt(state.dungeon, target.x, target.y) === 'merchant') {
+        // Bumping the merchant opens the shop — a free action, no turn passes.
+        return { ...state, shopping: true }
       } else if (
         tileAt(state.dungeon, target.x, target.y) === 'wall' ||
         tileAt(state.dungeon, target.x, target.y) === 'rubble'
@@ -443,7 +452,7 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'drink': {
       // Quaffing a potion costs a turn — foes act after you drink.
-      if (state.status !== 'playing') return state
+      if (state.status !== 'playing' || state.shopping) return state
       const item = state.inventory.find((i) => i.id === action.itemId)
       if (!item || ITEMS[item.kind].category !== 'potion') return state
       if (state.hp >= state.maxHp) {
@@ -528,7 +537,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'aimStart': {
-      if (state.status !== 'playing') return state
+      if (state.status !== 'playing' || state.shopping) return state
       // Standing in a doorway engages the peeked room(s), so the hero can aim
       // into the room beyond and loose an opportunity shot from the threshold.
       const actives = activeEnemiesOf(
@@ -570,7 +579,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       if (!state.aiming) return state
       return { ...state, aiming: false, targetId: null }
     case 'fire': {
-      if (state.status !== 'playing' || !state.aiming) return state
+      if (state.status !== 'playing' || !state.aiming || state.shopping) return state
       // The peeked rooms when standing in a doorway — fired into as an
       // opportunity shot, and roused to respond afterward.
       const engaged = roomsByDoor(state.dungeon, state.player)
@@ -676,6 +685,60 @@ function reducer(state: GameState, action: GameAction): GameState {
         ...logLines(state.log, state.nextLogId, messages),
       }
     }
+    case 'buy': {
+      // Free menu action at the merchant: pay the marked-up price, take the
+      // item, and remove it from the shelf. No-op if not shopping or too poor.
+      if (!state.shopping) return state
+      const entry = state.shopStock.find((s) => s.id === action.stockId)
+      if (!entry) return state
+      const def = ITEMS[entry.kind]
+      const price = buyPrice(def.value)
+      if (state.gold < price) {
+        return {
+          ...state,
+          ...logLines(state.log, state.nextLogId, [`You can't afford the ${def.name}.`]),
+        }
+      }
+      return {
+        ...state,
+        gold: state.gold - price,
+        inventory: [...state.inventory, { id: state.nextItemId, kind: entry.kind }],
+        nextItemId: state.nextItemId + 1,
+        shopStock: state.shopStock.filter((s) => s.id !== entry.id),
+        ...logLines(state.log, state.nextLogId, [`You buy the ${def.name} for ${price} gold.`]),
+      }
+    }
+    case 'sell': {
+      // Free menu action at the merchant: hand over an item for half its value.
+      // Selling a worn piece unequips it first and re-derives the hero's stats.
+      if (!state.shopping) return state
+      const item = state.inventory.find((i) => i.id === action.itemId)
+      if (!item) return state
+      const def = ITEMS[item.kind]
+      const price = sellPrice(def.value)
+      const inventory = state.inventory.filter((i) => i.id !== item.id)
+      const equipment: Equipment = {
+        weapon: state.equipment.weapon === item.id ? null : state.equipment.weapon,
+        armor: state.equipment.armor === item.id ? null : state.equipment.armor,
+        ring: state.equipment.ring === item.id ? null : state.equipment.ring,
+        amulet: state.equipment.amulet === item.id ? null : state.equipment.amulet,
+      }
+      const c = deriveCombat(state.base, state.level, inventory, equipment)
+      return {
+        ...state,
+        gold: state.gold + price,
+        inventory,
+        equipment,
+        maxHp: c.maxHp,
+        attacks: c.attacks,
+        defense: c.defense,
+        hp: Math.min(state.hp, c.maxHp),
+        ...logLines(state.log, state.nextLogId, [`You sell the ${def.name} for ${price} gold.`]),
+      }
+    }
+    case 'closeShop':
+      if (!state.shopping) return state
+      return { ...state, shopping: false }
   }
 }
 
@@ -740,6 +803,9 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const aimCycle = useCallback((delta: number) => dispatch({ type: 'aimCycle', delta }), [])
   const aimCancel = useCallback(() => dispatch({ type: 'aimCancel' }), [])
   const fire = useCallback(() => dispatch({ type: 'fire' }), [])
+  const buy = useCallback((stockId: number) => dispatch({ type: 'buy', stockId }), [])
+  const sell = useCallback((itemId: number) => dispatch({ type: 'sell', itemId }), [])
+  const closeShop = useCallback(() => dispatch({ type: 'closeShop' }), [])
 
   // "Active" foes — sharing the hero's room, right beside them, or in a room
   // being peeked from a doorway — are the ones shown as cards and targetable.
@@ -803,6 +869,8 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     effects: state.effects,
     projectiles: state.projectiles,
     fadingEnemies: state.fadingEnemies,
+    shopping: state.shopping,
+    shopStock: state.shopStock,
     start,
     reset,
     move,
@@ -814,5 +882,8 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     aimCycle,
     aimCancel,
     fire,
+    buy,
+    sell,
+    closeShop,
   }
 }

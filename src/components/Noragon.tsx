@@ -50,6 +50,18 @@ export function Noragon({
 
   useNoragonKeyboard(game, { enabled: enableKeyboard })
 
+  const shop = game.shopping
+    ? {
+        stock: game.shopStock,
+        gold: hero.gold,
+        inventory: hero.inventory,
+        equipment: hero.equipment,
+        onBuy: game.buy,
+        onSell: game.sell,
+        onLeave: game.closeShop,
+      }
+    : null
+
   return (
     <NoragonRoot className={className} ariaLabel={title ?? 'Legends of Noragon dungeon crawler'}>
       {title !== null && <h2 className="noragon__title">{title}</h2>}
@@ -75,6 +87,7 @@ export function Noragon({
             effects={game.effects}
             projectiles={game.projectiles}
             fadingEnemies={game.fadingEnemies}
+            shop={shop}
             status={status}
             depth={run.depth}
             onStairs={onStairs}

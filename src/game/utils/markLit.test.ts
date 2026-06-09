@@ -7,7 +7,16 @@ const floor3x3 = (): Dungeon => {
   const tiles: TileType[][] = Array.from({ length: 3 }, () =>
     Array.from({ length: 3 }, (): TileType => 'floor'),
   )
-  return { cols: 3, rows: 3, tiles, rooms: [], playerStart: { x: 0, y: 0 }, enemies: [], items: [] }
+  return {
+    cols: 3,
+    rows: 3,
+    tiles,
+    rooms: [],
+    playerStart: { x: 0, y: 0 },
+    enemies: [],
+    items: [],
+    shop: null,
+  }
 }
 
 describe('markLit', () => {

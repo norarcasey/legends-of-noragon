@@ -1,4 +1,4 @@
-import { render, renderHook, act, fireEvent, screen } from '@testing-library/react'
+import { render, renderHook, act, fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
 import { Inventory } from './Inventory'
@@ -7,6 +7,8 @@ import { Board } from './Board'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
+import { buyPrice, sellPrice } from '../game/utils'
+import { Shop } from './Shop'
 import type {
   Direction,
   FloorItem,
@@ -47,7 +49,7 @@ function findTile(tiles: TileType[][], type: TileType): Point | null {
 function bfsDir(tiles: TileType[][], from: Point, to: Point, blockChest = false): Direction | null {
   const walkable = (x: number, y: number) => {
     const t = tiles[y]?.[x]
-    if (!t || t === 'wall' || t === 'rubble') return false
+    if (!t || t === 'wall' || t === 'rubble' || t === 'merchant') return false
     if (blockChest && t === 'chest') return false
     return true
   }
@@ -88,6 +90,35 @@ function navigateToTile(result: Hook, target: Point, blockChest = true, cap = 60
     if (!dir) break
     act(() => result.current.move(dir))
   }
+}
+
+/** Walk to the merchant and bump it to open the shop. Returns whether it opened. */
+function openShop(result: Hook): boolean {
+  const tiles = result.current.board.tiles
+  let merchant: Point | null = null
+  for (let y = 0; y < tiles.length; y++) {
+    for (let x = 0; x < tiles[y].length; x++) if (tiles[y][x] === 'merchant') merchant = { x, y }
+  }
+  if (!merchant) return false
+  // Stand on a floor tile beside the merchant, then bump into it.
+  let stand: Point | null = null
+  for (const dir of DIRECTIONS) {
+    const a = { x: merchant.x + DELTA[dir].x, y: merchant.y + DELTA[dir].y }
+    if (tiles[a.y]?.[a.x] === 'floor') {
+      stand = a
+      break
+    }
+  }
+  if (!stand) return false
+  navigateToTile(result, stand)
+  const p = result.current.hero.position
+  if (p.x !== stand.x || p.y !== stand.y) return false
+  const bump = DIRECTIONS.find(
+    (d) => DELTA[d].x === merchant.x - stand.x && DELTA[d].y === merchant.y - stand.y,
+  )
+  if (!bump) return false
+  act(() => result.current.move(bump))
+  return result.current.shopping
 }
 
 /** Walk toward `enemies[0]` until the hero shares a room with active enemies. */
@@ -1447,6 +1478,62 @@ describe('ActivityLog colour-coding', () => {
   })
 })
 
+describe('useNoragon — shop', () => {
+  // God-mode so the hero can punch through to the merchant without dying.
+  const SHOP_OPTS = {
+    seed: 7,
+    maxHp: 9999,
+    attacks: { melee: { accuracy: 1, minDamage: 99, maxDamage: 99 } },
+  }
+
+  it('opens by bumping the merchant and closes on leaving', () => {
+    const { result } = renderHook(() => useNoragon(SHOP_OPTS))
+    act(() => result.current.start())
+    expect(openShop(result)).toBe(true)
+    expect(result.current.shopping).toBe(true)
+    act(() => result.current.closeShop())
+    expect(result.current.shopping).toBe(false)
+  })
+
+  it('buys a stocked item, spending gold and adding it to the pack', () => {
+    const { result } = renderHook(() => useNoragon(SHOP_OPTS))
+    act(() => result.current.start())
+    expect(openShop(result)).toBe(true)
+
+    const item = result.current.shopStock[0]
+    const price = buyPrice(ITEMS[item.kind].value)
+    const goldBefore = result.current.hero.gold
+    const packBefore = result.current.hero.inventory.length
+    const stockBefore = result.current.shopStock.length
+    expect(goldBefore).toBeGreaterThanOrEqual(price)
+
+    act(() => result.current.buy(item.id))
+    expect(result.current.hero.gold).toBe(goldBefore - price)
+    expect(result.current.hero.inventory).toHaveLength(packBefore + 1)
+    expect(result.current.shopStock).toHaveLength(stockBefore - 1)
+    expect(result.current.shopStock.some((s) => s.id === item.id)).toBe(false)
+  })
+
+  it('sells a worn item for gold, unequipping it', () => {
+    const { result } = renderHook(() => useNoragon(SHOP_OPTS))
+    act(() => result.current.start())
+    expect(openShop(result)).toBe(true)
+
+    const armorId = result.current.hero.equipment.armor
+    expect(armorId).not.toBeNull()
+    if (armorId == null) return
+    const worn = result.current.hero.inventory.find((i) => i.id === armorId)
+    if (!worn) throw new Error('no worn armor')
+    const price = sellPrice(ITEMS[worn.kind].value)
+    const goldBefore = result.current.hero.gold
+
+    act(() => result.current.sell(armorId))
+    expect(result.current.hero.gold).toBe(goldBefore + price)
+    expect(result.current.hero.equipment.armor).toBeNull()
+    expect(result.current.hero.inventory.some((i) => i.id === armorId)).toBe(false)
+  })
+})
+
 describe('Board combat floats', () => {
   const floor = (): TileType => 'floor'
   const board = {
@@ -1558,6 +1645,57 @@ describe('Board combat floats', () => {
       container.querySelector('.noragon__float--damage.noragon__float--delayed'),
     ).not.toBeNull()
     expect(container.querySelector('.noragon__float--heal.noragon__float--delayed')).toBeNull()
+  })
+})
+
+describe('Shop overlay', () => {
+  const noop = () => {}
+  const bare = { weapon: null, armor: null, ring: null, amulet: null }
+
+  it('disables buying what you cannot afford, and sells/leaves on click', () => {
+    let sold: number | null = null
+    let left = false
+    render(
+      <Shop
+        stock={[{ id: 0, kind: 'longSword' }]} // value 22 → buy 28, unaffordable on 5
+        gold={5}
+        inventory={[{ id: 9, kind: 'healthPotion' }]}
+        equipment={bare}
+        onBuy={noop}
+        onSell={(id) => {
+          sold = id
+        }}
+        onLeave={() => {
+          left = true
+        }}
+      />,
+    )
+    expect(within(screen.getByTestId('shop-buy')).getByRole('button')).toBeDisabled()
+    fireEvent.click(within(screen.getByTestId('shop-sell')).getByRole('button'))
+    expect(sold).toBe(9)
+    fireEvent.click(screen.getByRole('button', { name: /Leave/ }))
+    expect(left).toBe(true)
+  })
+
+  it('enables buying when the hero can afford it', () => {
+    let bought: number | null = null
+    render(
+      <Shop
+        stock={[{ id: 0, kind: 'dagger' }]}
+        gold={50}
+        inventory={[]}
+        equipment={bare}
+        onBuy={(id) => {
+          bought = id
+        }}
+        onSell={noop}
+        onLeave={noop}
+      />,
+    )
+    const buyBtn = within(screen.getByTestId('shop-buy')).getByRole('button')
+    expect(buyBtn).not.toBeDisabled()
+    fireEvent.click(buyBtn)
+    expect(bought).toBe(0)
   })
 })
 

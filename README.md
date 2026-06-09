@@ -27,7 +27,9 @@ the dark between them. Rooms are strewn with impassable **rubble** (`▲`) — c
 that both you and your foes must move around, so positioning matters in a fight.
 You start safe in **the entry hall**; the farthest room (a
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
-(`>`). A run is an **endless descent**: clear or sneak through each level, take
+(`>`). One room is a safe **shop** — bump the **merchant** (`商`) to open their
+stall and **buy** random gear or **sell** your wares (prices are marked up to
+buy, halved to sell); leave with **Esc**. A run is an **endless descent**: clear or sneak through each level, take
 the stairs to a deeper, tougher one, and see how far down you can get before you
 die. The stairs are walkable — they don't descend on contact — so you can cross
 them to reach the chest or fight the guards; when you're ready, stand on them and
@@ -194,7 +196,7 @@ co-located unit test.
 
 Between the all-in-one `<Noragon />` and the fully headless hook sits a middle
 tier: keep the built-in look but arrange it yourself. The UI is exported as parts
-— `Board`, `Stats`, `EnemyCards`, `ActivityLog`, `Inventory` — each taking a slice
+— `Board`, `Stats`, `EnemyCards`, `ActivityLog`, `Inventory`, `Shop` — each taking a slice
 of the `useNoragon()` return. Wrap them in `NoragonRoot`, which carries the theme
 (the `.noragon` styles and colour variables every part reads), and import the
 stylesheet:
@@ -226,6 +228,20 @@ export function MyDungeon() {
         effects={game.effects}
         // Optional — a fired arrow animated travelling to its target.
         projectiles={game.projectiles}
+        // Optional — the merchant's stall, shown over the board while shopping.
+        shop={
+          game.shopping
+            ? {
+                stock: game.shopStock,
+                gold: game.hero.gold,
+                inventory: game.hero.inventory,
+                equipment: game.hero.equipment,
+                onBuy: game.buy,
+                onSell: game.sell,
+                onLeave: game.closeShop,
+              }
+            : null
+        }
         // Optional — pass these to get the aim/stairs banners and start/death
         // overlay over the board; omit them to render just the grid.
         status={game.run.status}
@@ -284,9 +300,9 @@ guarded chest. Planned next, in roughly the order it was dreamed up:
   `spell` profile (targeted the same way) and an arrow/quiver resource for ranged.
 - **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
   enemy evasion, criticals, line-of-sight/cover, and per-weapon damage profiles.
-- **More loot & equipment** — building on weapons/armor/rings/amulets/potions/gold:
-  shields, more trinket effects, a shop to spend gold, and chests that sometimes
-  spring traps.
+- **More loot & equipment** — building on weapons/armor/rings/amulets/potions/gold
+  and the merchant: shields, more trinket effects, restocking/again-cost shops,
+  and chests that sometimes spring traps.
 - **Run depth & payoff** — a boss/▼victory at a target depth, rest/heal sites,
   and run summaries, building on the endless-descent loop.
 - **Richer generation** — building on variable size / irregular footprint /

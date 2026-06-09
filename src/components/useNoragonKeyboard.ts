@@ -32,7 +32,9 @@ export function useNoragonKeyboard(
   options: UseNoragonKeyboardOptions = {},
 ): void {
   const enabled = options.enabled ?? true
-  const { aiming, start, move, descend, drink, aimStart, aimCycle, aimCancel, fire } = game
+  const { aiming, shopping, start, move, descend, drink, aimStart, aimCycle, aimCancel, fire } =
+    game
+  const { closeShop } = game
   const { status } = game.run
   const { onStairs } = game.hero
   const firstPotion = game.hero.inventory.find((i) => i.kind === 'healthPotion')
@@ -41,6 +43,16 @@ export function useNoragonKeyboard(
     if (!enabled) return
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // ---- Shopping: the overlay owns the screen. Esc leaves; buying and
+      // selling are click-only, and every other key is swallowed. ----
+      if (shopping) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          closeShop()
+        }
+        return
+      }
+
       // ---- Aiming mode: arrows cycle targets, Enter fires, F/Esc cancel. F is
       // a toggle — the same key that entered aiming leaves it, for free. ----
       if (aiming) {
@@ -107,6 +119,7 @@ export function useNoragonKeyboard(
     enabled,
     status,
     aiming,
+    shopping,
     onStairs,
     firstPotion,
     start,
@@ -117,5 +130,6 @@ export function useNoragonKeyboard(
     aimCycle,
     aimCancel,
     fire,
+    closeShop,
   ])
 }

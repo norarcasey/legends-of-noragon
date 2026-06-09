@@ -1,0 +1,144 @@
+/* The merchant's stall — an overlay over the board while trading. */
+.noragon__shop {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  background: var(--noragon-overlay-bg);
+  border-radius: 8px;
+  color: var(--noragon-text);
+  overflow: hidden;
+}
+
+.noragon__shop-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.noragon__shop-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.noragon__shop-gold {
+  color: var(--noragon-chest);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.noragon__shop-cols {
+  display: flex;
+  flex: 1;
+  gap: 0.6rem;
+  min-height: 0;
+}
+
+.noragon__shop-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.noragon__shop-heading {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--noragon-muted);
+}
+
+.noragon__shop-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.noragon__shop-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--noragon-muted);
+}
+
+.noragon__shop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  background: var(--noragon-floor);
+  border-radius: 5px;
+  font-size: 0.85rem;
+}
+
+.noragon__shop-glyph {
+  flex: none;
+  width: 1.1em;
+  text-align: center;
+  color: var(--noragon-loot);
+}
+
+.noragon__shop-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noragon__shop-worn {
+  color: var(--noragon-muted);
+}
+
+.noragon__shop-button {
+  appearance: none;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  flex: none;
+  padding: 0.15rem 0.5rem;
+  color: var(--noragon-on-accent);
+  background: var(--noragon-accent);
+  border: none;
+  border-radius: 999px;
+  transition: filter 0.12s ease;
+}
+
+.noragon__shop-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.noragon__shop-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.noragon__shop-leave {
+  appearance: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: center;
+  padding: 0.4rem 1.4rem;
+  color: var(--noragon-on-accent);
+  background: var(--noragon-accent);
+  border: none;
+  border-radius: 999px;
+  transition: filter 0.12s ease;
+}
+
+.noragon__shop-leave:hover {
+  filter: brightness(1.1);
+}

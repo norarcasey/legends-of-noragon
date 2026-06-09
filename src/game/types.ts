@@ -21,8 +21,17 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
  *  - `chest`    — walkable; stepping onto it completes the level (loot/trap later).
  *  - `stairs`   — walkable; the way down to the next level (inert in the MVP).
  *  - `rubble`   — impassable obstacle inside a room; cover to fight around.
+ *  - `merchant` — impassable; the shopkeeper. Bump it to open the shop.
  */
-export type TileType = 'wall' | 'floor' | 'corridor' | 'door' | 'chest' | 'stairs' | 'rubble'
+export type TileType =
+  | 'wall'
+  | 'floor'
+  | 'corridor'
+  | 'door'
+  | 'chest'
+  | 'stairs'
+  | 'rubble'
+  | 'merchant'
 
 /**
  * A rectangular room, in inclusive interior tile coordinates. Enemies only act
@@ -198,6 +207,23 @@ export interface Dungeon {
   enemies: Enemy[]
   /** Loot scattered on the floor, awaiting pickup. */
   items: FloorItem[]
+  /** The level's merchant, if it has one — where they stand and what they sell. */
+  shop: DungeonShop | null
+}
+
+/** One item on a merchant's shelf, identified within the shop by `id`. */
+export interface ShopItem {
+  id: number
+  kind: ItemKind
+}
+
+/** A shop placed on a level: the merchant's tile and their (initial) stock. */
+export interface DungeonShop {
+  /** The room the merchant occupies (kept enemy- and rubble-free). */
+  room: number
+  /** The merchant's tile (rendered as `merchant`; bump it to trade). */
+  merchant: Point
+  stock: ShopItem[]
 }
 
 // ---- The hook's options and public API ------------------------------------
@@ -301,6 +327,11 @@ export interface NoragonApi {
   /** Foes slain on the latest turn, kept for one turn so the UI can play them
    *  out (fade) where they fell rather than vanishing instantly. */
   fadingEnemies: Enemy[]
+  /** Whether the shop is open (the hero bumped the merchant) — drives the
+   *  shop overlay. Buying/selling is only allowed while this is `true`. */
+  shopping: boolean
+  /** The current merchant stock (what's left to buy), or `[]` off the shop. */
+  shopStock: ShopItem[]
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
@@ -324,6 +355,13 @@ export interface NoragonApi {
   aimCancel: () => void
   /** Loose a ranged attack at the targeted enemy; costs the turn. */
   fire: () => void
+  /** Buy a stocked item by its shop id (spends gold). Free; only while shopping. */
+  buy: (stockId: number) => void
+  /** Sell a carried item by its inventory id (gains gold; unequips it first if
+   *  worn). Free; only while shopping. */
+  sell: (itemId: number) => void
+  /** Leave the merchant, closing the shop overlay. */
+  closeShop: () => void
 }
 
 // ---- Engine state & actions (internal to the reducer) ---------------------
@@ -377,6 +415,10 @@ export interface GameState extends HeroStats {
   /** Foes slain this turn, kept one turn so the UI can fade them out where they
    *  fell instead of popping away. Replaced each turn. */
   fadingEnemies: Enemy[]
+  /** Whether the shop overlay is open (the hero bumped the merchant). */
+  shopping: boolean
+  /** What the level's merchant still has for sale; drained as the hero buys. */
+  shopStock: ShopItem[]
   /** Next id to mint for a combat float or projectile; monotonic so the UI
    *  animates each visual effect exactly once. */
   nextEffectId: number
@@ -405,3 +447,6 @@ export type GameAction =
   | { type: 'aimCycle'; delta: number }
   | { type: 'aimCancel' }
   | { type: 'fire' }
+  | { type: 'buy'; stockId: number }
+  | { type: 'sell'; itemId: number }
+  | { type: 'closeShop' }

@@ -219,6 +219,14 @@
   box-shadow: inset 0 0 0 2px var(--noragon-rubble);
 }
 
+/* The merchant — bump it to open the shop. Impassable, glows to draw the eye. */
+.noragon__tile--merchant {
+  background: var(--noragon-floor);
+  color: var(--noragon-merchant);
+  font-weight: 700;
+  text-shadow: 0 0 5px currentColor;
+}
+
 .noragon__tile--player {
   color: var(--noragon-player);
   text-shadow: 0 0 6px currentColor;

@@ -17,6 +17,8 @@ export { ActivityLog } from './components/ActivityLog'
 export type { ActivityLogProps } from './components/ActivityLog'
 export { Inventory } from './components/Inventory'
 export type { InventoryProps } from './components/Inventory'
+export { Shop } from './components/Shop'
+export type { ShopProps } from './components/Shop'
 export { useNoragonKeyboard } from './components/useNoragonKeyboard'
 export type { UseNoragonKeyboardOptions } from './components/useNoragonKeyboard'
 
@@ -40,6 +42,7 @@ export type {
   Point,
   Projectile,
   Room,
+  ShopItem,
   RunView,
   TileType,
   UseNoragonOptions,

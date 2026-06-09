@@ -9,6 +9,8 @@ import type {
   TileType,
 } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
+import { Shop } from './Shop'
+import type { ShopProps } from './Shop'
 import './Board.css'
 
 export interface BoardProps {
@@ -30,6 +32,10 @@ export interface BoardProps {
   /** Foes slain this turn (`game.fadingEnemies`) — drawn briefly so they fade
    *  out where they fell instead of vanishing instantly. */
   fadingEnemies?: Enemy[]
+  /** When set, the merchant's stall is shown as an overlay over the board.
+   *  Build it from `game` while `game.shopping` (stock, gold, inventory, and the
+   *  buy/sell/leave handlers); omit or pass `null` to hide it. */
+  shop?: ShopProps | null
   /** Run status (`game.run.status`) — drives the start/death overlay and gates the
    *  stairs prompt. Omit to render just the grid (no status-driven overlays). */
   status?: GameStatus
@@ -52,6 +58,7 @@ const TILE_GLYPH: Record<TileType, string> = {
   chest: '▣',
   stairs: '>',
   rubble: '▲',
+  merchant: '商',
 }
 
 /** Every floor pickup looks the same — a satchel — so its contents stay a
@@ -74,6 +81,7 @@ export function Board({
   effects,
   projectiles,
   fadingEnemies,
+  shop,
   status,
   depth,
   onStairs,
@@ -262,6 +270,8 @@ export function Board({
           </p>
         </div>
       )}
+
+      {shop ? <Shop {...shop} /> : null}
     </div>
   )
 }

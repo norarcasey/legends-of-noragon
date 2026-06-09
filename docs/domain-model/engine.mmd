@@ -25,6 +25,8 @@ classDiagram
     +effects : CombatFloat[]
     +projectiles : Projectile[]
     +fadingEnemies : Enemy[]
+    +shopping : boolean
+    +shopStock : ShopItem[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -45,6 +47,9 @@ classDiagram
     aimCycle
     aimCancel
     fire
+    buy
+    sell
+    closeShop
   }
   class HeroStats {
     <<external>>
@@ -79,6 +84,9 @@ classDiagram
   class Projectile {
     <<external>>
   }
+  class ShopItem {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -94,5 +102,6 @@ classDiagram
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects
   GameState --> Projectile : projectiles
+  GameState --> ShopItem : shopStock
   GameAction --> HeroStats
   GameAction --> Direction

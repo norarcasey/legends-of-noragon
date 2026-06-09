@@ -51,6 +51,7 @@ classDiagram
     chest
     stairs
     rubble
+    merchant
   }
   class Room {
     +id : number
@@ -149,6 +150,16 @@ classDiagram
     +playerStart : Point
     +enemies : Enemy[]
     +items : FloorItem[]
+    +shop : DungeonShop / null
+  }
+  class ShopItem {
+    +id : number
+    +kind : ItemKind
+  }
+  class DungeonShop {
+    +room : number
+    +merchant : Point
+    +stock : ShopItem[]
   }
   class EnemyKind {
     <<enumeration>>
@@ -224,6 +235,10 @@ classDiagram
   Dungeon --> Point : playerStart
   Dungeon --> Enemy : enemies
   Dungeon --> FloorItem : items
+  Dungeon --> DungeonShop : shop
+  ShopItem --> ItemKind : kind
+  DungeonShop --> Point : merchant
+  DungeonShop --> ShopItem : stock
   ItemDef --> ItemCategory : category
 ```
 
@@ -259,6 +274,8 @@ classDiagram
     +effects : CombatFloat[]
     +projectiles : Projectile[]
     +fadingEnemies : Enemy[]
+    +shopping : boolean
+    +shopStock : ShopItem[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -279,6 +296,9 @@ classDiagram
     aimCycle
     aimCancel
     fire
+    buy
+    sell
+    closeShop
   }
   class HeroStats {
     <<external>>
@@ -313,6 +333,9 @@ classDiagram
   class Projectile {
     <<external>>
   }
+  class ShopItem {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -328,6 +351,7 @@ classDiagram
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects
   GameState --> Projectile : projectiles
+  GameState --> ShopItem : shopStock
   GameAction --> HeroStats
   GameAction --> Direction
 ```
@@ -385,6 +409,8 @@ classDiagram
     +effects : CombatFloat[]
     +projectiles : Projectile[]
     +fadingEnemies : Enemy[]
+    +shopping : boolean
+    +shopStock : ShopItem[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -396,6 +422,9 @@ classDiagram
     +aimCycle : () ↦ void
     +aimCancel : () ↦ void
     +fire : () ↦ void
+    +buy : () ↦ void
+    +sell : () ↦ void
+    +closeShop : () ↦ void
   }
   class AttackProfiles {
     <<external>>
@@ -430,6 +459,9 @@ classDiagram
   class Projectile {
     <<external>>
   }
+  class ShopItem {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -448,6 +480,7 @@ classDiagram
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles
+  NoragonApi --> ShopItem : shopStock
   NoragonApi --> Direction : move
 ```
 
@@ -478,6 +511,7 @@ classDiagram
     chest
     stairs
     rubble
+    merchant
   }
   class Room {
     +id : number
@@ -576,6 +610,16 @@ classDiagram
     +playerStart : Point
     +enemies : Enemy[]
     +items : FloorItem[]
+    +shop : DungeonShop / null
+  }
+  class ShopItem {
+    +id : number
+    +kind : ItemKind
+  }
+  class DungeonShop {
+    +room : number
+    +merchant : Point
+    +stock : ShopItem[]
   }
   class UseNoragonOptions {
     +maxHp? : number
@@ -623,6 +667,8 @@ classDiagram
     +effects : CombatFloat[]
     +projectiles : Projectile[]
     +fadingEnemies : Enemy[]
+    +shopping : boolean
+    +shopStock : ShopItem[]
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
@@ -634,6 +680,9 @@ classDiagram
     +aimCycle : () ↦ void
     +aimCancel : () ↦ void
     +fire : () ↦ void
+    +buy : () ↦ void
+    +sell : () ↦ void
+    +closeShop : () ↦ void
   }
   class GameState {
     +seed : number
@@ -660,6 +709,8 @@ classDiagram
     +effects : CombatFloat[]
     +projectiles : Projectile[]
     +fadingEnemies : Enemy[]
+    +shopping : boolean
+    +shopStock : ShopItem[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -680,6 +731,9 @@ classDiagram
     aimCycle
     aimCancel
     fire
+    buy
+    sell
+    closeShop
   }
   class EnemyKind {
     <<enumeration>>
@@ -755,6 +809,10 @@ classDiagram
   Dungeon --> Point : playerStart
   Dungeon --> Enemy : enemies
   Dungeon --> FloorItem : items
+  Dungeon --> DungeonShop : shop
+  ShopItem --> ItemKind : kind
+  DungeonShop --> Point : merchant
+  DungeonShop --> ShopItem : stock
   UseNoragonOptions --> AttackProfiles : attacks
   BoardView --> TileType : tiles
   BoardView --> FloorItem : floorItems
@@ -770,6 +828,7 @@ classDiagram
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles
+  NoragonApi --> ShopItem : shopStock
   NoragonApi --> Direction : move
   HeroStats <|-- GameState
   GameState --> Dungeon : dungeon
@@ -783,6 +842,7 @@ classDiagram
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects
   GameState --> Projectile : projectiles
+  GameState --> ShopItem : shopStock
   GameAction --> HeroStats
   GameAction --> Direction
   ItemDef --> ItemCategory : category
@@ -811,6 +871,8 @@ classDiagram
 | `CombatStats`       | interface | domain | `src/game/types.ts`   |
 | `LeveledStats`      | interface | domain | `src/game/types.ts`   |
 | `Dungeon`           | interface | domain | `src/game/types.ts`   |
+| `ShopItem`          | interface | domain | `src/game/types.ts`   |
+| `DungeonShop`       | interface | domain | `src/game/types.ts`   |
 | `UseNoragonOptions` | interface | public | `src/game/types.ts`   |
 | `BoardView`         | interface | public | `src/game/types.ts`   |
 | `HeroView`          | interface | public | `src/game/types.ts`   |

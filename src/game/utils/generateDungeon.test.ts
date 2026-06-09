@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generateDungeon } from './generateDungeon'
+import { SHOP } from '../constants'
 import type { Dungeon, Point, TileType } from '../types'
 
 const SEEDS = [1, 7, 42, 99, 256, 4242]
@@ -26,7 +27,14 @@ function reaches(d: Dungeon, from: Point, to: Point): boolean {
       const nx = c.x + dlt.x
       const ny = c.y + dlt.y
       const tile = d.tiles[ny]?.[nx]
-      if (!tile || tile === 'wall' || tile === 'rubble' || seen.has(`${nx},${ny}`)) continue
+      if (
+        !tile ||
+        tile === 'wall' ||
+        tile === 'rubble' ||
+        tile === 'merchant' ||
+        seen.has(`${nx},${ny}`)
+      )
+        continue
       seen.add(`${nx},${ny}`)
       queue.push({ x: nx, y: ny })
     }
@@ -106,6 +114,31 @@ describe('generateDungeon', () => {
     }
     // Rubble actually appears across the sampled levels.
     expect(total).toBeGreaterThan(0)
+  })
+
+  it('places a stocked merchant in a safe shop room', () => {
+    for (const seed of SEEDS) {
+      const d = generateDungeon(seed, 2)
+      expect(d.shop).not.toBeNull()
+      if (!d.shop) continue
+      // The merchant stands on a `merchant` tile, the room is enemy-free, and the
+      // shelves are stocked.
+      expect(d.tiles[d.shop.merchant.y][d.shop.merchant.x]).toBe('merchant')
+      expect(d.enemies.every((e) => e.room !== d.shop?.room)).toBe(true)
+      expect(d.shop.stock).toHaveLength(SHOP.stockSize)
+      // The shop is never the entry hall, and is still reachable from the start.
+      const startRoom = d.rooms.find(
+        (r) =>
+          d.playerStart.x >= r.x0 &&
+          d.playerStart.x <= r.x1 &&
+          d.playerStart.y >= r.y0 &&
+          d.playerStart.y <= r.y1,
+      )
+      expect(d.shop.room).not.toBe(startRoom?.id)
+      expect(reaches(d, d.playerStart, d.shop.merchant)).toBe(false) // merchant tile itself is impassable
+      const beside = { x: d.shop.merchant.x + 1, y: d.shop.merchant.y }
+      expect(reaches(d, d.playerStart, beside)).toBe(true) // but you can reach its counter
+    }
   })
 
   it('spawns no enemy on the start tile', () => {

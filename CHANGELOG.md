@@ -23,6 +23,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Shops: every level now has a safe **shop room** with a **merchant** (`商`).
+  Bump the merchant to open their stall — an overlay over the board — and **buy**
+  randomly stocked gear (a couple of potions plus weapons/armor/rings/amulets) or
+  **sell** your own wares; prices are marked up to buy (~1.25×) and halved to
+  sell. Trading is free (no turn passes); leave with the button or **Esc**. The
+  shop room is kept clear of enemies, rubble, and floor loot. New `Shop`
+  component, `shopping`/`shopStock` on the hook with `buy`/`sell`/`closeShop`
+  actions, a `merchant` `TileType`, and a `Dungeon.shop` describing the stall.
 - Room obstacles: rooms are now strewn with impassable **rubble** (`▲`) — single
   isolated piles, kept off each room's central cross so doorways stay connected
   and the level is always solvable. Both the hero and foes must path around them

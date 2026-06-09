@@ -20,6 +20,7 @@ classDiagram
     chest
     stairs
     rubble
+    merchant
   }
   class Room {
     +id : number
@@ -118,6 +119,16 @@ classDiagram
     +playerStart : Point
     +enemies : Enemy[]
     +items : FloorItem[]
+    +shop : DungeonShop / null
+  }
+  class ShopItem {
+    +id : number
+    +kind : ItemKind
+  }
+  class DungeonShop {
+    +room : number
+    +merchant : Point
+    +stock : ShopItem[]
   }
   class EnemyKind {
     <<enumeration>>
@@ -193,4 +204,8 @@ classDiagram
   Dungeon --> Point : playerStart
   Dungeon --> Enemy : enemies
   Dungeon --> FloorItem : items
+  Dungeon --> DungeonShop : shop
+  ShopItem --> ItemKind : kind
+  DungeonShop --> Point : merchant
+  DungeonShop --> ShopItem : stock
   ItemDef --> ItemCategory : category

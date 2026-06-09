@@ -14,6 +14,7 @@ const dungeon: Dungeon = {
   playerStart: { x: 2, y: 2 },
   enemies: [],
   items: [],
+  shop: null,
 }
 const foe = (id: number, x: number, y: number, room: number, over: Partial<Enemy> = {}): Enemy => ({
   id,

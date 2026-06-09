@@ -30,6 +30,17 @@ export const LEVELING = {
   accuracyPerLevel: 0.02,
 }
 
+/**
+ * Shop economy. The merchant marks stock up over its base value and buys your
+ * wares back at a fraction of it — so gold matters and trading isn't free.
+ */
+export const SHOP = {
+  buyMarkup: 1.25,
+  sellRate: 0.5,
+  /** How many items a merchant stocks (a couple of potions plus random gear). */
+  stockSize: 5,
+}
+
 /** The tile offset for each direction. Origin top-left; x grows right, y down. */
 export const DELTA: Record<Direction, Point> = {
   up: { x: 0, y: -1 },

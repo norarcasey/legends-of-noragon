@@ -12,6 +12,7 @@ const d: Dungeon = {
   playerStart: { x: 3, y: 3 },
   enemies: [],
   items: [],
+  shop: null,
 }
 
 describe('computeVisible', () => {

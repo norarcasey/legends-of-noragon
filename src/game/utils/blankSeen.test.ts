@@ -10,6 +10,7 @@ const dungeon = (tiles: TileType[][]): Dungeon => ({
   playerStart: { x: 0, y: 0 },
   enemies: [],
   items: [],
+  shop: null,
 })
 
 describe('blankSeen', () => {
