@@ -143,19 +143,25 @@ export function Board({
           )
         })}
 
-      {effects?.map((e) => (
-        <span
-          key={e.id}
-          className={`noragon__float noragon__float--${e.tone}`}
-          style={{
-            left: `${((e.x + 0.5) / cols) * 100}%`,
-            top: `${((e.y + 0.5) / rows) * 100}%`,
-          }}
-          aria-hidden
-        >
-          {e.tone === 'miss' ? 'miss' : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
-        </span>
-      ))}
+      {effects?.map((e) => {
+        // Text landing on a tile a fired arrow is reaching waits for the arrow.
+        const ranged = e.tone !== 'heal' && projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
+        return (
+          <span
+            key={e.id}
+            className={`noragon__float noragon__float--${e.tone}${
+              ranged ? ' noragon__float--delayed' : ''
+            }`}
+            style={{
+              left: `${((e.x + 0.5) / cols) * 100}%`,
+              top: `${((e.y + 0.5) / rows) * 100}%`,
+            }}
+            aria-hidden
+          >
+            {e.tone === 'miss' ? 'miss' : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
+          </span>
+        )
+      })}
 
       {projectiles?.map((p) => {
         // Rotate the arrow glyph (which points east at 0°) to face its target.

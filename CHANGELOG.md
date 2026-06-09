@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Combat juice now plays in the right order: the impact burst leads the damage
+  number (the ring blossoms, then the number rises out of it) instead of
+  trailing it, and on a ranged hit both wait for the arrow to land rather than
+  firing at launch.
 - Aiming no longer eats a turn when you cancel: `F` now **toggles** aim on/off
   (the second press cancels, for free) instead of firing. Firing is **Enter**;
   **Esc** still cancels. Previously pressing `F` to leave aiming loosed an arrow

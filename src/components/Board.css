@@ -30,11 +30,14 @@
   font-variant-numeric: tabular-nums;
   pointer-events: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-  animation: noragon-float 0.9s ease-out forwards;
+  /* `both` so the start (hidden) state also holds during any animation-delay. */
+  animation: noragon-float 0.9s ease-out both;
 }
 
 .noragon__float--damage {
   color: var(--noragon-log-bad);
+  /* Wait a beat so the impact ring blossoms first, then the number rises out. */
+  animation-delay: 0.1s;
 }
 
 .noragon__float--heal {
@@ -45,6 +48,16 @@
   color: var(--noragon-muted);
   font-style: italic;
   font-weight: 600;
+}
+
+/* On a tile a fired arrow is reaching, hold the text until the arrow lands
+   (~0.24s flight); a damage number then trails its burst by the same beat. */
+.noragon__float--delayed {
+  animation-delay: 0.24s;
+}
+
+.noragon__float--damage.noragon__float--delayed {
+  animation-delay: 0.34s;
 }
 
 @keyframes noragon-float {
@@ -111,7 +124,7 @@
 
 /* Paired with the arrow flight (~0.24s) so the ring pops on impact, not launch. */
 .noragon__burst--delayed {
-  animation-delay: 0.2s;
+  animation-delay: 0.24s;
 }
 
 @keyframes noragon-burst {

@@ -1457,6 +1457,13 @@ describe('Board combat floats', () => {
     expect(container.querySelectorAll('.noragon__burst')).toHaveLength(2)
     // The burst on the arrow's target tile waits for the arrow; the melee one doesn't.
     expect(container.querySelectorAll('.noragon__burst--delayed')).toHaveLength(1)
+    // The number on the arrow's target tile also waits (so the burst leads it);
+    // the heal at the hero's tile never waits on an arrow.
+    expect(container.querySelectorAll('.noragon__float--delayed')).toHaveLength(1)
+    expect(
+      container.querySelector('.noragon__float--damage.noragon__float--delayed'),
+    ).not.toBeNull()
+    expect(container.querySelector('.noragon__float--heal.noragon__float--delayed')).toBeNull()
   })
 })
 

@@ -385,6 +385,9 @@ function reducer(state: GameState, action: GameAction): GameState {
         turns: state.turns + 1,
         revealedRooms,
         effects: floats,
+        // No arrow this turn; clear any from a prior shot so impact timing on a
+        // tile a past arrow targeted isn't mistaken for a ranged hit.
+        projectiles: [],
         nextEffectId,
         rngState: rng.state(),
         seen: litSeen(player),
@@ -477,6 +480,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         status,
         turns: state.turns + 1,
         effects: floats,
+        projectiles: [],
         nextEffectId,
         rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
