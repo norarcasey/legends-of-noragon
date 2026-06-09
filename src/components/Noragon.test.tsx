@@ -651,12 +651,25 @@ describe('useNoragon — combat', () => {
     expect(result.current.aiming).toBe(true)
     expect(result.current.targetId).not.toBeNull()
     const turnsBefore = result.current.run.turns
+    const from = result.current.hero.position
+    const targeted = result.current.enemies.find((e) => e.id === result.current.targetId)
+    if (!targeted) throw new Error('no target')
 
     act(() => result.current.fire())
     expect(result.current.aiming).toBe(false)
     expect(result.current.run.turns).toBe(turnsBefore + 1)
     expect(result.current.run.kills).toBeGreaterThan(0)
     expect(result.current.log.some((e) => /^You shoot the \w+ for 10/.test(e.text))).toBe(true)
+
+    // An arrow flies from the hero's tile to where the target stood.
+    expect(result.current.projectiles).toHaveLength(1)
+    expect(result.current.projectiles[0]).toMatchObject({
+      kind: 'arrow',
+      fromX: from.x,
+      fromY: from.y,
+      toX: targeted.x,
+      toY: targeted.y,
+    })
   })
 
   it('cycles the crosshairs among foes in the room', () => {
@@ -1404,6 +1417,23 @@ describe('Board combat floats', () => {
       <Board board={board} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
     )
     expect(container.querySelector('.noragon__float')).toBeNull()
+  })
+
+  it('renders a fired arrow aimed at its target', () => {
+    const { container } = render(
+      <Board
+        board={board}
+        hero={{ x: 0, y: 0 }}
+        enemies={[]}
+        aiming={false}
+        targetId={null}
+        projectiles={[{ id: 1, fromX: 0, fromY: 0, toX: 2, toY: 0, kind: 'arrow' }]}
+      />,
+    )
+    const arrow = container.querySelector('.noragon__arrow')
+    expect(arrow).not.toBeNull()
+    // A due-east shot points along 0°.
+    expect(arrow?.getAttribute('style')).toContain('--arrow-angle: 0deg')
   })
 })
 

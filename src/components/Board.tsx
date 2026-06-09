@@ -1,5 +1,13 @@
 import type { CSSProperties } from 'react'
-import type { BoardView, CombatFloat, Enemy, GameStatus, Point, TileType } from '../game/types'
+import type {
+  BoardView,
+  CombatFloat,
+  Enemy,
+  GameStatus,
+  Point,
+  Projectile,
+  TileType,
+} from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
 import { ITEMS } from '../game/items'
 import './Board.css'
@@ -18,6 +26,8 @@ export interface BoardProps {
   targetId: number | null
   /** Floating combat numbers (`game.effects`) to animate over their tiles. */
   effects?: CombatFloat[]
+  /** Projectiles (`game.projectiles`) to animate travelling to their target. */
+  projectiles?: Projectile[]
   /** Run status (`game.run.status`) — drives the start/death overlay and gates the
    *  stairs prompt. Omit to render just the grid (no status-driven overlays). */
   status?: GameStatus
@@ -55,6 +65,7 @@ export function Board({
   aiming,
   targetId,
   effects,
+  projectiles,
   status,
   depth,
   onStairs,
@@ -126,6 +137,28 @@ export function Board({
           {e.tone === 'miss' ? 'miss' : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
         </span>
       ))}
+
+      {projectiles?.map((p) => {
+        // Rotate the arrow glyph (which points east at 0°) to face its target.
+        const angle = Math.atan2(p.toY - p.fromY, p.toX - p.fromX) * (180 / Math.PI)
+        const style: CSSProperties & Record<string, string | number> = {
+          '--arrow-from-x': `${((p.fromX + 0.5) / cols) * 100}%`,
+          '--arrow-from-y': `${((p.fromY + 0.5) / rows) * 100}%`,
+          '--arrow-to-x': `${((p.toX + 0.5) / cols) * 100}%`,
+          '--arrow-to-y': `${((p.toY + 0.5) / rows) * 100}%`,
+          '--arrow-angle': `${angle}deg`,
+        }
+        return (
+          <span
+            key={p.id}
+            className={`noragon__arrow noragon__arrow--${p.kind}`}
+            style={style}
+            aria-hidden
+          >
+            ➤
+          </span>
+        )
+      })}
 
       {aiming && (
         <div className="noragon__aim-banner" role="status" data-testid="aim-banner">

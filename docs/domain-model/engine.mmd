@@ -23,6 +23,7 @@ classDiagram
     +log : LogEntry[]
     +nextLogId : number
     +effects : CombatFloat[]
+    +projectiles : Projectile[]
     +nextEffectId : number
     +rngState : number
     +aiming : boolean
@@ -74,6 +75,9 @@ classDiagram
   class CombatFloat {
     <<external>>
   }
+  class Projectile {
+    <<external>>
+  }
   class Direction {
     <<external>>
   }
@@ -88,5 +92,6 @@ classDiagram
   GameState --> GameStatus : status
   GameState --> LogEntry : log
   GameState --> CombatFloat : effects
+  GameState --> Projectile : projectiles
   GameAction --> HeroStats
   GameAction --> Direction

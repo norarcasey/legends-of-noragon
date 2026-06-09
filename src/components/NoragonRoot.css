@@ -27,6 +27,8 @@
   /* Quiet text (the Drop action) and generic floor-loot glyphs. */
   --noragon-muted: #8a90a6;
   --noragon-loot: #cbd5e1;
+  /* A fired arrow in flight. */
+  --noragon-arrow: #e7d9a8;
   /* Targeting / danger red (aim reticle, targeted enemy card). */
   --noragon-target: #ff5252;
   /* Dark ink for text on accent / coloured button backgrounds. */

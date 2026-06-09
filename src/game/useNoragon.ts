@@ -13,6 +13,7 @@ import type {
   InventoryItem,
   NoragonApi,
   Point,
+  Projectile,
   UseNoragonOptions,
 } from './types'
 import { ENEMY_INFO } from './enemies'
@@ -86,6 +87,7 @@ function makeInitial(config: HeroStats, seed: number): GameState {
     log: [],
     nextLogId: 0,
     effects: [],
+    projectiles: [],
     nextEffectId: 0,
     rngState: seed >>> 0,
     aiming: false,
@@ -561,6 +563,18 @@ function reducer(state: GameState, action: GameAction): GameState {
       const messages: string[] = []
       let nextEffectId = state.nextEffectId
       const floats: CombatFloat[] = []
+      // The arrow in flight — hero's tile to the target's, animated by the UI.
+      // Captured before resolution so it flies to the foe even on a kill or miss.
+      const projectiles: Projectile[] = [
+        {
+          id: nextEffectId++,
+          fromX: state.player.x,
+          fromY: state.player.y,
+          toX: target.x,
+          toY: target.y,
+          kind: 'arrow',
+        },
+      ]
 
       // The hero looses an arrow: resolve the ranged profile, then enemies act.
       const a = resolveHeroAttack(state, target, state.attacks.ranged, rng.roll, messages, {
@@ -625,6 +639,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         aiming: false,
         targetId: null,
         effects: floats,
+        projectiles,
         nextEffectId,
         rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
@@ -755,6 +770,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     targetId: state.targetId,
     log: state.log,
     effects: state.effects,
+    projectiles: state.projectiles,
     start,
     reset,
     move,

@@ -38,6 +38,7 @@ export type {
   LogEntry,
   NoragonApi,
   Point,
+  Projectile,
   Room,
   RunView,
   TileType,

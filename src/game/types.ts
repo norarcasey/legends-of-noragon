@@ -59,6 +59,22 @@ export interface CombatFloat {
   tone: 'damage' | 'heal' | 'miss'
 }
 
+/**
+ * A projectile fired this turn, for the UI to animate travelling from the
+ * shooter's tile (`fromX`/`fromY`) to the target's (`toX`/`toY`) and then
+ * dissolve. Emitted on a ranged shot — hit or miss — and replaced each turn;
+ * `id` is a stable, monotonic key so the renderer animates each one once.
+ */
+export interface Projectile {
+  id: number
+  fromX: number
+  fromY: number
+  toX: number
+  toY: number
+  /** What's in flight; `arrow` today, with room for bolts/spells later. */
+  kind: 'arrow'
+}
+
 /** One item the hero is carrying; `id` is a stable, unique instance key. */
 export interface InventoryItem {
   id: number
@@ -275,6 +291,9 @@ export interface NoragonApi {
   /** Floating combat numbers from the latest turn (damage/heal), for the UI to
    *  animate and dissolve. Replaced each combat turn. */
   effects: CombatFloat[]
+  /** Projectiles loosed on the latest turn (e.g. a fired arrow), for the UI to
+   *  animate travelling to their target. Replaced each turn. */
+  projectiles: Projectile[]
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
@@ -346,7 +365,10 @@ export interface GameState extends HeroStats {
   nextLogId: number
   /** Floating combat numbers from the latest turn; replaced each combat turn. */
   effects: CombatFloat[]
-  /** Next id to mint for a combat float; monotonic so the UI animates each once. */
+  /** Projectiles loosed this turn (a fired arrow); replaced each turn. */
+  projectiles: Projectile[]
+  /** Next id to mint for a combat float or projectile; monotonic so the UI
+   *  animates each visual effect exactly once. */
   nextEffectId: number
   /** Current PRNG state driving combat rolls; advanced purely each transition. */
   rngState: number

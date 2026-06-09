@@ -61,8 +61,42 @@
   }
 }
 
+/* A fired arrow: glide from the shooter's tile to the target's, rotated to face
+   it (the angle comes in via --arrow-angle), then dissolve on impact. Positioned
+   by animating left/top between the two tile centres carried as inline vars. */
+.noragon__arrow {
+  position: absolute;
+  left: var(--arrow-from-x);
+  top: var(--arrow-from-y);
+  /* Centre on the tile, then orient toward the target. */
+  transform: translate(-50%, -50%) rotate(var(--arrow-angle, 0deg));
+  font-size: clamp(0.7rem, 2vmin, 1.15rem);
+  line-height: 1;
+  color: var(--noragon-arrow);
+  text-shadow: 0 0 4px currentColor;
+  pointer-events: none;
+  animation: noragon-arrow-fly 0.24s linear forwards;
+}
+
+@keyframes noragon-arrow-fly {
+  0% {
+    left: var(--arrow-from-x);
+    top: var(--arrow-from-y);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    left: var(--arrow-to-x);
+    top: var(--arrow-to-y);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .noragon__float {
+  .noragon__float,
+  .noragon__arrow {
     animation-duration: 0.01ms;
   }
 }

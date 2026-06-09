@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Arrow flight: firing now looses a visible arrow that glides from the hero to
+  the target — rotated to face it — and dissolves on impact, so ranged shots
+  read as travelling rather than instant. The hook exposes the shot as
+  `projectiles: Projectile[]` (`from`/`to` tiles, refreshed each turn) and the
+  `Board` animates it via a new optional `projectiles` prop; the flight colour
+  is the `--noragon-arrow` token and the motion respects `prefers-reduced-motion`.
 - Floating combat numbers: each hit now pops a short `-N` (damage, red) or `+N`
   (heal, green) that rises from the struck tile and fades, so the outcome of a
   turn reads at a glance — over the foe when you strike it, over the hero when

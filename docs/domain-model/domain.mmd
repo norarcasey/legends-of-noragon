@@ -39,6 +39,14 @@ classDiagram
     +amount : number
     +tone : damage / heal / miss
   }
+  class Projectile {
+    +id : number
+    +fromX : number
+    +fromY : number
+    +toX : number
+    +toY : number
+    +kind : arrow
+  }
   class InventoryItem {
     +id : number
     +kind : ItemKind
