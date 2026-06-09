@@ -146,18 +146,20 @@
 }
 
 /* ---- Aim banner ---- */
+/* Sits at the bottom of the board, the same slot as the stairs prompt; while
+   aiming the stairs prompt is suppressed (see Board), so the aim banner wins. */
 .noragon__aim-banner {
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
+  bottom: 0;
   padding: 0.4rem 0.6rem;
   background: var(--noragon-aim-bg);
   color: var(--noragon-aim-ink);
   font-size: 0.8rem;
   font-weight: 600;
   text-align: center;
-  border-radius: 8px 8px 0 0;
+  border-radius: 0 0 8px 8px;
 }
 
 .noragon__aim-banner kbd {
