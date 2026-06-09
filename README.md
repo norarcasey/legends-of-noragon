@@ -37,8 +37,8 @@ Combat:
   a random 3–6 damage, so a kill may take a couple of swings (and a swing can
   whiff).
 - **Ranged** — press **F** to take aim (the nearest foe is auto-targeted; **Tab**
-  or the arrow keys switch targets, **F**/**Enter** looses an arrow, **Esc**
-  cancels) and soften foes from a distance.
+  or the arrow keys switch targets, **Enter** looses an arrow, and **F** again or
+  **Esc** cancels for free) and soften foes from a distance.
 - Foes roll their own chance to hit back, and the bestiary climbs from fodder to
   horror: **Bats**, **Kobolds**, **Spiders**, and **Dire Wolves** early, then
   **Skeletons**, **Goblins**, and **Orcs**, up to hulking **Ogres**, lumbering
@@ -233,8 +233,9 @@ export function MyDungeon() {
 
 The parts are presentational only. For the default controls, call
 `useNoragonKeyboard(game)` — it attaches a `window` keydown listener for the same
-keys `<Noragon />` uses (arrows/WASD to move, Enter to start, `F` to aim/fire,
-`>` to descend, `Q` to quaff), and takes `{ enabled }` to toggle it:
+keys `<Noragon />` uses (arrows/WASD to move, Enter to start, `F` to toggle aim
+with Enter to fire, `>` to descend, `Q` to quaff), and takes `{ enabled }` to
+toggle it:
 
 ```tsx
 const game = useNoragon()

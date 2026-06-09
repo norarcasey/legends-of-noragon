@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.0] - 2026-06-04
 
+### Fixed
+
+- Aiming no longer eats a turn when you cancel: `F` now **toggles** aim on/off
+  (the second press cancels, for free) instead of firing. Firing is **Enter**;
+  **Esc** still cancels. Previously pressing `F` to leave aiming loosed an arrow
+  and ran the enemy phase. Banner and docs updated to match.
+
 ### Added
 
 - A shipped example theme: add the `noragon--parchment` class (e.g.

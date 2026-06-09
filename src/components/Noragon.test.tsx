@@ -267,9 +267,26 @@ describe('<Noragon />', () => {
       screen.getAllByTestId('enemy-card').filter((c) => c.getAttribute('aria-current')),
     ).toHaveLength(1)
 
-    fireEvent.keyDown(window, { key: 'f' }) // loose the arrow
+    fireEvent.keyDown(window, { key: 'Enter' }) // loose the arrow
     expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
     expect(screen.getByTestId('activity-log')).toHaveTextContent('You shoot the')
+  })
+
+  it('toggles aiming off with F without firing (no turn spent)', () => {
+    const opts = {
+      seed: 7,
+      maxHp: 99,
+      attacks: { melee: { accuracy: 0, minDamage: 3, maxDamage: 6 } },
+    }
+    const dirs = dirsToEnemyRoom(opts)
+    render(<Noragon {...opts} />)
+    for (const dir of dirs) fireEvent.keyDown(window, { key: KEY[dir] })
+
+    fireEvent.keyDown(window, { key: 'f' })
+    expect(screen.getByTestId('aim-banner')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'f' }) // F again toggles aiming off — no shot
+    expect(screen.queryByTestId('aim-banner')).not.toBeInTheDocument()
+    expect(screen.getByTestId('activity-log')).not.toHaveTextContent('You shoot')
   })
 
   it('cancels aiming with Escape without firing', () => {

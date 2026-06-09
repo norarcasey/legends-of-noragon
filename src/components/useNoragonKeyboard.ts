@@ -20,8 +20,9 @@ export interface UseNoragonKeyboardOptions {
 /**
  * Wire the default keyboard controls to a {@link NoragonApi} from `useNoragon()`:
  * arrow keys / WASD move (and start a stopped run on the first step), Enter
- * begins/restarts, `F` takes aim then fires (Tab/arrows switch targets, Esc
- * cancels), `>`/Enter descends on the stairs, and `Q` quaffs a health potion.
+ * begins/restarts, `F` toggles aim on/off (while aiming, Enter fires, Tab/arrows
+ * switch targets, Esc cancels), `>`/Enter descends on the stairs, and `Q` quaffs
+ * a health potion.
  *
  * Attaches a single `window` keydown listener. `<Noragon />` uses this; call it
  * yourself when composing your own layout from the exported parts.
@@ -40,12 +41,13 @@ export function useNoragonKeyboard(
     if (!enabled) return
 
     const onKeyDown = (e: KeyboardEvent) => {
-      // ---- Aiming mode: arrows cycle targets, F/Enter fires, Esc cancels. ----
+      // ---- Aiming mode: arrows cycle targets, Enter fires, F/Esc cancel. F is
+      // a toggle — the same key that entered aiming leaves it, for free. ----
       if (aiming) {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' || e.key === 'f' || e.key === 'F') {
           e.preventDefault()
           aimCancel()
-        } else if (e.key === 'f' || e.key === 'F' || e.key === 'Enter') {
+        } else if (e.key === 'Enter') {
           e.preventDefault()
           fire()
         } else if (e.key === 'Tab') {

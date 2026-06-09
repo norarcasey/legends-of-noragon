@@ -78,7 +78,8 @@ export function Noragon({
 
           {aiming && (
             <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
-              Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>F</kbd> fire · <kbd>Esc</kbd> cancel
+              Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
+              <kbd>Esc</kbd> cancel
             </div>
           )}
 
@@ -105,7 +106,7 @@ export function Noragon({
                 {isOver ? 'Delve again' : 'Enter'}
               </button>
               <p className="noragon__hint">
-                Arrow keys / WASD to move, F to shoot — take the stairs to descend
+                Arrow keys / WASD to move, F to aim (Enter to fire) — take the stairs to descend
               </p>
             </div>
           )}
