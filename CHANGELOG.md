@@ -30,6 +30,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stats moved off the side column into the frame's margins: Depth/Slain top-left
   and HP/Gold/XP top-right, with Level/Damage/Melee/Range/Defense along the
   bottom. (`Stats` is still exported for custom layouts.)
+- The aim and descend prompts now sit in the board frame's bottom margin, under
+  the stat row, instead of floating at the grid's edge. `Board` gained a
+  `banners` prop (default `true`) to suppress its built-in aim/stairs banners so
+  a composition can render them in its own chrome (the start/death overlay is
+  unaffected).
 - Stylized dividers between the three layout columns — a vertical rule that
   fades at both ends with a small diamond finial at its centre, themeable via a
   new `--noragon-divider` token. Shown only in the wide 3-column grid.

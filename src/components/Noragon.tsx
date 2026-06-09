@@ -121,6 +121,7 @@ export function Noragon({
             onStairs={onStairs}
             onStart={start}
             onDescend={descend}
+            banners={false}
           />
 
           <div className="noragon__chrome noragon__chrome--top" aria-live="polite">
@@ -128,7 +129,26 @@ export function Noragon({
             <div className="noragon__chrome-group">{topRightStats.map(chip)}</div>
           </div>
           <div className="noragon__chrome noragon__chrome--bottom" aria-live="polite">
-            {bottomStats.map(chip)}
+            <div className="noragon__chrome-group">{bottomStats.map(chip)}</div>
+            {aiming ? (
+              <div
+                className="noragon__chrome-banner noragon__chrome-banner--aim"
+                role="status"
+                data-testid="aim-banner"
+              >
+                Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
+                <kbd>Esc</kbd> cancel
+              </div>
+            ) : status === 'playing' && onStairs ? (
+              <div className="noragon__chrome-banner" role="status" data-testid="stairs-banner">
+                <span>
+                  A stairway leads down. Press <kbd>&gt;</kbd> to descend.
+                </span>
+                <button type="button" className="noragon__descend-button" onClick={descend}>
+                  Descend ▾
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
 

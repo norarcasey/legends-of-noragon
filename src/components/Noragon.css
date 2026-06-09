@@ -131,14 +131,48 @@
 
 .noragon__chrome--bottom {
   bottom: 0;
-  justify-content: center;
+  /* Stat row on top, the aim/stairs prompt wired in beneath it. */
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
 }
 
 .noragon__chrome-group {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
+  justify-content: center;
   gap: 0.15rem 0.7rem;
+}
+
+/* The aim / descend prompt, sitting under the bottom stat row. */
+.noragon__chrome-banner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 6px;
+  background: var(--noragon-banner-bg);
+  color: var(--noragon-text);
+}
+
+.noragon__chrome-banner--aim {
+  background: var(--noragon-aim-bg);
+  color: var(--noragon-aim-ink);
+}
+
+.noragon__chrome-banner kbd {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  background: var(--noragon-wall);
+  border-radius: 3px;
+  padding: 0 0.3em;
 }
 
 .noragon__chip {

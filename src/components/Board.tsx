@@ -48,6 +48,10 @@ export interface BoardProps {
   onStart?: () => void
   /** Descend the stairs (`game.descend`) — shows the descend button. */
   onDescend?: () => void
+  /** Whether to render the aim and stairs prompt banners at the board's edge.
+   *  Default `true`. `<Noragon />` sets this `false` and renders those prompts
+   *  in its frame chrome instead; the start/death overlay is unaffected. */
+  banners?: boolean
 }
 
 const TILE_GLYPH: Record<TileType, string> = {
@@ -87,6 +91,7 @@ export function Board({
   onStairs,
   onStart,
   onDescend,
+  banners = true,
 }: BoardProps) {
   const { cols, rows, tiles, visible, floorItems } = board
   const gridStyle: CSSProperties = {
@@ -238,14 +243,14 @@ export function Board({
         )
       })}
 
-      {aiming && (
+      {banners && aiming && (
         <div className="noragon__aim-banner" role="status" data-testid="aim-banner">
           Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
           <kbd>Esc</kbd> cancel
         </div>
       )}
 
-      {status === 'playing' && onStairs && !aiming && onDescend && (
+      {banners && status === 'playing' && onStairs && !aiming && onDescend && (
         <div className="noragon__stairs-banner" role="status" data-testid="stairs-banner">
           <span>
             A stairway leads down. Press <kbd>&gt;</kbd> to descend.

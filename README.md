@@ -244,7 +244,9 @@ export function MyDungeon() {
             : null
         }
         // Optional — pass these to get the aim/stairs banners and start/death
-        // overlay over the board; omit them to render just the grid.
+        // overlay over the board; omit them to render just the grid. Pass
+        // `banners={false}` to suppress the aim/stairs prompts (e.g. to render
+        // them in your own chrome) while keeping the start/death overlay.
         status={game.run.status}
         depth={game.run.depth}
         onStairs={game.hero.onStairs}
