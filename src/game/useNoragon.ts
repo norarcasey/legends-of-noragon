@@ -567,18 +567,6 @@ function reducer(state: GameState, action: GameAction): GameState {
       const messages: string[] = []
       let nextEffectId = state.nextEffectId
       const floats: CombatFloat[] = []
-      // The arrow in flight — hero's tile to the target's, animated by the UI.
-      // Captured before resolution so it flies to the foe even on a kill or miss.
-      const projectiles: Projectile[] = [
-        {
-          id: nextEffectId++,
-          fromX: state.player.x,
-          fromY: state.player.y,
-          toX: target.x,
-          toY: target.y,
-          kind: 'arrow',
-        },
-      ]
 
       // The hero looses an arrow: resolve the ranged profile, then enemies act.
       const a = resolveHeroAttack(state, target, state.attacks.ranged, rng.roll, messages, {
@@ -586,17 +574,6 @@ function reducer(state: GameState, action: GameAction): GameState {
         slain: (name, dmg, gained) => `You shoot the ${name} for ${dmg} — slain! (+${gained} XP)`,
         miss: (name) => `Your arrow misses the ${name}.`,
       })
-      if (!a.hit) {
-        floats.push({ id: nextEffectId++, x: target.x, y: target.y, amount: 0, tone: 'miss' })
-      } else if (a.damage > 0) {
-        floats.push({
-          id: nextEffectId++,
-          x: target.x,
-          y: target.y,
-          amount: a.damage,
-          tone: 'damage',
-        })
-      }
 
       const phase = runEnemyPhase(
         state.dungeon,
@@ -610,6 +587,30 @@ function reducer(state: GameState, action: GameAction): GameState {
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
+
+      // Where the target ends up on-screen this turn: its post-move tile if it
+      // survived, else where it stood when struck. The arrow — and its burst and
+      // number — land here, so a hit on a foe that then steps away still reads as
+      // a hit, not a miss against the tile it just left.
+      const survivor = phase.enemies.find((e) => e.id === target.id)
+      const landX = survivor ? survivor.x : target.x
+      const landY = survivor ? survivor.y : target.y
+      const projectiles: Projectile[] = [
+        {
+          id: nextEffectId++,
+          fromX: state.player.x,
+          fromY: state.player.y,
+          toX: landX,
+          toY: landY,
+          kind: 'arrow',
+        },
+      ]
+      if (!a.hit) {
+        floats.push({ id: nextEffectId++, x: landX, y: landY, amount: 0, tone: 'miss' })
+      } else if (a.damage > 0) {
+        floats.push({ id: nextEffectId++, x: landX, y: landY, amount: a.damage, tone: 'damage' })
+      }
+
       if (a.hp - phase.hp > 0) {
         floats.push({
           id: nextEffectId++,

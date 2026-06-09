@@ -672,6 +672,38 @@ describe('useNoragon — combat', () => {
     })
   })
 
+  it('lands the arrow where the target ends up, not the tile it left', () => {
+    // A light hit (1 dmg) so the foe is likely to survive and take its step,
+    // exercising the case the engine guards against: the arrow tracking a foe
+    // that moves on the same turn instead of stranding on the tile it left.
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { ranged: { accuracy: 1, minDamage: 1, maxDamage: 1 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    enterEnemyRoom(result)
+
+    act(() => result.current.aimStart())
+    const targetId = result.current.targetId
+    if (targetId == null) throw new Error('no target')
+    const before = result.current.enemies.find((e) => e.id === targetId)
+    if (!before) throw new Error('no target enemy')
+
+    act(() => result.current.fire())
+
+    // The arrow, its burst, and its number all land on the target's final tile:
+    // where it moved to if it lived, else where it died.
+    const after = result.current.enemies.find((e) => e.id === targetId)
+    const land = after ?? before
+    expect(result.current.projectiles[0]).toMatchObject({ toX: land.x, toY: land.y })
+    expect(
+      result.current.effects.some((f) => f.tone === 'damage' && f.x === land.x && f.y === land.y),
+    ).toBe(true)
+  })
+
   it('cycles the crosshairs among foes in the room', () => {
     // Sure-kill melee clears any single foe blocking the route deeper, so the
     // hero can reach a room that still holds two foes to cycle between.

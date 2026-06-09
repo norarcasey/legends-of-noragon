@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- A fired arrow now lands on the foe it hit even when that foe steps on the same
+  turn: the arrow (and its burst and number) aim at the target's final tile —
+  where it moved to if it lived, or where it stood if it died — instead of the
+  tile it just left, which had made a clean hit look like a miss.
 - Combat juice now plays in the right order: the impact burst leads the damage
   number (the ring blossoms, then the number rises out of it) instead of
   trailing it, and on a ranged hit both wait for the arrow to land rather than
