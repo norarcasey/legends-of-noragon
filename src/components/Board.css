@@ -1,26 +1,16 @@
 /* The dungeon grid and tiles. Imported by Board. */
 
 /* ---- Board ---- */
-.noragon__stage {
-  position: relative;
-  display: flex;
-
-  width: 100%;
-  /* Fill the middle column, but cap by viewport height so a tall board never
-     shoves the panels off-screen; the board centers within whatever's left. */
-  max-width: min(68vh, 100%);
-  margin: 0 auto;
-  gap: 1rem;
-}
-
-/* Wraps the board and its overlays so the banners/overlay anchor to the board
-   alone — not the whole stage, which also holds the Stats column. */
+/* Wraps the grid and its overlays (banners/shop/start-death anchor to the grid
+   alone) and carries the level's aspect ratio. On its own it fills the host's
+   width; inside the all-in-one Noragon frame it's letterboxed (see Noragon.css).
+   Also a sizing container + carrier of --noragon-cols so the enemy overlay,
+   which sits here rather than in the grid, scales its glyphs to the tiles. */
 .noragon__board-wrap {
   position: relative;
   width: 100%;
+  aspect-ratio: var(--noragon-aspect, 1);
   min-width: 0;
-  /* A sizing container (and carrier of --noragon-cols) so the enemy overlay,
-     which sits here rather than in the grid, can scale glyphs to the tiles. */
   container-type: inline-size;
 }
 
@@ -161,10 +151,10 @@
 .noragon__board {
   display: grid;
   width: 100%;
-  background: var(--noragon-bg);
-  border: 2px solid var(--noragon-wall-edge);
-  border-radius: 8px;
-  overflow: hidden;
+  height: 100%;
+  /* Borderless and transparent: the frame (see Noragon.css) supplies the border
+     and the dark fill, and unrevealed tiles share that fill — so the grid blends
+     into the frame until the hero uncovers it, hiding the level's dimensions. */
   container-type: inline-size;
 }
 

@@ -83,3 +83,72 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+
+/* ---- Board frame + stat chrome ----
+   A fixed square frame whose border and dark fill never change with the level's
+   size. The grid is letterboxed inside (and, being borderless, blends into the
+   fill until uncovered, hiding the dimensions); the player stats live in the top
+   and bottom margins. `container-type: size` lets the grid size to the frame. */
+.noragon__stage {
+  position: relative;
+  container-type: size;
+  width: 100%;
+  max-width: min(70vh, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  /* Top/bottom bands hold the stat chrome; the grid sits in the middle. */
+  padding: 1.7rem 0.7rem;
+  background: var(--noragon-bg);
+  border: 2px solid var(--noragon-wall-edge);
+  border-radius: 10px;
+  display: grid;
+  place-content: center;
+}
+
+/* Fit the grid to the frame's content box, preserving square tiles (letterbox). */
+.noragon__stage > .noragon__board-wrap {
+  width: min(100cqw, calc(100cqh * var(--noragon-aspect, 1)));
+  margin: auto;
+}
+
+.noragon__chrome {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+  padding: 0.3rem 0.7rem;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.noragon__chrome--top {
+  top: 0;
+  justify-content: flex-start;
+}
+
+.noragon__chrome--bottom {
+  bottom: 0;
+  justify-content: center;
+}
+
+.noragon__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  line-height: 1;
+}
+
+.noragon__chip-k {
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--noragon-stairs);
+}
+
+.noragon__chip-v {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--noragon-accent);
+}

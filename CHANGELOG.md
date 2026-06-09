@@ -23,6 +23,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Static board frame with in-frame stats: the board now sits in a fixed square
+  frame whose border and dark fill never change with the level's size — the grid
+  is borderless and letterboxes inside, blending into the fill until uncovered,
+  so a level's dimensions no longer show through before you explore. The player
+  stats moved off the side column into the frame's margins: the run tallies
+  (Depth, Level, XP, Gold, Slain) across the top, the combat numbers (HP,
+  Defense, Melee, Damage, Range) along the bottom. (`Stats` is still exported for
+  custom layouts.)
 - Stylized dividers between the three layout columns — a vertical rule that
   fades at both ends with a small diamond finial at its centre, themeable via a
   new `--noragon-divider` token. Shown only in the wide 3-column grid.

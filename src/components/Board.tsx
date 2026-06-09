@@ -92,13 +92,13 @@ export function Board({
   const gridStyle: CSSProperties = {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
-    aspectRatio: `${cols} / ${rows}`,
   }
-  // `--noragon-cols` lets the CSS scale glyphs to the column count so they stay
-  // legible at any board size. It lives on the wrap so both the grid tiles and
-  // the enemy overlay (a sibling of the grid) inherit it.
+  // The wrap carries the level's aspect ratio (so it can be letterboxed inside a
+  // fixed frame) and `--noragon-cols` (so the grid tiles and the enemy overlay,
+  // a sibling of the grid, scale their glyphs to the column count).
   const wrapStyle: CSSProperties & Record<string, string | number> = {
     '--noragon-cols': cols,
+    '--noragon-aspect': `${cols} / ${rows}`,
   }
 
   const enemyAt = (x: number, y: number) => enemies.find((e) => e.x === x && e.y === y)

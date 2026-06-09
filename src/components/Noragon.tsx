@@ -6,7 +6,6 @@ import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
 import { Inventory } from './Inventory'
 import { NoragonRoot } from './NoragonRoot'
-import { Stats } from './Stats'
 import { useNoragonKeyboard } from './useNoragonKeyboard'
 import './Noragon.css'
 
@@ -62,6 +61,31 @@ export function Noragon({
       }
     : null
 
+  // Player stats live in the board frame's margins (see Noragon.css): the run
+  // tallies up top, the moment-to-moment combat numbers along the bottom.
+  const melee = hero.attacks.melee
+  const ranged = hero.attacks.ranged
+  const topStats: [string, string | number][] = [
+    ['Depth', run.depth],
+    ['Level', hero.level],
+    ['XP', `${hero.xp}/${hero.xpToNext}`],
+    ['Gold', hero.gold],
+    ['Slain', run.kills],
+  ]
+  const bottomStats: [string, string | number][] = [
+    ['HP', `${hero.hp}/${hero.maxHp}`],
+    ['Defense', hero.defense],
+    ['Melee', `${Math.round(melee.accuracy * 100)}%`],
+    ['Damage', `${melee.minDamage}–${melee.maxDamage}`],
+    ['Range', `${Math.round(ranged.accuracy * 100)}%`],
+  ]
+  const chip = ([k, v]: [string, string | number]) => (
+    <span className="noragon__chip" key={k}>
+      <span className="noragon__chip-k">{k}</span>
+      <span className="noragon__chip-v">{v}</span>
+    </span>
+  )
+
   return (
     <NoragonRoot className={className} ariaLabel={title ?? 'Legends of Noragon dungeon crawler'}>
       {title !== null && <h2 className="noragon__title">{title}</h2>}
@@ -97,7 +121,12 @@ export function Noragon({
             onDescend={descend}
           />
 
-          <Stats hero={hero} run={run} />
+          <div className="noragon__chrome noragon__chrome--top" aria-live="polite">
+            {topStats.map(chip)}
+          </div>
+          <div className="noragon__chrome noragon__chrome--bottom" aria-live="polite">
+            {bottomStats.map(chip)}
+          </div>
         </div>
 
         <div className="noragon__divider" aria-hidden />
