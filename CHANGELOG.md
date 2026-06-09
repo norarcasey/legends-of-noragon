@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Floating combat numbers: each hit now pops a short `-N` (damage, red) or `+N`
+  (heal, green) that rises from the struck tile and fades, so the outcome of a
+  turn reads at a glance — over the foe when you strike it, over the hero when
+  you take damage or quaff. The hook exposes them as `effects: CombatFloat[]`
+  (refreshed each turn), and the `Board` component animates them via a new
+  optional `effects` prop; the animation respects `prefers-reduced-motion`.
 - Doorway opportunity shot: standing in a doorway, the hero can now aim and fire
   into the room being peeked (previously firing required sharing the room), and
   that room's enemy cards show while peeking so you can pick a target. The shot

@@ -21,6 +21,46 @@
   min-width: 0;
 }
 
+/* Floating combat numbers — a short rise-and-fade over the tile they belong to.
+   Positioned by inline left/top (the tile centre) within the board-wrap. */
+.noragon__float {
+  position: absolute;
+  font-weight: 700;
+  font-size: clamp(0.8rem, 2.2vmin, 1.4rem);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  animation: noragon-float 0.9s ease-out forwards;
+}
+
+.noragon__float--damage {
+  color: var(--noragon-log-bad);
+}
+
+.noragon__float--heal {
+  color: var(--noragon-log-good);
+}
+
+@keyframes noragon-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -170%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noragon__float {
+    animation-duration: 0.01ms;
+  }
+}
+
 .noragon__board {
   display: grid;
   width: 100%;

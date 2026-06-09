@@ -27,6 +27,7 @@ export type {
   AttackProfile,
   AttackProfiles,
   BoardView,
+  CombatFloat,
   Direction,
   Enemy,
   Equipment,

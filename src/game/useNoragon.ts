@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import type {
   AttackProfile,
   AttackProfiles,
+  CombatFloat,
   Direction,
   Enemy,
   Equipment,
@@ -84,6 +85,8 @@ function makeInitial(config: HeroStats, seed: number): GameState {
     revealedRooms: reveal([], roomAt(dungeon.rooms, dungeon.playerStart.x, dungeon.playerStart.y)),
     log: [],
     nextLogId: 0,
+    effects: [],
+    nextEffectId: 0,
     rngState: seed >>> 0,
     aiming: false,
     targetId: null,
@@ -125,7 +128,8 @@ function descend(state: GameState, messages: string[]): GameState {
   }
 }
 
-/** The hero-state fields a single attack can change. */
+/** The hero-state fields a single attack can change, plus the damage it dealt
+ *  (0 on a miss) so the reducer can float a number over the target. */
 interface HeroAttackOutcome {
   enemies: Enemy[]
   kills: number
@@ -135,6 +139,7 @@ interface HeroAttackOutcome {
   attacks: AttackProfiles
   defense: number
   hp: number
+  damage: number
 }
 
 /**
@@ -165,6 +170,7 @@ function resolveHeroAttack(
     attacks: state.attacks,
     defense: state.defense,
     hp: state.hp,
+    damage: 0,
   }
   const name = ENEMY_INFO[target.kind].name
   const { hit, damage } = resolveAttack(profile, roll)
@@ -178,7 +184,7 @@ function resolveHeroAttack(
   if (enemies.length === state.enemies.length) {
     // A hit that didn't kill: damage landed, no XP.
     messages.push(flavor.hit(name, damage))
-    return { ...unchanged, enemies }
+    return { ...unchanged, enemies, damage }
   }
   // Slain: award XP and apply any level-up (which fully heals).
   const gained = target.xp
@@ -202,6 +208,7 @@ function resolveHeroAttack(
     attacks: lv.attacks,
     defense: lv.defense,
     hp: lv.hp,
+    damage,
   }
 }
 
@@ -245,6 +252,9 @@ function reducer(state: GameState, action: GameAction): GameState {
       // The dungeon can change this turn (opening a chest consumes its tile).
       let dungeon = state.dungeon
       const messages: string[] = []
+      // Floating combat numbers emitted this turn (damage dealt / taken).
+      let nextEffectId = state.nextEffectId
+      const floats: CombatFloat[] = []
 
       // Re-light the torch radius around wherever the hero ends up this turn.
       const litSeen = (p: Point): boolean[][] => {
@@ -273,6 +283,15 @@ function reducer(state: GameState, action: GameAction): GameState {
         attacks = a.attacks
         defense = a.defense
         hp = a.hp
+        if (a.damage > 0) {
+          floats.push({
+            id: nextEffectId++,
+            x: target.x,
+            y: target.y,
+            amount: a.damage,
+            tone: 'damage',
+          })
+        }
       } else if (tileAt(state.dungeon, target.x, target.y) === 'wall') {
         // Bumping a wall is not a turn — nothing happens, and nothing is logged.
         return state
@@ -324,6 +343,16 @@ function reducer(state: GameState, action: GameAction): GameState {
       const phase = runEnemyPhase(dungeon, player, enemies, hp, defense, rng.roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
+      // Float the damage the foes dealt the hero this phase over the hero's tile.
+      if (hp - phase.hp > 0) {
+        floats.push({
+          id: nextEffectId++,
+          x: player.x,
+          y: player.y,
+          amount: hp - phase.hp,
+          tone: 'damage',
+        })
+      }
 
       return {
         ...state,
@@ -344,6 +373,8 @@ function reducer(state: GameState, action: GameAction): GameState {
         status,
         turns: state.turns + 1,
         revealedRooms,
+        effects: floats,
+        nextEffectId,
         rngState: rng.state(),
         seen: litSeen(player),
         // Stepping ends any aim that was somehow still open.
@@ -397,6 +428,16 @@ function reducer(state: GameState, action: GameAction): GameState {
       const healed = Math.min(state.maxHp, state.hp + ITEMS[item.kind].heal)
       messages.push(`You drink a ${ITEMS[item.kind].name} and recover ${healed - state.hp} HP.`)
       const inventory = state.inventory.filter((i) => i.id !== item.id)
+      let nextEffectId = state.nextEffectId
+      const floats: CombatFloat[] = [
+        {
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: healed - state.hp,
+          tone: 'heal',
+        },
+      ]
       const phase = runEnemyPhase(
         state.dungeon,
         state.player,
@@ -408,6 +449,15 @@ function reducer(state: GameState, action: GameAction): GameState {
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
+      if (healed - phase.hp > 0) {
+        floats.push({
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: healed - phase.hp,
+          tone: 'damage',
+        })
+      }
       return {
         ...state,
         inventory,
@@ -415,6 +465,8 @@ function reducer(state: GameState, action: GameAction): GameState {
         enemies: phase.enemies,
         status,
         turns: state.turns + 1,
+        effects: floats,
+        nextEffectId,
         rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
       }
@@ -498,6 +550,8 @@ function reducer(state: GameState, action: GameAction): GameState {
 
       const rng = makeRoller(state.rngState)
       const messages: string[] = []
+      let nextEffectId = state.nextEffectId
+      const floats: CombatFloat[] = []
 
       // The hero looses an arrow: resolve the ranged profile, then enemies act.
       const a = resolveHeroAttack(state, target, state.attacks.ranged, rng.roll, messages, {
@@ -505,6 +559,15 @@ function reducer(state: GameState, action: GameAction): GameState {
         slain: (name, dmg, gained) => `You shoot the ${name} for ${dmg} — slain! (+${gained} XP)`,
         miss: (name) => `Your arrow misses the ${name}.`,
       })
+      if (a.damage > 0) {
+        floats.push({
+          id: nextEffectId++,
+          x: target.x,
+          y: target.y,
+          amount: a.damage,
+          tone: 'damage',
+        })
+      }
 
       const phase = runEnemyPhase(
         state.dungeon,
@@ -518,6 +581,15 @@ function reducer(state: GameState, action: GameAction): GameState {
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
+      if (a.hp - phase.hp > 0) {
+        floats.push({
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: a.hp - phase.hp,
+          tone: 'damage',
+        })
+      }
 
       return {
         ...state,
@@ -533,6 +605,8 @@ function reducer(state: GameState, action: GameAction): GameState {
         turns: state.turns + 1,
         aiming: false,
         targetId: null,
+        effects: floats,
+        nextEffectId,
         rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
       }
@@ -661,6 +735,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     aiming: state.aiming,
     targetId: state.targetId,
     log: state.log,
+    effects: state.effects,
     start,
     reset,
     move,

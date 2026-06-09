@@ -72,6 +72,7 @@ export function Noragon({
             enemies={game.enemies}
             aiming={aiming}
             targetId={game.targetId}
+            effects={game.effects}
             status={status}
             depth={run.depth}
             onStairs={onStairs}

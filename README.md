@@ -217,6 +217,8 @@ export function MyDungeon() {
         enemies={game.enemies}
         aiming={game.aiming}
         targetId={game.targetId}
+        // Optional — animated `-N`/`+N` numbers that rise over the struck tile.
+        effects={game.effects}
         // Optional — pass these to get the aim/stairs banners and start/death
         // overlay over the board; omit them to render just the grid.
         status={game.run.status}

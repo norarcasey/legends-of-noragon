@@ -44,6 +44,20 @@ export interface LogEntry {
   text: string
 }
 
+/**
+ * A transient floating combat number for the UI to animate and dissolve — damage
+ * dealt or taken (`damage`, shown as `-N`) or healing (`heal`, shown as `+N`),
+ * anchored to a grid tile. Emitted fresh each combat turn; `id` is a stable,
+ * monotonic key so the renderer animates each one exactly once.
+ */
+export interface CombatFloat {
+  id: number
+  x: number
+  y: number
+  amount: number
+  tone: 'damage' | 'heal'
+}
+
 /** One item the hero is carrying; `id` is a stable, unique instance key. */
 export interface InventoryItem {
   id: number
@@ -257,6 +271,9 @@ export interface NoragonApi {
   targetId: number | null
   /** A running log of what happened each turn, oldest entry first. */
   log: LogEntry[]
+  /** Floating combat numbers from the latest turn (damage/heal), for the UI to
+   *  animate and dissolve. Replaced each combat turn. */
+  effects: CombatFloat[]
   /** Lay out a fresh dungeon and begin playing. */
   start: () => void
   /** Lay out a fresh dungeon without starting (returns to `idle`). */
@@ -326,6 +343,10 @@ export interface GameState extends HeroStats {
   log: LogEntry[]
   /** Next id to hand out for a log entry; keeps keys stable and monotonic. */
   nextLogId: number
+  /** Floating combat numbers from the latest turn; replaced each combat turn. */
+  effects: CombatFloat[]
+  /** Next id to mint for a combat float; monotonic so the UI animates each once. */
+  nextEffectId: number
   /** Current PRNG state driving combat rolls; advanced purely each transition. */
   rngState: number
   /** Whether the hero is in ranged-aiming mode (arrows cycle targets, not move). */

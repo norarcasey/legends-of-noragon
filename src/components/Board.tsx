@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { BoardView, Enemy, GameStatus, Point, TileType } from '../game/types'
+import type { BoardView, CombatFloat, Enemy, GameStatus, Point, TileType } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
 import { ITEMS } from '../game/items'
 import './Board.css'
@@ -16,6 +16,8 @@ export interface BoardProps {
   aiming: boolean
   /** Id of the targeted enemy while aiming, else `null`. */
   targetId: number | null
+  /** Floating combat numbers (`game.effects`) to animate over their tiles. */
+  effects?: CombatFloat[]
   /** Run status (`game.run.status`) — drives the start/death overlay and gates the
    *  stairs prompt. Omit to render just the grid (no status-driven overlays). */
   status?: GameStatus
@@ -52,6 +54,7 @@ export function Board({
   enemies,
   aiming,
   targetId,
+  effects,
   status,
   depth,
   onStairs,
@@ -109,6 +112,21 @@ export function Board({
           }),
         )}
       </div>
+
+      {effects?.map((e) => (
+        <span
+          key={e.id}
+          className={`noragon__float noragon__float--${e.tone}`}
+          style={{
+            left: `${((e.x + 0.5) / cols) * 100}%`,
+            top: `${((e.y + 0.5) / rows) * 100}%`,
+          }}
+          aria-hidden
+        >
+          {e.tone === 'heal' ? '+' : '-'}
+          {e.amount}
+        </span>
+      ))}
 
       {aiming && (
         <div className="noragon__aim-banner" role="status" data-testid="aim-banner">

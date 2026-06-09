@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { Noragon } from './Noragon'
 import { Inventory } from './Inventory'
 import { ActivityLog } from './ActivityLog'
+import { Board } from './Board'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
@@ -568,6 +569,39 @@ describe('useNoragon — combat', () => {
     }
     expect(damages.length).toBeGreaterThan(0)
     expect(damages.every((d) => d >= lo && d <= hi)).toBe(true)
+  })
+
+  it('floats a damage number over a struck foe', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 4, maxDamage: 4 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    enterEnemyRoom(result)
+
+    for (let i = 0; i < 40 && result.current.activeEnemies.length > 0; i++) {
+      const foe = result.current.activeEnemies[0]
+      if (!foe) break
+      const dir = bfsDir(result.current.board.tiles, result.current.hero.position, foe, true)
+      if (!dir) break
+      const p = result.current.hero.position
+      const tgt = { x: p.x + DELTA[dir].x, y: p.y + DELTA[dir].y }
+      const isBump = result.current.enemies.some((e) => e.x === tgt.x && e.y === tgt.y)
+      act(() => result.current.move(dir))
+      if (isBump) {
+        // The hero always hits (accuracy 1), so a damage float lands on the foe.
+        expect(
+          result.current.effects.some(
+            (f) => f.tone === 'damage' && f.x === tgt.x && f.y === tgt.y && f.amount > 0,
+          ),
+        ).toBe(true)
+        return
+      }
+    }
+    throw new Error('never bumped a foe')
   })
 
   it('shoots a targeted foe from range, costing a turn', () => {
@@ -1301,6 +1335,42 @@ describe('ActivityLog colour-coding', () => {
     expect(container.querySelector('.noragon__log-mark--death')?.textContent).toBe(
       'You collapse, slain in the dark.',
     )
+  })
+})
+
+describe('Board combat floats', () => {
+  const floor = (): TileType => 'floor'
+  const board = {
+    cols: 3,
+    rows: 3,
+    tiles: Array.from({ length: 3 }, () => Array.from({ length: 3 }, floor)),
+    visible: Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => true)),
+    floorItems: [],
+  }
+
+  it('renders floating numbers with the right sign and tone', () => {
+    const { container } = render(
+      <Board
+        board={board}
+        hero={{ x: 0, y: 0 }}
+        enemies={[]}
+        aiming={false}
+        targetId={null}
+        effects={[
+          { id: 1, x: 1, y: 1, amount: 5, tone: 'damage' },
+          { id: 2, x: 0, y: 0, amount: 8, tone: 'heal' },
+        ]}
+      />,
+    )
+    expect(container.querySelector('.noragon__float--damage')?.textContent).toBe('-5')
+    expect(container.querySelector('.noragon__float--heal')?.textContent).toBe('+8')
+  })
+
+  it('renders no floats when there are none', () => {
+    const { container } = render(
+      <Board board={board} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
+    )
+    expect(container.querySelector('.noragon__float')).toBeNull()
   })
 })
 
