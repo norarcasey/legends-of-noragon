@@ -2,6 +2,7 @@
   /* Full viewport width — the three columns stretch across the screen, with the
      board a fixed-size island in the middle and the info/panel columns filling
      the rest. A little side padding keeps content off the edges. */
+  position: relative;
   max-width: none;
   margin: 0;
   padding: 2.5rem 2rem 3.5rem;
@@ -18,7 +19,10 @@
 }
 
 .demo__theme {
-  margin: 0 0 0.25rem;
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 1;
   appearance: none;
   font: inherit;
   font-size: 0.85rem;
