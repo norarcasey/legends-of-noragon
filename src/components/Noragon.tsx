@@ -8,6 +8,7 @@ import { Inventory } from './Inventory'
 import { NoragonRoot } from './NoragonRoot'
 import { Stats } from './Stats'
 import { useNoragonKeyboard } from './useNoragonKeyboard'
+import './Noragon.css'
 
 export interface NoragonProps {
   /** The hero's starting (and maximum) hit points. Default `6`. */

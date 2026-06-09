@@ -107,8 +107,19 @@ export function App() {
 ### Theming
 
 Every colour is a CSS custom property on the `.noragon` root, so you retheme by
-overriding the `--noragon-*` variables — no build step, no fork. Scope your
-overrides to `.noragon` (or your own wrapper / a `NoragonRoot` / `className`):
+overriding the `--noragon-*` variables — no build step, no fork.
+
+A ready-made example theme ships in the stylesheet: add the `noragon--parchment`
+class for a warm, light, aged-paper palette (it also doubles as a template for
+your own):
+
+```tsx
+<Noragon className="noragon--parchment" />
+// or on a custom layout: <NoragonRoot className="noragon--parchment">…</NoragonRoot>
+```
+
+To roll your own, override the tokens — scope them to `.noragon` (or your own
+wrapper / a modifier class like the parchment one):
 
 ```css
 .noragon {

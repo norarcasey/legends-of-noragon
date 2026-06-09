@@ -1,0 +1,29 @@
+/* Character stat readout. Imported by Stats. */
+
+.noragon__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.noragon__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.noragon__stat dt {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--noragon-stairs);
+}
+
+.noragon__stat dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--noragon-accent);
+}

@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Noragon } from './components/Noragon'
 import './App.css'
 
 export default function App() {
+  const [parchment, setParchment] = useState(false)
+
   const intro = (
     <p className="demo__lede">
       A turn-based, procedurally generated dungeon crawl. Move the hero{' '}
@@ -24,9 +27,21 @@ export default function App() {
     <main className="demo">
       <header className="demo__intro">
         <h1 className="demo__title">Legends of Noragon ⚔️</h1>
+        <button
+          type="button"
+          className="demo__theme"
+          onClick={() => setParchment((p) => !p)}
+          aria-pressed={parchment}
+        >
+          {parchment ? '◑ Dark theme' : '◐ Parchment theme'}
+        </button>
       </header>
 
-      <Noragon intro={intro} footer={credit} />
+      <Noragon
+        intro={intro}
+        footer={credit}
+        className={parchment ? 'noragon--parchment' : undefined}
+      />
     </main>
   )
 }

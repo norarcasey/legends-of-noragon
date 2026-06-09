@@ -1,0 +1,107 @@
+/* Active-enemy cards. Imported by EnemyCards. */
+
+/* ---- Enemy cards ---- */
+.noragon__enemies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noragon__enemy-card {
+  --card-accent: var(--noragon-bat);
+  flex: 1 1 0;
+  min-width: 11rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-left: 3px solid var(--card-accent);
+  border-radius: 6px;
+}
+
+.noragon__enemy-card--bat {
+  --card-accent: var(--noragon-bat);
+}
+
+.noragon__enemy-card--kobold {
+  --card-accent: var(--noragon-kobold);
+}
+
+.noragon__enemy-card--spider {
+  --card-accent: var(--noragon-spider);
+}
+
+.noragon__enemy-card--direWolf {
+  --card-accent: var(--noragon-direWolf);
+}
+
+.noragon__enemy-card--skeleton {
+  --card-accent: var(--noragon-skeleton);
+}
+
+.noragon__enemy-card--goblin {
+  --card-accent: var(--noragon-goblin);
+}
+
+.noragon__enemy-card--orc {
+  --card-accent: var(--noragon-orc);
+}
+
+.noragon__enemy-card--ogre {
+  --card-accent: var(--noragon-ogre);
+}
+
+.noragon__enemy-card--troll {
+  --card-accent: var(--noragon-troll);
+}
+
+.noragon__enemy-card--wraith {
+  --card-accent: var(--noragon-wraith);
+}
+
+.noragon__enemy-card--targeted {
+  border-color: var(--noragon-target);
+  border-left-color: var(--noragon-target);
+  box-shadow: 0 0 0 1px var(--noragon-target);
+}
+
+.noragon__enemy-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.noragon__enemy-name {
+  font-weight: 700;
+  color: var(--card-accent);
+}
+
+.noragon__enemy-hp {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--noragon-text);
+}
+
+.noragon__enemy-desc {
+  margin: 0.3rem 0 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--noragon-stairs);
+}
+
+.noragon__enemy-bar {
+  height: 5px;
+  background: var(--noragon-wall);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.noragon__enemy-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--noragon-hp-bar-from), var(--noragon-hp-bar-to));
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}

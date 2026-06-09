@@ -1,5 +1,6 @@
 import { ENEMY_INFO } from '../game/enemies'
 import type { Enemy } from '../game/types'
+import './EnemyCards.css'
 
 export interface EnemyCardsProps {
   /** The active enemies to show cards for (`game.activeEnemies`); nothing renders

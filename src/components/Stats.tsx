@@ -1,4 +1,5 @@
 import type { HeroView, RunView } from '../game/types'
+import './Stats.css'
 
 export interface StatsProps {
   /** The hero slice from the hook (`game.hero`): level, XP, HP, combat, gold. */

@@ -1,0 +1,94 @@
+/* The pack / inventory list. Imported by Inventory. */
+
+/* ---- Inventory ---- */
+.noragon__inventory-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--noragon-stairs);
+}
+
+.noragon__inventory-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.noragon__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.noragon__item--equipped {
+  border-left: 3px solid var(--noragon-accent);
+}
+
+.noragon__item-glyph {
+  width: 1.1em;
+  text-align: center;
+  color: var(--noragon-accent);
+}
+
+.noragon__item-name {
+  flex: 1;
+}
+
+.noragon__item-count {
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.noragon__item-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--noragon-accent);
+}
+
+.noragon__item-button {
+  appearance: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.15rem 0.6rem;
+  color: var(--noragon-on-accent);
+  background: var(--noragon-accent);
+  border: none;
+  border-radius: 999px;
+  transition: filter 0.12s ease;
+}
+
+.noragon__item-button:hover {
+  filter: brightness(1.1);
+}
+
+.noragon__item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* The Drop action is deliberately understated so it doesn't compete with
+   Equip/Drink — a quiet, outlined button that warms up on hover. */
+.noragon__item-button--drop {
+  color: var(--noragon-muted);
+  background: transparent;
+  border: 1px solid var(--noragon-wall-edge);
+}
+
+.noragon__item-button--drop:hover {
+  color: var(--noragon-on-accent);
+  background: var(--noragon-muted);
+  filter: none;
+}

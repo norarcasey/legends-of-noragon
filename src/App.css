@@ -17,6 +17,23 @@
   font-size: clamp(2rem, 5vw, 2.75rem);
 }
 
+.demo__theme {
+  margin-top: 0.9rem;
+  appearance: none;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.35rem 0.9rem;
+  color: #e6e9f0;
+  background: #1a1d28;
+  border: 1px solid #2c3243;
+  border-radius: 999px;
+}
+
+.demo__theme:hover {
+  border-color: #5a6172;
+}
+
 .demo__lede {
   margin: 0 auto;
   max-width: 54ch;

@@ -1,0 +1,65 @@
+/* Theme tokens and base styles for the `.noragon` root. Imported by NoragonRoot;
+   every part reads the colour custom properties defined here. */
+
+.noragon {
+  --noragon-bg: #0b0d14;
+  --noragon-wall: #20242f;
+  --noragon-wall-edge: #2c3243;
+  --noragon-floor: #12141d;
+  --noragon-floor-line: #181b26;
+  --noragon-corridor: #0d0f17;
+  --noragon-door: #6b4f2a;
+  --noragon-chest: #d4a017;
+  --noragon-stairs: #5a6172;
+  --noragon-player: #4fc3f7;
+  --noragon-bat: #b39ddb;
+  --noragon-kobold: #c98a3c;
+  --noragon-spider: #e57373;
+  --noragon-direWolf: #8d9bb5;
+  --noragon-skeleton: #d7d3c8;
+  --noragon-goblin: #7cb342;
+  --noragon-orc: #c0a16b;
+  --noragon-ogre: #c2784f;
+  --noragon-troll: #4db6ac;
+  --noragon-wraith: #ce93d8;
+  --noragon-accent: #d4a017;
+  --noragon-text: #e6e9f0;
+  /* Quiet text (the Drop action) and generic floor-loot glyphs. */
+  --noragon-muted: #8a90a6;
+  --noragon-loot: #cbd5e1;
+  /* Targeting / danger red (aim reticle, targeted enemy card). */
+  --noragon-target: #ff5252;
+  /* Dark ink for text on accent / coloured button backgrounds. */
+  --noragon-on-accent: #0b0d14;
+  /* Health-bar gradient. */
+  --noragon-hp-bar-from: #e53935;
+  --noragon-hp-bar-to: #ff7043;
+  /* Activity-log highlight tones (see splitLog). */
+  --noragon-log-gold: #e6c34a;
+  --noragon-log-bad: #ef5350;
+  --noragon-log-good: #81c784;
+  --noragon-log-level: #4fc3f7;
+  --noragon-log-death: #ff5252;
+  /* Aiming banner. */
+  --noragon-aim-bg: rgba(255, 82, 82, 0.92);
+  --noragon-aim-ink: #1a0606;
+  /* Scrims over the board: the start/death overlay and the stairs prompt. */
+  --noragon-overlay-bg: rgba(6, 8, 14, 0.82);
+  --noragon-banner-bg: rgba(13, 15, 23, 0.92);
+
+  box-sizing: border-box;
+  /* Fill the host container — the 3-column layout is meant to be wide. Embedders
+     who want it narrower can constrain their own wrapper (or pass `className`). */
+  width: 100%;
+  margin: 0 auto;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    'Helvetica Neue', sans-serif;
+  color: var(--noragon-text);
+}
+
+.noragon *,
+.noragon *::before,
+.noragon *::after {
+  box-sizing: border-box;
+}

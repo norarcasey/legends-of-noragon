@@ -6,8 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.0] - 2026-06-04
 
+### Added
+
+- A shipped example theme: add the `noragon--parchment` class (e.g.
+  `<Noragon className="noragon--parchment" />`) for a warm, light, aged-paper
+  palette. It overrides the `--noragon-*` tokens, doubling as proof the theming
+  surface fully rethemes the component and as a template for custom themes; the
+  demo has a toggle. (Tokenized the last two scrim colours — the overlay and
+  stairs-banner backgrounds — so light themes read correctly.)
+
 ### Changed
 
+- The component stylesheet is split per component (`NoragonRoot.css`,
+  `Board.css`, `Stats.css`, `EnemyCards.css`, `Inventory.css`, `ActivityLog.css`,
+  `themes.css`, and a slimmer `Noragon.css` for layout + chrome), each imported by
+  its component. The library still bundles to a single `dist/style.css`, so
+  embedders import the same one file.
 - Theming is now a complete, documented CSS-variable contract: the ~18 colours
   that were still hardcoded in the stylesheet (targeting red, the HP-bar gradient,
   button ink, the activity-log highlight tones, the aim banner, loot/muted text)

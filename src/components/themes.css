@@ -1,0 +1,49 @@
+/* Shipped example theme. Apply by adding the `noragon--parchment` class to the
+   root (e.g. `<Noragon className="noragon--parchment" />` or on a NoragonRoot) —
+   it overrides the `--noragon-*` tokens for a warm, light, aged-paper palette.
+   Doubles as proof that the token surface fully rethemes the component, and as a
+   template for writing your own theme. */
+.noragon.noragon--parchment {
+  --noragon-bg: #efe6cf;
+  --noragon-wall: #d8c39a;
+  --noragon-wall-edge: #c4ab78;
+  --noragon-floor: #f3ecd8;
+  --noragon-floor-line: #e4d8bb;
+  --noragon-corridor: #e7dcc1;
+  --noragon-door: #8a5a2b;
+  --noragon-chest: #b8860b;
+  --noragon-stairs: #6f5d3f;
+  --noragon-player: #1565c0;
+
+  --noragon-bat: #6a4fa3;
+  --noragon-kobold: #9c6a1f;
+  --noragon-spider: #c0392b;
+  --noragon-direWolf: #455a7a;
+  --noragon-skeleton: #6b6452;
+  --noragon-goblin: #4e7a2a;
+  --noragon-orc: #8a6a36;
+  --noragon-ogre: #a3502b;
+  --noragon-troll: #1f7a72;
+  --noragon-wraith: #8e44ad;
+
+  --noragon-accent: #b8860b;
+  --noragon-text: #2b2415;
+  --noragon-muted: #7a6a4f;
+  --noragon-loot: #5a4a2a;
+  --noragon-target: #c0392b;
+  --noragon-on-accent: #2a2008;
+  --noragon-hp-bar-from: #c0392b;
+  --noragon-hp-bar-to: #e07b39;
+
+  --noragon-log-gold: #9a7d0a;
+  --noragon-log-bad: #c0392b;
+  --noragon-log-good: #2e7d32;
+  --noragon-log-level: #1565c0;
+  --noragon-log-death: #b71c1c;
+
+  --noragon-aim-bg: rgba(192, 57, 43, 0.92);
+  --noragon-aim-ink: #fff3e0;
+  /* Light scrims so the dark theme text reads over them. */
+  --noragon-overlay-bg: rgba(243, 236, 216, 0.86);
+  --noragon-banner-bg: rgba(243, 236, 216, 0.92);
+}

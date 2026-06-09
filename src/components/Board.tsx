@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { BoardView, Enemy, Point, TileType } from '../game/types'
 import { ENEMY_INFO } from '../game/enemies'
 import { ITEMS } from '../game/items'
+import './Board.css'
 
 export interface BoardProps {
   /** The board slice from the hook (`game.board`): dimensions, tiles, fog mask,

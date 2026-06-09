@@ -1,6 +1,7 @@
 import { ITEMS } from '../game/items'
 import type { ItemKind } from '../game/items'
 import type { Equipment, InventoryItem } from '../game/types'
+import './Inventory.css'
 
 export interface InventoryProps {
   /** The hero's carried items (`game.hero.inventory`). */

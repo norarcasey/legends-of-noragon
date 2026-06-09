@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import './Noragon.css'
+import './NoragonRoot.css'
+import './themes.css'
 
 export interface NoragonRootProps {
   children: ReactNode
