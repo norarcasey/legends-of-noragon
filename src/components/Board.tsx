@@ -124,6 +124,25 @@ export function Board({
         )}
       </div>
 
+      {effects
+        ?.filter((e) => e.tone === 'damage')
+        .map((e) => {
+          // Where the blow landed, a shockwave ring. A ranged hit's burst waits for
+          // the arrow to reach the tile; melee and incoming hits burst at once.
+          const ranged = projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
+          return (
+            <span
+              key={`burst-${e.id}`}
+              className={`noragon__burst${ranged ? ' noragon__burst--delayed' : ''}`}
+              style={{
+                left: `${((e.x + 0.5) / cols) * 100}%`,
+                top: `${((e.y + 0.5) / rows) * 100}%`,
+              }}
+              aria-hidden
+            />
+          )
+        })}
+
       {effects?.map((e) => (
         <span
           key={e.id}

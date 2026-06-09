@@ -1435,6 +1435,29 @@ describe('Board combat floats', () => {
     // A due-east shot points along 0°.
     expect(arrow?.getAttribute('style')).toContain('--arrow-angle: 0deg')
   })
+
+  it('bursts only where a hit lands, delaying the burst under a fired arrow', () => {
+    const { container } = render(
+      <Board
+        board={board}
+        hero={{ x: 0, y: 0 }}
+        enemies={[]}
+        aiming={false}
+        targetId={null}
+        effects={[
+          { id: 1, x: 1, y: 1, amount: 5, tone: 'damage' }, // melee/defense hit
+          { id: 2, x: 2, y: 0, amount: 3, tone: 'damage' }, // the arrow's target
+          { id: 3, x: 0, y: 0, amount: 8, tone: 'heal' }, // no burst
+          { id: 4, x: 0, y: 1, amount: 0, tone: 'miss' }, // no burst
+        ]}
+        projectiles={[{ id: 9, fromX: 0, fromY: 0, toX: 2, toY: 0, kind: 'arrow' }]}
+      />,
+    )
+    // One burst per damage float — heal and miss don't burst.
+    expect(container.querySelectorAll('.noragon__burst')).toHaveLength(2)
+    // The burst on the arrow's target tile waits for the arrow; the melee one doesn't.
+    expect(container.querySelectorAll('.noragon__burst--delayed')).toHaveLength(1)
+  })
 })
 
 describe('Inventory grouping', () => {

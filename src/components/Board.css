@@ -94,9 +94,44 @@
   }
 }
 
+/* Impact burst — an expanding shockwave ring where a hit lands, centred on the
+   tile. `--delayed` holds it back so a ranged hit bursts as the arrow arrives. */
+.noragon__burst {
+  position: absolute;
+  width: clamp(0.9rem, 3.4vmin, 1.8rem);
+  height: clamp(0.9rem, 3.4vmin, 1.8rem);
+  border: 2px solid var(--noragon-impact);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--noragon-impact);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.2);
+  pointer-events: none;
+  animation: noragon-burst 0.34s ease-out forwards;
+}
+
+/* Paired with the arrow flight (~0.24s) so the ring pops on impact, not launch. */
+.noragon__burst--delayed {
+  animation-delay: 0.2s;
+}
+
+@keyframes noragon-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .noragon__float,
-  .noragon__arrow {
+  .noragon__arrow,
+  .noragon__burst {
     animation-duration: 0.01ms;
   }
 }

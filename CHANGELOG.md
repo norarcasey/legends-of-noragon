@@ -15,6 +15,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Impact bursts: a landed blow now flashes an expanding shockwave ring on the
+  struck tile — your melee hits, your arrows (the ring waits for the arrow to
+  arrive), and hits you take. Driven entirely from the existing combat floats,
+  so it needs no new wiring; the colour is the `--noragon-impact` token and it
+  respects `prefers-reduced-motion`.
 - Arrow flight: firing now looses a visible arrow that glides from the hero to
   the target — rotated to face it — and dissolves on impact, so ranged shots
   read as travelling rather than instant. The hook exposes the shot as
