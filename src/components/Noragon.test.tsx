@@ -604,6 +604,37 @@ describe('useNoragon — combat', () => {
     throw new Error('never bumped a foe')
   })
 
+  it('floats a "miss" over a foe the hero whiffs on', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        // Never connects: every swing is a miss.
+        attacks: { melee: { accuracy: 0, minDamage: 4, maxDamage: 4 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+    enterEnemyRoom(result)
+
+    for (let i = 0; i < 40 && result.current.activeEnemies.length > 0; i++) {
+      const foe = result.current.activeEnemies[0]
+      if (!foe) break
+      const dir = bfsDir(result.current.board.tiles, result.current.hero.position, foe, true)
+      if (!dir) break
+      const p = result.current.hero.position
+      const tgt = { x: p.x + DELTA[dir].x, y: p.y + DELTA[dir].y }
+      const isBump = result.current.enemies.some((e) => e.x === tgt.x && e.y === tgt.y)
+      act(() => result.current.move(dir))
+      if (isBump) {
+        expect(
+          result.current.effects.some((f) => f.tone === 'miss' && f.x === tgt.x && f.y === tgt.y),
+        ).toBe(true)
+        return
+      }
+    }
+    throw new Error('never bumped a foe')
+  })
+
   it('shoots a targeted foe from range, costing a turn', () => {
     const { result } = renderHook(() =>
       useNoragon({
@@ -1359,11 +1390,13 @@ describe('Board combat floats', () => {
         effects={[
           { id: 1, x: 1, y: 1, amount: 5, tone: 'damage' },
           { id: 2, x: 0, y: 0, amount: 8, tone: 'heal' },
+          { id: 3, x: 2, y: 2, amount: 0, tone: 'miss' },
         ]}
       />,
     )
     expect(container.querySelector('.noragon__float--damage')?.textContent).toBe('-5')
     expect(container.querySelector('.noragon__float--heal')?.textContent).toBe('+8')
+    expect(container.querySelector('.noragon__float--miss')?.textContent).toBe('miss')
   })
 
   it('renders no floats when there are none', () => {

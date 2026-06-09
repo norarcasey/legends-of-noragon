@@ -68,7 +68,7 @@ classDiagram
     +x : number
     +y : number
     +amount : number
-    +tone : damage / heal
+    +tone : damage / heal / miss
   }
   class InventoryItem {
     +id : number
@@ -464,7 +464,7 @@ classDiagram
     +x : number
     +y : number
     +amount : number
-    +tone : damage / heal
+    +tone : damage / heal / miss
   }
   class InventoryItem {
     +id : number

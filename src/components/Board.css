@@ -41,6 +41,12 @@
   color: var(--noragon-log-good);
 }
 
+.noragon__float--miss {
+  color: var(--noragon-muted);
+  font-style: italic;
+  font-weight: 600;
+}
+
 @keyframes noragon-float {
   0% {
     opacity: 0;

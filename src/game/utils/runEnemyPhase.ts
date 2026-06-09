@@ -8,8 +8,8 @@ import { chaseStep } from './chaseStep'
  * Run the enemy phase: every foe sharing the hero's room either attacks (if
  * adjacent, rolling its own accuracy for its own damage) or chases one step.
  * Mutates `messages` and draws from the shared `roll`; returns the foes' new
- * positions and the hero's remaining hp. Used by both moving and firing so a
- * turn always ends the same way.
+ * positions, the hero's remaining hp, and how many adjacent foes whiffed. Used
+ * by both moving and firing so a turn always ends the same way.
  */
 export function runEnemyPhase(
   dungeon: Dungeon,
@@ -20,10 +20,12 @@ export function runEnemyPhase(
   roll: () => number,
   messages: string[],
   engaged: number[] = [],
-): { enemies: Enemy[]; hp: number } {
+): { enemies: Enemy[]; hp: number; misses: number } {
   const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`))
   const moved: Enemy[] = []
   let nextHp = hp
+  // How many adjacent foes whiffed this phase, so the reducer can float a "miss".
+  let misses = 0
 
   for (const foe of enemies) {
     if (!isActiveFoe(dungeon.rooms, player, foe, engaged)) {
@@ -44,6 +46,7 @@ export function runEnemyPhase(
             : `The ${info.name} ${info.verb} you, but your armor holds.`,
         )
       } else {
+        misses++
         messages.push(`The ${info.name} misses you.`)
       }
       moved.push(foe)
@@ -56,5 +59,5 @@ export function runEnemyPhase(
     moved.push({ ...foe, x: step.x, y: step.y })
   }
 
-  return { enemies: moved, hp: nextHp }
+  return { enemies: moved, hp: nextHp, misses }
 }

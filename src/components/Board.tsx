@@ -123,8 +123,7 @@ export function Board({
           }}
           aria-hidden
         >
-          {e.tone === 'heal' ? '+' : '-'}
-          {e.amount}
+          {e.tone === 'miss' ? 'miss' : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
         </span>
       ))}
 

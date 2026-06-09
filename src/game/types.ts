@@ -54,8 +54,9 @@ export interface CombatFloat {
   id: number
   x: number
   y: number
+  /** Hit points changed; `0` (and ignored) for a `miss`. */
   amount: number
-  tone: 'damage' | 'heal'
+  tone: 'damage' | 'heal' | 'miss'
 }
 
 /** One item the hero is carrying; `id` is a stable, unique instance key. */

@@ -128,8 +128,9 @@ function descend(state: GameState, messages: string[]): GameState {
   }
 }
 
-/** The hero-state fields a single attack can change, plus the damage it dealt
- *  (0 on a miss) so the reducer can float a number over the target. */
+/** The hero-state fields a single attack can change, plus whether it landed and
+ *  the damage it dealt (`0` on a miss) so the reducer can float a number — or a
+ *  "miss" — over the target. */
 interface HeroAttackOutcome {
   enemies: Enemy[]
   kills: number
@@ -139,6 +140,7 @@ interface HeroAttackOutcome {
   attacks: AttackProfiles
   defense: number
   hp: number
+  hit: boolean
   damage: number
 }
 
@@ -170,6 +172,7 @@ function resolveHeroAttack(
     attacks: state.attacks,
     defense: state.defense,
     hp: state.hp,
+    hit: false,
     damage: 0,
   }
   const name = ENEMY_INFO[target.kind].name
@@ -184,7 +187,7 @@ function resolveHeroAttack(
   if (enemies.length === state.enemies.length) {
     // A hit that didn't kill: damage landed, no XP.
     messages.push(flavor.hit(name, damage))
-    return { ...unchanged, enemies, damage }
+    return { ...unchanged, enemies, hit: true, damage }
   }
   // Slain: award XP and apply any level-up (which fully heals).
   const gained = target.xp
@@ -208,6 +211,7 @@ function resolveHeroAttack(
     attacks: lv.attacks,
     defense: lv.defense,
     hp: lv.hp,
+    hit: true,
     damage,
   }
 }
@@ -283,7 +287,9 @@ function reducer(state: GameState, action: GameAction): GameState {
         attacks = a.attacks
         defense = a.defense
         hp = a.hp
-        if (a.damage > 0) {
+        if (!a.hit) {
+          floats.push({ id: nextEffectId++, x: target.x, y: target.y, amount: 0, tone: 'miss' })
+        } else if (a.damage > 0) {
           floats.push({
             id: nextEffectId++,
             x: target.x,
@@ -343,7 +349,8 @@ function reducer(state: GameState, action: GameAction): GameState {
       const phase = runEnemyPhase(dungeon, player, enemies, hp, defense, rng.roll, messages)
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
-      // Float the damage the foes dealt the hero this phase over the hero's tile.
+      // Over the hero's tile: the damage the foes dealt this phase, or — if they
+      // all whiffed — a single "miss" so a dodged turn still reads at a glance.
       if (hp - phase.hp > 0) {
         floats.push({
           id: nextEffectId++,
@@ -352,6 +359,8 @@ function reducer(state: GameState, action: GameAction): GameState {
           amount: hp - phase.hp,
           tone: 'damage',
         })
+      } else if (phase.misses > 0) {
+        floats.push({ id: nextEffectId++, x: player.x, y: player.y, amount: 0, tone: 'miss' })
       }
 
       return {
@@ -559,7 +568,9 @@ function reducer(state: GameState, action: GameAction): GameState {
         slain: (name, dmg, gained) => `You shoot the ${name} for ${dmg} — slain! (+${gained} XP)`,
         miss: (name) => `Your arrow misses the ${name}.`,
       })
-      if (a.damage > 0) {
+      if (!a.hit) {
+        floats.push({ id: nextEffectId++, x: target.x, y: target.y, amount: 0, tone: 'miss' })
+      } else if (a.damage > 0) {
         floats.push({
           id: nextEffectId++,
           x: target.x,
@@ -588,6 +599,14 @@ function reducer(state: GameState, action: GameAction): GameState {
           y: state.player.y,
           amount: a.hp - phase.hp,
           tone: 'damage',
+        })
+      } else if (phase.misses > 0) {
+        floats.push({
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: 0,
+          tone: 'miss',
         })
       }
 
