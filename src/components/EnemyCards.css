@@ -48,19 +48,19 @@
   border: 1px dashed var(--noragon-wall-edge);
 }
 
-/* A faint shimmer band sweeping across, the classic "placeholder" cue. */
+/* A very faint shimmer band drifting across, a subtle "placeholder" cue. */
 .noragon__enemy-face--back::before {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     100deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.05) 50%,
-    transparent 70%
+    transparent 42%,
+    rgba(255, 255, 255, 0.025) 50%,
+    transparent 58%
   );
-  background-size: 220% 100%;
-  animation: noragon-skeleton 1.8s ease-in-out infinite;
+  background-size: 280% 100%;
+  animation: noragon-skeleton 3.4s ease-in-out infinite;
 }
 
 .noragon__enemy-logo {
