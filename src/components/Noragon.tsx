@@ -104,8 +104,15 @@ export function Noragon({
 
       <div className="noragon__layout">
         <aside className="noragon__info">
-          {status === 'playing' && (
-            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+          {status !== 'idle' && (
+            <Inventory
+              inventory={hero.inventory}
+              equipment={hero.equipment}
+              gold={hero.gold}
+              onEquip={equip}
+              onDrink={drink}
+              onDrop={drop}
+            />
           )}
 
           {footer != null && <div className="noragon__note">{footer}</div>}
@@ -167,15 +174,8 @@ export function Noragon({
         <aside className="noragon__panel">
           {status !== 'idle' && <ActivityLog entries={game.log} />}
 
-          {status !== 'idle' && (
-            <Inventory
-              inventory={hero.inventory}
-              equipment={hero.equipment}
-              gold={hero.gold}
-              onEquip={equip}
-              onDrink={drink}
-              onDrop={drop}
-            />
+          {status === 'playing' && (
+            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
           )}
         </aside>
       </div>
