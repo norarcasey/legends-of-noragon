@@ -25,8 +25,8 @@ export interface NoragonProps {
   title?: string | null
   /** Extra class on the root element. */
   className?: string
-  /** Optional content for the top of the left info column — e.g. a description
-   *  or how-to-play blurb. Sits above the enemy cards. */
+  /** Optional how-to-play / flavour shown on the start ("Delve") overlay, below
+   *  the title. When given, it replaces the short default control hint there. */
   intro?: ReactNode
   /** Optional content for the bottom of the left info column — e.g. a credit or
    *  footnote. Sits below the enemy cards. */
@@ -104,8 +104,6 @@ export function Noragon({
 
       <div className="noragon__layout">
         <aside className="noragon__info">
-          {intro != null && <div className="noragon__intro">{intro}</div>}
-
           {status === 'playing' && (
             <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
           )}
@@ -138,7 +136,7 @@ export function Noragon({
             </div>
 
             {/* Full-frame overlays — cover the board and its chrome. */}
-            <Overlay status={status} depth={run.depth} onStart={start} />
+            <Overlay status={status} depth={run.depth} onStart={start} intro={intro} />
             {shop ? <Shop {...shop} /> : null}
           </div>
 

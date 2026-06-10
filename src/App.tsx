@@ -5,7 +5,7 @@ import './App.css'
 export default function App() {
   const [parchment, setParchment] = useState(false)
 
-  const footer = (
+  const intro = (
     <p className="demo__lede">
       A turn-based, procedurally generated dungeon crawl. Move the hero{' '}
       <span className="demo__hero">☻</span> with the arrow keys (or <kbd>W</kbd> <kbd>A</kbd>{' '}
@@ -36,7 +36,7 @@ export default function App() {
       </header>
 
       <Noragon
-        footer={footer}
+        intro={intro}
         title={null}
         className={parchment ? 'noragon--parchment' : undefined}
       />

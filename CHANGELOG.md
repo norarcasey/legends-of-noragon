@@ -23,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The how-to-play blurb now greets you on the start ("Delve") overlay instead of
+  sitting in the side column — so new players read it before the run. `<Noragon>`'s
+  `intro` prop (and the `Overlay` part's new `intro` prop) render there, replacing
+  the short default control hint.
 - The merchant's buy and sell lists now collapse stackable potions into one
   counted row (e.g. `Health Potion (3)`), like the pack — less clutter — while
   gear stays listed per item.

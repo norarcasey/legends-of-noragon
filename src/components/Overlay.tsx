@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { GameStatus } from '../game/types'
 import './Overlay.css'
 
@@ -8,6 +9,9 @@ export interface OverlayProps {
   depth?: number
   /** Begin / restart the run (`game.start`). */
   onStart: () => void
+  /** Optional how-to-play / flavour shown on the start screen. When given, it
+   *  replaces the short default control hint there. */
+  intro?: ReactNode
 }
 
 /**
@@ -16,18 +20,22 @@ export interface OverlayProps {
  * the whole board frame (chrome included); on a standalone `<Board />` it covers
  * the grid. Returns nothing while playing.
  */
-export function Overlay({ status, depth, onStart }: OverlayProps) {
+export function Overlay({ status, depth, onStart, intro }: OverlayProps) {
   if (status === 'playing') return null
+  const showIntro = status === 'idle' && intro != null
   return (
     <div className="noragon__overlay" role="status">
       {status === 'idle' && <p className="noragon__message">Descend into the dungeon of Noragon</p>}
+      {showIntro && <div className="noragon__overlay-intro">{intro}</div>}
       {status === 'dead' && <p className="noragon__message">You died at depth {depth}. 💀</p>}
       <button type="button" className="noragon__button" onClick={onStart}>
         {status === 'dead' ? 'Delve again' : 'Enter'}
       </button>
-      <p className="noragon__hint">
-        Arrow keys / WASD to move, F to aim (Enter to fire) — take the stairs to descend
-      </p>
+      {!showIntro && (
+        <p className="noragon__hint">
+          Arrow keys / WASD to move, F to aim (Enter to fire) — take the stairs to descend
+        </p>
+      )}
     </div>
   )
 }
