@@ -1007,6 +1007,52 @@ describe('useNoragon — leveling', () => {
     expect(result.current.log.some((e) => /reach level 2/.test(e.text))).toBe(true)
   })
 
+  it('pops a "Level N!" float over the hero on the turn it levels up', () => {
+    const { result } = renderHook(() =>
+      useNoragon({
+        maxHp: 99,
+        attacks: { melee: { accuracy: 1, minDamage: 20, maxDamage: 20 } },
+        seed: 7,
+      }),
+    )
+    act(() => result.current.start())
+
+    let levelFloat = false
+    for (
+      let i = 0;
+      i < 200 &&
+      !levelFloat &&
+      result.current.hero.level < 2 &&
+      result.current.run.status === 'playing';
+      i++
+    ) {
+      const foe = result.current.enemies[0]
+      if (!foe) break
+      const before = result.current.hero.level
+      const dir = bfsDir(
+        result.current.board.tiles,
+        result.current.hero.position,
+        { x: foe.x, y: foe.y },
+        true,
+      )
+      if (!dir) break
+      act(() => result.current.move(dir))
+      if (result.current.hero.level > before) {
+        const p = result.current.hero.position
+        levelFloat = result.current.effects.some(
+          (f) =>
+            f.tone === 'level' &&
+            f.x === p.x &&
+            f.y === p.y &&
+            f.amount === result.current.hero.level,
+        )
+      }
+    }
+
+    expect(result.current.hero.level).toBeGreaterThanOrEqual(2)
+    expect(levelFloat).toBe(true)
+  })
+
   it('starts a fresh delve back at level 1', () => {
     const { result } = renderHook(() =>
       useNoragon({
@@ -1562,6 +1608,21 @@ describe('Board combat floats', () => {
     expect(container.querySelector('.noragon__float--damage')?.textContent).toBe('-5')
     expect(container.querySelector('.noragon__float--heal')?.textContent).toBe('+8')
     expect(container.querySelector('.noragon__float--miss')?.textContent).toBe('miss')
+  })
+
+  it('pops a "Level N!" number and a level-up ring on a level effect', () => {
+    const { container } = render(
+      <Board
+        board={board}
+        hero={{ x: 0, y: 0 }}
+        enemies={[]}
+        aiming={false}
+        targetId={null}
+        effects={[{ id: 1, x: 0, y: 0, amount: 3, tone: 'level' }]}
+      />,
+    )
+    expect(container.querySelector('.noragon__float--level')?.textContent).toBe('Level 3!')
+    expect(container.querySelector('.noragon__burst--level')).not.toBeNull()
   })
 
   it('renders no floats when there are none', () => {

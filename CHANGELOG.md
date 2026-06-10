@@ -23,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Level-up flourish: reaching a new level now pops a big gold **"Level N!"** that
+  rises over the hero with a celebratory ring, so the moment is unmistakable
+  (the heal and stat bumps already happen under the hood). Built on the existing
+  combat-float system via a new `level` tone; respects `prefers-reduced-motion`.
 - Items show their effect on hover: in the pack, a small tooltip beneath the row
   summarises what each piece does (e.g. `+2 damage · +5% accuracy`, `+1 defense`,
   `+5 max HP`, `restores 10 HP`); the merchant's buy/sell rows show the same on

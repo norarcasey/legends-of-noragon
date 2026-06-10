@@ -64,9 +64,9 @@ export interface CombatFloat {
   id: number
   x: number
   y: number
-  /** Hit points changed; `0` (and ignored) for a `miss`. */
+  /** Hit points changed; `0` (and ignored) for a `miss`; the new level for `level`. */
   amount: number
-  tone: 'damage' | 'heal' | 'miss'
+  tone: 'damage' | 'heal' | 'miss' | 'level'
 }
 
 /**

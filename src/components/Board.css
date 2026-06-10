@@ -43,6 +43,17 @@
   font-weight: 600;
 }
 
+/* Level-up: a big celebratory "Level N!" over the hero that pops, rises, glows,
+   and lingers a touch longer than a combat number. */
+.noragon__float--level {
+  color: var(--noragon-accent);
+  font-size: clamp(1rem, 3vmin, 1.8rem);
+  text-shadow:
+    0 0 8px currentColor,
+    0 1px 2px rgba(0, 0, 0, 0.75);
+  animation: noragon-levelup 1.3s ease-out both;
+}
+
 /* On a tile a fired arrow is reaching, hold the text until the arrow lands
    (~0.24s flight); a damage number then trails its burst by the same beat. */
 .noragon__float--delayed {
@@ -64,6 +75,24 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -170%);
+  }
+}
+
+@keyframes noragon-levelup {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -10%) scale(0.6);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -45%) scale(1.15);
+  }
+  38% {
+    transform: translate(-50%, -60%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150%) scale(1);
   }
 }
 
@@ -118,6 +147,14 @@
 /* Paired with the arrow flight (~0.24s) so the ring pops on impact, not launch. */
 .noragon__burst--delayed {
   animation-delay: 0.24s;
+}
+
+/* The level-up ring — bigger and gold, to read as a reward rather than a hit. */
+.noragon__burst--level {
+  width: clamp(1.3rem, 5vmin, 2.6rem);
+  height: clamp(1.3rem, 5vmin, 2.6rem);
+  border-color: var(--noragon-accent);
+  box-shadow: 0 0 12px var(--noragon-accent);
 }
 
 @keyframes noragon-burst {

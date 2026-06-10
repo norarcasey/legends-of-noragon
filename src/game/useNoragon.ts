@@ -309,6 +309,16 @@ function reducer(state: GameState, action: GameAction): GameState {
             tone: 'damage',
           })
         }
+        // A kill that pushed the hero to a new level pops a "Level N!" over them.
+        if (a.level > state.level) {
+          floats.push({
+            id: nextEffectId++,
+            x: player.x,
+            y: player.y,
+            amount: a.level,
+            tone: 'level',
+          })
+        }
       } else if (tileAt(state.dungeon, target.x, target.y) === 'merchant') {
         // Bumping the merchant opens the shop — a free action, no turn passes.
         return { ...state, shopping: true }
@@ -638,6 +648,16 @@ function reducer(state: GameState, action: GameAction): GameState {
           y: target.y,
           amount: a.damage,
           tone: 'damage',
+        })
+      }
+      // A kill that pushed the hero to a new level pops a "Level N!" over them.
+      if (a.level > state.level) {
+        floats.push({
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: a.level,
+          tone: 'level',
         })
       }
       // If the shot killed it, keep the foe one turn so the view can fade it out

@@ -184,15 +184,19 @@ export function Board({
       ))}
 
       {effects
-        ?.filter((e) => e.tone === 'damage')
+        ?.filter((e) => e.tone === 'damage' || e.tone === 'level')
         .map((e) => {
-          // Where the blow landed, a shockwave ring. A ranged hit's burst waits for
-          // the arrow to reach the tile; melee and incoming hits burst at once.
-          const ranged = projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
+          // A shockwave ring: where a blow landed (impact) or over the hero on a
+          // level-up (a brighter, larger ring). A ranged hit's burst waits for the
+          // arrow to reach the tile; melee, incoming, and level bursts fire at once.
+          const ranged =
+            e.tone === 'damage' && projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
           return (
             <span
               key={`burst-${e.id}`}
-              className={`noragon__burst${ranged ? ' noragon__burst--delayed' : ''}`}
+              className={`noragon__burst${e.tone === 'level' ? ' noragon__burst--level' : ''}${
+                ranged ? ' noragon__burst--delayed' : ''
+              }`}
               style={{
                 left: `${((e.x + 0.5) / cols) * 100}%`,
                 top: `${((e.y + 0.5) / rows) * 100}%`,
@@ -217,7 +221,11 @@ export function Board({
             }}
             aria-hidden
           >
-            {e.tone === 'miss' ? 'miss' : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
+            {e.tone === 'miss'
+              ? 'miss'
+              : e.tone === 'level'
+                ? `Level ${e.amount}!`
+                : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
           </span>
         )
       })}

@@ -70,7 +70,7 @@ classDiagram
     +x : number
     +y : number
     +amount : number
-    +tone : damage / heal / miss
+    +tone : damage / heal / miss / level
   }
   class Projectile {
     +id : number
@@ -530,7 +530,7 @@ classDiagram
     +x : number
     +y : number
     +amount : number
-    +tone : damage / heal / miss
+    +tone : damage / heal / miss / level
   }
   class Projectile {
     +id : number
