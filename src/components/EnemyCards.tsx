@@ -2,9 +2,9 @@ import { ENEMY_INFO } from '../game/enemies'
 import type { Enemy } from '../game/types'
 import './EnemyCards.css'
 
-/** Always show at least this many card slots, so the panel holds its shape and
- *  there are placeholders to flip when foes appear. */
-const MIN_SLOTS = 3
+/** Always show at least this many card slots, so the panel holds its shape, the
+ *  cards stay a uniform size, and there are placeholders to flip when foes appear. */
+const MIN_SLOTS = 4
 
 export interface EnemyCardsProps {
   /** The active enemies to show cards for (`game.activeEnemies`). Empty slots

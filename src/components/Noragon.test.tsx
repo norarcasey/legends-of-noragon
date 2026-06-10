@@ -1797,8 +1797,8 @@ describe('EnemyCards (flip placeholders)', () => {
   it('shows skeleton placeholders when there are no enemies', () => {
     const { container } = render(<EnemyCards enemies={[]} />)
     expect(screen.queryAllByTestId('enemy-card')).toHaveLength(0)
-    expect(container.querySelectorAll('.noragon__enemy-slot').length).toBeGreaterThanOrEqual(3)
-    expect(container.querySelectorAll('.noragon__enemy-logo').length).toBeGreaterThanOrEqual(3)
+    expect(container.querySelectorAll('.noragon__enemy-slot').length).toBeGreaterThanOrEqual(4)
+    expect(container.querySelectorAll('.noragon__enemy-logo').length).toBeGreaterThanOrEqual(4)
     expect(container.querySelector('.noragon__enemy-flip--revealed')).toBeNull()
   })
 
