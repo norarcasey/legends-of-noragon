@@ -17,7 +17,9 @@
   margin: 0;
   padding: 0.5rem 0.75rem;
   list-style: none;
-  max-height: 13rem;
+  /* Fixed height from the start (rather than growing to a max as lines arrive)
+     so the panel doesn't reflow during the first few turns. */
+  height: 13rem;
   overflow-y: auto;
   background: var(--noragon-floor);
   border: 1px solid var(--noragon-wall-edge);
