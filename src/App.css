@@ -18,11 +18,16 @@
   font-size: clamp(2rem, 5vw, 2.75rem);
 }
 
-.demo__theme {
+.demo__toolbar {
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
   z-index: 1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.demo__btn {
   appearance: none;
   font: inherit;
   font-size: 0.85rem;
@@ -34,8 +39,84 @@
   border-radius: 999px;
 }
 
-.demo__theme:hover {
+.demo__btn:hover {
   border-color: #5a6172;
+}
+
+/* ---- Controls modal ---- */
+.demo__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(6, 8, 14, 0.7);
+}
+
+.demo__modal {
+  width: 100%;
+  max-width: 30rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  color: #e6e9f0;
+  background: #12141d;
+  border: 1px solid #2c3243;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.demo__modal-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.demo__controls {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.demo__controls-row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.demo__controls-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.demo__controls-keys kbd {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8em;
+  background: #1a1d28;
+  border: 1px solid #2c3243;
+  border-radius: 4px;
+  padding: 0 0.4em;
+}
+
+.demo__controls-note {
+  font-size: 0.85rem;
+  color: #aab2c5;
+}
+
+.demo__controls-desc {
+  margin: 0;
+  color: #c8cedb;
+}
+
+.demo__modal .demo__btn {
+  align-self: center;
 }
 
 .demo__lede {
