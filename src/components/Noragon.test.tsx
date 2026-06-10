@@ -1762,6 +1762,34 @@ describe('Shop overlay', () => {
     fireEvent.click(buyBtn)
     expect(bought).toBe(0)
   })
+
+  it('collapses stackable potions into one counted row in both lists', () => {
+    render(
+      <Shop
+        stock={[
+          { id: 0, kind: 'healthPotion' },
+          { id: 1, kind: 'healthPotion' },
+          { id: 2, kind: 'dagger' },
+        ]}
+        gold={100}
+        inventory={[
+          { id: 5, kind: 'healthPotion' },
+          { id: 6, kind: 'healthPotion' },
+          { id: 7, kind: 'healthPotion' },
+          { id: 8, kind: 'shortSword' },
+        ]}
+        equipment={bare}
+        onBuy={noop}
+        onSell={noop}
+        onLeave={noop}
+      />,
+    )
+    // Potions collapse to one row each; gear stays per-item.
+    expect(screen.getAllByTestId('shop-buy')).toHaveLength(2) // potion stack + dagger
+    expect(screen.getAllByTestId('shop-sell')).toHaveLength(2) // potion stack + short sword
+    expect(screen.getByText('(2)')).toBeInTheDocument() // 2 potions in stock
+    expect(screen.getByText('(3)')).toBeInTheDocument() // 3 potions in pack
+  })
 })
 
 describe('Inventory grouping', () => {

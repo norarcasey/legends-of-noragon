@@ -23,6 +23,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The merchant's buy and sell lists now collapse stackable potions into one
+  counted row (e.g. `Health Potion (3)`), like the pack — less clutter — while
+  gear stays listed per item.
 - Level-up flourish: reaching a new level now pops a big gold **"Level N!"** that
   rises over the hero with a celebratory ring, so the moment is unmistakable
   (the heal and stat bumps already happen under the hood). Built on the existing

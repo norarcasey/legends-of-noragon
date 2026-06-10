@@ -134,6 +134,11 @@
   color: var(--noragon-muted);
 }
 
+.noragon__shop-count {
+  color: var(--noragon-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .noragon__shop-button {
   appearance: none;
   font: inherit;
