@@ -52,12 +52,7 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                 const price = buyPrice(def.value)
                 const afford = gold >= price
                 return (
-                  <li
-                    key={s.id}
-                    className="noragon__shop-item"
-                    data-testid="shop-buy"
-                    title={itemEffect(s.kind)}
-                  >
+                  <li key={s.id} className="noragon__shop-item" data-testid="shop-buy">
                     <span className="noragon__shop-glyph" aria-hidden>
                       {def.glyph}
                     </span>
@@ -67,10 +62,12 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                       className="noragon__shop-button"
                       onClick={() => onBuy(s.id)}
                       disabled={!afford}
-                      title={afford ? undefined : 'Not enough gold'}
                     >
                       {price} ◉
                     </button>
+                    <span className="noragon__shop-tip" role="tooltip">
+                      {itemEffect(s.kind)}
+                    </span>
                   </li>
                 )
               })}
@@ -88,12 +85,7 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                 const def = ITEMS[item.kind]
                 const worn = isEquipped(item)
                 return (
-                  <li
-                    key={item.id}
-                    className="noragon__shop-item"
-                    data-testid="shop-sell"
-                    title={itemEffect(item.kind)}
-                  >
+                  <li key={item.id} className="noragon__shop-item" data-testid="shop-sell">
                     <span className="noragon__shop-glyph" aria-hidden>
                       {def.glyph}
                     </span>
@@ -108,6 +100,9 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                     >
                       {sellPrice(def.value)} ◉
                     </button>
+                    <span className="noragon__shop-tip" role="tooltip">
+                      {itemEffect(item.kind)}
+                    </span>
                   </li>
                 )
               })}

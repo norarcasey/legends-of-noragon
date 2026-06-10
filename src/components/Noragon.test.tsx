@@ -1671,9 +1671,10 @@ describe('Shop overlay', () => {
       />,
     )
     expect(within(screen.getByTestId('shop-buy')).getByRole('button')).toBeDisabled()
-    // Rows describe their effect on hover (native title).
-    expect(screen.getByTestId('shop-buy')).toHaveAttribute('title', '+3 damage · +5% accuracy')
-    expect(screen.getByTestId('shop-sell')).toHaveAttribute('title', 'restores 10 HP')
+    // Rows describe their effect in a hover tooltip (CSS-hidden until hover).
+    const tips = screen.getAllByRole('tooltip', { hidden: true }).map((t) => t.textContent)
+    expect(tips).toContain('+3 damage · +5% accuracy') // Long Sword
+    expect(tips).toContain('restores 10 HP') // Health Potion
     fireEvent.click(within(screen.getByTestId('shop-sell')).getByRole('button'))
     expect(sold).toBe(9)
     fireEvent.click(screen.getByRole('button', { name: /Leave/ }))

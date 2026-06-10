@@ -10,7 +10,10 @@
   background: var(--noragon-overlay-bg);
   border-radius: 8px;
   color: var(--noragon-text);
-  overflow: hidden;
+  /* Scroll the whole stall (not each list) so item tooltips aren't clipped by a
+     list's own scroll box. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .noragon__shop-head {
@@ -35,7 +38,6 @@
   display: flex;
   flex: 1;
   gap: 0.6rem;
-  min-height: 0;
 }
 
 .noragon__shop-col {
@@ -43,7 +45,6 @@
   flex: 1;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
 }
 
 .noragon__shop-heading {
@@ -61,8 +62,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  overflow-y: auto;
-  min-height: 0;
 }
 
 .noragon__shop-empty {
@@ -72,6 +71,7 @@
 }
 
 .noragon__shop-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -79,6 +79,40 @@
   background: var(--noragon-floor);
   border-radius: 5px;
   font-size: 0.85rem;
+}
+
+/* Hover/focus tooltip describing the item's effect — instant, above the shop's
+   rows, and never blocking the buy/sell button. */
+.noragon__shop-tip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 6;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--noragon-text);
+  background: var(--noragon-banner-bg);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.noragon__shop-item:hover .noragon__shop-tip,
+.noragon__shop-item:focus-within .noragon__shop-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noragon__shop-tip {
+    transition: none;
+  }
 }
 
 .noragon__shop-glyph {
