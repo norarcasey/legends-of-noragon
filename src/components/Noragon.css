@@ -25,9 +25,11 @@
 @media (min-width: 960px) {
   .noragon__layout {
     display: grid;
-    /* Middle (board) column twice the width of each side column, with a thin
-       divider track (sized to the rule) in each gutter. */
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 2fr) auto minmax(0, 1fr);
+    /* Middle (board) column capped just past the board's own max width (the
+       frame is min(70vh, 100%)) so it never sprawls and the dividers hug the
+       board; the side columns soak up any extra width. A thin divider track
+       (sized to the rule) sits in each gutter. */
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, calc(70vh + 2rem)) auto minmax(0, 1fr);
     align-items: start;
     gap: 1.25rem;
   }
