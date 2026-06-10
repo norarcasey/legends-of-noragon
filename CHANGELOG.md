@@ -23,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Enemy cards are now flip cards: the panel always holds a few skeleton
+  placeholders (a Noragon roundel with a faint shimmer), and when the hero enters
+  a room with foes the placeholders flip over to reveal each enemy's name,
+  description, and health bar. Respects `prefers-reduced-motion`.
 - The how-to-play blurb now greets you on the start ("Delve") overlay instead of
   sitting in the side column — so new players read it before the run. `<Noragon>`'s
   `intro` prop (and the `Overlay` part's new `intro` prop) render there, replacing

@@ -4,6 +4,7 @@ import { Noragon } from './Noragon'
 import { Inventory } from './Inventory'
 import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
+import { EnemyCards } from './EnemyCards'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
@@ -1789,6 +1790,44 @@ describe('Shop overlay', () => {
     expect(screen.getAllByTestId('shop-sell')).toHaveLength(2) // potion stack + short sword
     expect(screen.getByText('(2)')).toBeInTheDocument() // 2 potions in stock
     expect(screen.getByText('(3)')).toBeInTheDocument() // 3 potions in pack
+  })
+})
+
+describe('EnemyCards (flip placeholders)', () => {
+  it('shows skeleton placeholders when there are no enemies', () => {
+    const { container } = render(<EnemyCards enemies={[]} />)
+    expect(screen.queryAllByTestId('enemy-card')).toHaveLength(0)
+    expect(container.querySelectorAll('.noragon__enemy-slot').length).toBeGreaterThanOrEqual(3)
+    expect(container.querySelectorAll('.noragon__enemy-logo').length).toBeGreaterThanOrEqual(3)
+    expect(container.querySelector('.noragon__enemy-flip--revealed')).toBeNull()
+  })
+
+  it('flips a slot to reveal the enemy card', () => {
+    const { container } = render(
+      <EnemyCards
+        enemies={[
+          {
+            id: 1,
+            kind: 'goblin',
+            x: 0,
+            y: 0,
+            hp: 4,
+            maxHp: 6,
+            accuracy: 0.5,
+            damage: 2,
+            xp: 5,
+            room: 0,
+          },
+        ]}
+        targetId={1}
+      />,
+    )
+    // One slot flips to the enemy; the others stay skeleton placeholders.
+    expect(container.querySelectorAll('.noragon__enemy-flip--revealed')).toHaveLength(1)
+    const card = screen.getByTestId('enemy-card')
+    expect(card).toHaveAttribute('aria-current', 'true')
+    expect(card).toHaveTextContent(ENEMY_INFO.goblin.name)
+    expect(card).toHaveTextContent('4/6')
   })
 })
 
