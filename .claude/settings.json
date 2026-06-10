@@ -11,7 +11,9 @@
       "Bash(npm run test:*)",
       "Bash(npm run build)",
       "Bash(npm run build:lib)",
-      "Bash(npm run docs:model)"
+      "Bash(npm run docs:model)",
+      "Bash(npm run ci:watch)",
+      "Bash(npm run ci:watch:*)"
     ]
   }
 }

@@ -53,6 +53,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "npm run format && npm run docs:model && npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run build:lib",
+    "ci:watch": "bash scripts/ci-watch.sh",
     "docs:model": "node scripts/generate-domain-model.mjs && prettier --write docs/DOMAIN_MODEL.md",
     "docs:render": "node scripts/generate-domain-model.mjs --render && prettier --write docs/DOMAIN_MODEL.md",
     "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build:lib"
