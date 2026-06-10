@@ -39,52 +39,30 @@
   overflow: hidden;
 }
 
-/* ---- Back: skeleton placeholder ---- */
+/* ---- Back: a patterned "card back" (like the back of a playing card) ---- */
 .noragon__enemy-face--back {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--noragon-floor);
-  border: 1px dashed var(--noragon-wall-edge);
-}
-
-/* A very faint shimmer band drifting across, a subtle "placeholder" cue. */
-.noragon__enemy-face--back::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 42%,
-    rgba(255, 255, 255, 0.025) 50%,
-    transparent 58%
-  );
-  background-size: 280% 100%;
-  animation: noragon-skeleton 3.4s ease-in-out infinite;
-}
-
-.noragon__enemy-logo {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.3rem;
-  height: 2.3rem;
-  border-radius: 50%;
+  padding: 0.5rem;
+  background-color: var(--noragon-floor);
+  /* A diagonal diamond lattice from two crossed line patterns. */
+  background-image:
+    repeating-linear-gradient(45deg, var(--noragon-wall-edge) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, var(--noragon-wall-edge) 0 1px, transparent 1px 9px);
   border: 1px solid var(--noragon-wall-edge);
-  color: var(--noragon-stairs);
-  font-size: 1.15rem;
-  opacity: 0.75;
 }
 
-@keyframes noragon-skeleton {
-  0% {
-    background-position: 220% 0;
-  }
-  100% {
-    background-position: -220% 0;
-  }
+.noragon__enemy-back-title {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--noragon-accent);
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 5px;
 }
 
 /* ---- Front: the enemy card ---- */
@@ -189,9 +167,5 @@
 @media (prefers-reduced-motion: reduce) {
   .noragon__enemy-flip {
     transition: none;
-  }
-
-  .noragon__enemy-face--back::before {
-    animation: none;
   }
 }

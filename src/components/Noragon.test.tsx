@@ -1798,7 +1798,9 @@ describe('EnemyCards (flip placeholders)', () => {
     const { container } = render(<EnemyCards enemies={[]} />)
     expect(screen.queryAllByTestId('enemy-card')).toHaveLength(0)
     expect(container.querySelectorAll('.noragon__enemy-slot').length).toBeGreaterThanOrEqual(4)
-    expect(container.querySelectorAll('.noragon__enemy-logo').length).toBeGreaterThanOrEqual(4)
+    const backs = container.querySelectorAll('.noragon__enemy-back-title')
+    expect(backs.length).toBeGreaterThanOrEqual(4)
+    expect(backs[0].textContent).toBe('Legends of Noragon')
     expect(container.querySelector('.noragon__enemy-flip--revealed')).toBeNull()
   })
 

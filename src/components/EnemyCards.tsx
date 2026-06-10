@@ -35,9 +35,9 @@ export function EnemyCards({ enemies, targetId = null }: EnemyCardsProps) {
         return (
           <li key={i} className="noragon__enemy-slot">
             <div className={`noragon__enemy-flip${enemy ? ' noragon__enemy-flip--revealed' : ''}`}>
-              {/* Back: skeleton placeholder with the Noragon roundel. */}
+              {/* Back: a patterned "card back" with the title, like a playing card. */}
               <div className="noragon__enemy-face noragon__enemy-face--back" aria-hidden>
-                <span className="noragon__enemy-logo">⚔</span>
+                <span className="noragon__enemy-back-title">Legends of Noragon</span>
               </div>
 
               {/* Front: the enemy details, revealed by the flip. */}
