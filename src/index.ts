@@ -51,5 +51,5 @@ export type {
 } from './game/types'
 export { ENEMY_DEPTH_SCALING, ENEMY_INFO, enemyStatsAt } from './game/enemies'
 export type { EnemyInfo, EnemyKind } from './game/enemies'
-export { ITEMS } from './game/items'
+export { ITEMS, itemEffect } from './game/items'
 export type { ItemCategory, ItemDef, ItemKind } from './game/items'

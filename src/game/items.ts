@@ -130,3 +130,19 @@ export const WEAPON_KINDS: ItemKind[] = ['dagger', 'shortSword', 'longSword', 'b
 export const ARMOR_KINDS: ItemKind[] = ['clothes', 'leather', 'chainmail', 'plate']
 export const RING_KINDS: ItemKind[] = ['ringOfProtection', 'ringOfPower', 'ringOfPrecision']
 export const AMULET_KINDS: ItemKind[] = ['amuletOfHealth', 'amuletOfValor']
+
+const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
+const signedPct = (x: number) => `${x >= 0 ? '+' : ''}${Math.round(x * 100)}%`
+
+/** A short, human-readable summary of what an item does when worn or used —
+ *  e.g. `+2 damage · +5% accuracy`, `+1 defense`, `restores 10 HP`. For tooltips. */
+export function itemEffect(kind: ItemKind): string {
+  const d = ITEMS[kind]
+  const parts: string[] = []
+  if (d.meleeDamage) parts.push(`${signed(d.meleeDamage)} damage`)
+  if (d.meleeAccuracy) parts.push(`${signedPct(d.meleeAccuracy)} accuracy`)
+  if (d.defense) parts.push(`${signed(d.defense)} defense`)
+  if (d.maxHp) parts.push(`${signed(d.maxHp)} max HP`)
+  if (d.heal) parts.push(`restores ${d.heal} HP`)
+  return parts.length > 0 ? parts.join(' · ') : 'no effect'
+}

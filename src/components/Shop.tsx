@@ -1,4 +1,4 @@
-import { ITEMS } from '../game/items'
+import { ITEMS, itemEffect } from '../game/items'
 import { buyPrice, sellPrice } from '../game/utils'
 import type { Equipment, InventoryItem, ShopItem } from '../game/types'
 import './Shop.css'
@@ -52,7 +52,12 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                 const price = buyPrice(def.value)
                 const afford = gold >= price
                 return (
-                  <li key={s.id} className="noragon__shop-item" data-testid="shop-buy">
+                  <li
+                    key={s.id}
+                    className="noragon__shop-item"
+                    data-testid="shop-buy"
+                    title={itemEffect(s.kind)}
+                  >
                     <span className="noragon__shop-glyph" aria-hidden>
                       {def.glyph}
                     </span>
@@ -83,7 +88,12 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                 const def = ITEMS[item.kind]
                 const worn = isEquipped(item)
                 return (
-                  <li key={item.id} className="noragon__shop-item" data-testid="shop-sell">
+                  <li
+                    key={item.id}
+                    className="noragon__shop-item"
+                    data-testid="shop-sell"
+                    title={itemEffect(item.kind)}
+                  >
                     <span className="noragon__shop-glyph" aria-hidden>
                       {def.glyph}
                     </span>
