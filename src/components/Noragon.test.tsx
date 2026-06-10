@@ -1766,6 +1766,28 @@ describe('Inventory grouping', () => {
     expect(equipped).toBe(1)
   })
 
+  it('describes each item’s effect in a hover tooltip', () => {
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'shortSword' },
+          { id: 1, kind: 'healthPotion' },
+          { id: 2, kind: 'amuletOfValor' },
+        ]}
+        equipment={{ weapon: 0, armor: null, ring: null, amulet: null }}
+        gold={0}
+        onEquip={noop}
+        onDrink={noop}
+        onDrop={noop}
+      />,
+    )
+    // The tips are CSS-hidden until hover, so include hidden elements.
+    const tips = screen.getAllByRole('tooltip', { hidden: true }).map((t) => t.textContent)
+    expect(tips).toContain('+2 damage · +5% accuracy') // Short Sword
+    expect(tips).toContain('restores 10 HP') // Health Potion
+    expect(tips).toContain('+1 damage · +5% accuracy') // Amulet of Valor
+  })
+
   it('drinks the first potion of a stack', () => {
     let drunk: number | null = null
     render(

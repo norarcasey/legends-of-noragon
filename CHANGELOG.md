@@ -23,6 +23,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Inventory items show their effect on hover: a small tooltip beneath the row
+  summarises what each piece does (e.g. `+2 damage · +5% accuracy`, `+1 defense`,
+  `+5 max HP`, `restores 10 HP`).
 - The full-board overlays — the start/death screen and the merchant's shop — now
   cover the entire board frame, chrome included, in the all-in-one layout
   (previously they covered only the grid). The start/death screen is extracted as

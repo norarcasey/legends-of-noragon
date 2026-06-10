@@ -3,6 +3,22 @@ import type { ItemKind } from '../game/items'
 import type { Equipment, InventoryItem } from '../game/types'
 import './Inventory.css'
 
+const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
+const signedPct = (x: number) => `${x >= 0 ? '+' : ''}${Math.round(x * 100)}%`
+
+/** A short, human-readable summary of what an item does when worn or used —
+ *  shown as a hover tooltip. */
+function itemEffect(kind: ItemKind): string {
+  const d = ITEMS[kind]
+  const parts: string[] = []
+  if (d.meleeDamage) parts.push(`${signed(d.meleeDamage)} damage`)
+  if (d.meleeAccuracy) parts.push(`${signedPct(d.meleeAccuracy)} accuracy`)
+  if (d.defense) parts.push(`${signed(d.defense)} defense`)
+  if (d.maxHp) parts.push(`${signed(d.maxHp)} max HP`)
+  if (d.heal) parts.push(`restores ${d.heal} HP`)
+  return parts.length > 0 ? parts.join(' · ') : 'no effect'
+}
+
 export interface InventoryProps {
   /** The hero's carried items (`game.hero.inventory`). */
   inventory: InventoryItem[]
@@ -84,6 +100,9 @@ export function Inventory({
             Drop
           </button>
         </span>
+        <span className="noragon__item-tip" role="tooltip">
+          {itemEffect(item.kind)}
+        </span>
       </li>
     )
   }
@@ -122,6 +141,9 @@ export function Inventory({
                 >
                   Drop
                 </button>
+              </span>
+              <span className="noragon__item-tip" role="tooltip">
+                {itemEffect(kind)}
               </span>
             </li>
           )

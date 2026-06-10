@@ -27,10 +27,45 @@
   border: 1px solid var(--noragon-wall-edge);
   border-radius: 6px;
   font-size: 0.82rem;
+  position: relative;
 }
 
 .noragon__item--equipped {
   border-left: 3px solid var(--noragon-accent);
+}
+
+/* Hover/focus tooltip describing the item's effect — hidden until the row is
+   hovered or focused, sits just below it, and never blocks clicks. */
+.noragon__item-tip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--noragon-text);
+  background: var(--noragon-banner-bg);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.noragon__item:hover .noragon__item-tip,
+.noragon__item:focus-within .noragon__item-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noragon__item-tip {
+    transition: none;
+  }
 }
 
 .noragon__item-glyph {
