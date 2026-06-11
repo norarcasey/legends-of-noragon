@@ -46,9 +46,30 @@ export function Inventory({
   const wornKind = (id: number | null) =>
     id == null ? null : (inventory.find((i) => i.id === id)?.kind ?? null)
 
+  // A portrait weapon slot: just the weapon's SVG when one is equipped, or a
+  // muted placeholder icon over the "Weapon" label when empty.
+  const weaponSlot = () => {
+    const kind = wornKind(equipment.weapon)
+    const def = kind ? ITEMS[kind] : null
+    return (
+      <div
+        className={`noragon__weapon-slot${def ? '' : ' noragon__weapon-slot--empty'}`}
+        data-testid="equip-weapon"
+      >
+        <ItemIcon kind={kind ?? 'shortSword'} />
+        {!def && <span className="noragon__weapon-label">Weapon</span>}
+        {kind && (
+          <span className="noragon__item-tip" role="tooltip">
+            {itemEffect(kind)}
+          </span>
+        )}
+      </div>
+    )
+  }
+
   // An equipment slot beside the avatar: an SVG icon of the worn item + its
   // name, or a muted placeholder icon when empty. Used for the handheld gear
-  // (weapon, ring); `fallbackKind` is the kind drawn (muted) for an empty slot.
+  // (ring); `fallbackKind` is the kind drawn (muted) for an empty slot.
   const equipSlot = (label: string, fallbackKind: ItemKind, id: number | null) => {
     const kind = wornKind(id)
     const def = kind ? ITEMS[kind] : null
@@ -166,7 +187,7 @@ export function Inventory({
       <div className="noragon__avatar-frame">
         <HeroAvatar armor={wornKind(equipment.armor)} amulet={wornKind(equipment.amulet)} />
         <div className="noragon__equip-slots">
-          {equipSlot('Weapon', 'shortSword', equipment.weapon)}
+          {weaponSlot()}
           {equipSlot('Ring', 'ringOfProtection', equipment.ring)}
         </div>
       </div>

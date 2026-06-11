@@ -16,7 +16,42 @@
 .noragon__equip-slots {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.4rem;
+}
+
+/* Portrait weapon slot: the weapon's SVG fills it; "Weapon" shows only empty. */
+.noragon__weapon-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 3.6rem;
+  aspect-ratio: 3 / 4;
+  padding: 0.4rem;
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 5px;
+}
+
+.noragon__weapon-slot .noragon__item-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.noragon__weapon-slot--empty {
+  border-style: dashed;
+  color: var(--noragon-muted);
+}
+
+.noragon__weapon-slot--empty .noragon__item-icon {
+  opacity: 0.4;
+}
+
+.noragon__weapon-label {
+  font-size: 0.7rem;
 }
 
 .noragon__equip-slot {

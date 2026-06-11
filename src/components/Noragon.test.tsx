@@ -1829,13 +1829,16 @@ describe('HeroAvatar', () => {
         onDrop={() => {}}
       />,
     )
-    expect(screen.getByTestId('equip-weapon')).toHaveTextContent('Short Sword')
+    // The weapon slot shows just the SVG when equipped — no name text.
+    const weaponSlot = screen.getByTestId('equip-weapon')
+    expect(weaponSlot.querySelector('svg.noragon__item-icon')).not.toBeNull()
+    expect(weaponSlot).not.toHaveTextContent('Weapon')
     expect(screen.getByTestId('equip-ring')).toHaveTextContent('Ring of Power')
     // Armor isn't worn, so the on-body armor layer is absent.
     expect(screen.queryByTestId('avatar-armor')).not.toBeInTheDocument()
   })
 
-  it('shows an empty weapon slot as a placeholder', () => {
+  it('shows an empty weapon slot as a placeholder with its name', () => {
     render(
       <Inventory
         inventory={[]}
@@ -1847,7 +1850,7 @@ describe('HeroAvatar', () => {
       />,
     )
     expect(screen.getByTestId('equip-weapon')).toHaveTextContent('Weapon')
-    expect(screen.getByTestId('equip-weapon')).toHaveClass('noragon__equip-slot--empty')
+    expect(screen.getByTestId('equip-weapon')).toHaveClass('noragon__weapon-slot--empty')
   })
 })
 
