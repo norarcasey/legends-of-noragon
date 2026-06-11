@@ -94,7 +94,7 @@ classDiagram
   class Equipment {
     +weapon : number / null
     +armor : number / null
-    +ring : number / null
+    +rings : number[]
     +amulet : number / null
   }
   class AttackKind {
@@ -554,7 +554,7 @@ classDiagram
   class Equipment {
     +weapon : number / null
     +armor : number / null
-    +ring : number / null
+    +rings : number[]
     +amulet : number / null
   }
   class AttackKind {

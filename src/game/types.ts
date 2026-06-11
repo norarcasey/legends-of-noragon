@@ -101,14 +101,17 @@ export interface FloorItem {
   amount: number
 }
 
-/** Which inventory item is equipped in each slot (by item id), or `null`. The
- *  hero wears one of each — weapon, armor, ring, amulet. */
+/** What's equipped in each slot (by inventory item id). The hero wears one
+ *  weapon, one armor, one amulet, and up to two `rings` (the item ids worn). */
 export interface Equipment {
   weapon: number | null
   armor: number | null
-  ring: number | null
+  rings: number[]
   amulet: number | null
 }
+
+/** How many ring slots the hero has. */
+export const RING_SLOTS = 2
 
 /**
  * The ways the hero can attack. Only `melee` (bump-to-attack) is wired up today;

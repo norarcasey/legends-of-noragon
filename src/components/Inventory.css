@@ -54,39 +54,37 @@
   font-size: 0.7rem;
 }
 
-.noragon__equip-slot {
+/* Two ring slots sit in a row matching the weapon slot's width (so they tuck
+   neatly beneath it). Each shows a ring outline — gold when worn, muted empty. */
+.noragon__ring-slots {
+  display: flex;
+  gap: 0.3rem;
+  width: 3.6rem;
+}
+
+.noragon__ring-slot {
   position: relative;
+  flex: 1;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  min-width: 7rem;
-  padding: 0.3rem 0.5rem;
+  justify-content: center;
+  padding: 0.2rem;
   background: var(--noragon-floor);
   border: 1px solid var(--noragon-wall-edge);
   border-radius: 5px;
-  font-size: 0.78rem;
+  color: var(--noragon-accent);
 }
 
-.noragon__equip-slot--empty {
+.noragon__ring-slot--empty {
   border-style: dashed;
   color: var(--noragon-muted);
 }
 
-.noragon__equip-slot .noragon__item-icon {
-  width: 1.6rem;
-  height: 1.6rem;
-}
-
-.noragon__equip-slot--empty .noragon__item-icon {
-  opacity: 0.4;
-}
-
-.noragon__equip-label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.noragon__ring-outline {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* ---- Inventory ---- */

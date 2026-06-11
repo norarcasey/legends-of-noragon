@@ -1714,7 +1714,7 @@ describe('Board combat floats', () => {
 
 describe('Shop overlay', () => {
   const noop = () => {}
-  const bare = { weapon: null, armor: null, ring: null, amulet: null }
+  const bare = { weapon: null, armor: null, rings: [], amulet: null }
 
   it('disables buying what you cannot afford, and sells/leaves on click', () => {
     let sold: number | null = null
@@ -1822,7 +1822,7 @@ describe('HeroAvatar', () => {
           { id: 0, kind: 'shortSword' },
           { id: 1, kind: 'ringOfPower' },
         ]}
-        equipment={{ weapon: 0, armor: null, ring: 1, amulet: null }}
+        equipment={{ weapon: 0, armor: null, rings: [1], amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
@@ -1833,16 +1833,39 @@ describe('HeroAvatar', () => {
     const weaponSlot = screen.getByTestId('equip-weapon')
     expect(weaponSlot.querySelector('svg.noragon__item-icon')).not.toBeNull()
     expect(weaponSlot).not.toHaveTextContent('Weapon')
-    expect(screen.getByTestId('equip-ring')).toHaveTextContent('Ring of Power')
+    // Two ring slots: the worn ring fills the first (its effect on hover), the
+    // second stays an empty outline.
+    const ring1 = screen.getByTestId('equip-ring-1')
+    expect(ring1).not.toHaveClass('noragon__ring-slot--empty')
+    expect(ring1.querySelector('.noragon__item-tip')?.textContent).toBe('+1 damage')
+    expect(screen.getByTestId('equip-ring-2')).toHaveClass('noragon__ring-slot--empty')
     // Armor isn't worn, so the on-body armor layer is absent.
     expect(screen.queryByTestId('avatar-armor')).not.toBeInTheDocument()
+  })
+
+  it('fills both ring slots when two rings are worn', () => {
+    render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'ringOfPower' },
+          { id: 1, kind: 'ringOfProtection' },
+        ]}
+        equipment={{ weapon: null, armor: null, rings: [0, 1], amulet: null }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+        onDrop={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('equip-ring-1')).not.toHaveClass('noragon__ring-slot--empty')
+    expect(screen.getByTestId('equip-ring-2')).not.toHaveClass('noragon__ring-slot--empty')
   })
 
   it('shows an empty weapon slot as a placeholder with its name', () => {
     render(
       <Inventory
         inventory={[]}
-        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: null, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
@@ -1905,7 +1928,7 @@ describe('Inventory grouping', () => {
           { id: 1, kind: 'healthPotion' },
           { id: 2, kind: 'healthPotion' },
         ]}
-        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: null, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={noop}
@@ -1926,7 +1949,7 @@ describe('Inventory grouping', () => {
           { id: 0, kind: 'shortSword' },
           { id: 1, kind: 'shortSword' },
         ]}
-        equipment={{ weapon: 0, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: 0, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={noop}
@@ -1947,7 +1970,7 @@ describe('Inventory grouping', () => {
           { id: 0, kind: 'ringOfProtection' }, // worn
           { id: 1, kind: 'amuletOfHealth' }, // spare
         ]}
-        equipment={{ weapon: null, armor: null, ring: 0, amulet: null }}
+        equipment={{ weapon: null, armor: null, rings: [0], amulet: null }}
         gold={0}
         onEquip={(id) => {
           equipped = id
@@ -1969,7 +1992,7 @@ describe('Inventory grouping', () => {
           { id: 1, kind: 'healthPotion' },
           { id: 2, kind: 'amuletOfValor' },
         ]}
-        equipment={{ weapon: 0, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: 0, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={noop}
@@ -1991,7 +2014,7 @@ describe('Inventory grouping', () => {
           { id: 5, kind: 'healthPotion' },
           { id: 6, kind: 'healthPotion' },
         ]}
-        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: null, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={noop}
         onDrink={(id) => {
@@ -2013,7 +2036,7 @@ describe('Inventory grouping', () => {
           { id: 2, kind: 'shortSword' }, // equipped weapon
           { id: 3, kind: 'leather' }, // equipped armor
         ]}
-        equipment={{ weapon: 2, armor: 3, ring: null, amulet: null }}
+        equipment={{ weapon: 2, armor: 3, rings: [], amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
@@ -2037,7 +2060,7 @@ describe('Inventory grouping', () => {
           { id: 2, kind: 'dagger' }, // "Dagger"
           { id: 3, kind: 'chainmail' }, // "Chainmail"
         ]}
-        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: null, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
@@ -2059,7 +2082,7 @@ describe('Inventory grouping', () => {
           { id: 9, kind: 'dagger' },
           { id: 10, kind: 'healthPotion' },
         ]}
-        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
+        equipment={{ weapon: null, armor: null, rings: [], amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}

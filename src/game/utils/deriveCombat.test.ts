@@ -11,7 +11,7 @@ const base: HeroStats = {
     spell: { accuracy: 0.9, minDamage: 3, maxDamage: 6 },
   },
 }
-const bare: Equipment = { weapon: null, armor: null, ring: null, amulet: null }
+const bare: Equipment = { weapon: null, armor: null, rings: [], amulet: null }
 
 describe('deriveCombat', () => {
   it('with no gear, returns the leveled base and zero defense', () => {
@@ -41,7 +41,7 @@ describe('deriveCombat', () => {
       { id: 2, kind: 'ringOfProtection' }, // +1 defense
       { id: 3, kind: 'amuletOfHealth' }, // +5 max HP
     ]
-    const c = deriveCombat(base, 1, inv, { weapon: 0, armor: 1, ring: 2, amulet: 3 })
+    const c = deriveCombat(base, 1, inv, { weapon: 0, armor: 1, rings: [2], amulet: 3 })
     expect(c.defense).toBe(ITEMS.leather.defense + ITEMS.ringOfProtection.defense)
     expect(c.maxHp).toBe(base.maxHp + ITEMS.amuletOfHealth.maxHp)
     expect(c.attacks.melee.minDamage).toBe(3 + ITEMS.shortSword.meleeDamage)
@@ -49,7 +49,7 @@ describe('deriveCombat', () => {
 
   it('a ring of power raises melee damage with no weapon equipped', () => {
     const inv: InventoryItem[] = [{ id: 0, kind: 'ringOfPower' }]
-    const c = deriveCombat(base, 1, inv, { ...bare, ring: 0 })
+    const c = deriveCombat(base, 1, inv, { ...bare, rings: [0] })
     expect(c.attacks.melee.minDamage).toBe(3 + ITEMS.ringOfPower.meleeDamage)
     expect(c.attacks.melee.maxDamage).toBe(6 + ITEMS.ringOfPower.meleeDamage)
   })

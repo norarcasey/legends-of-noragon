@@ -45,7 +45,7 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
   const isEquipped = (item: InventoryItem) =>
     equipment.weapon === item.id ||
     equipment.armor === item.id ||
-    equipment.ring === item.id ||
+    equipment.rings.includes(item.id) ||
     equipment.amulet === item.id
 
   return (

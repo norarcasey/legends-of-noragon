@@ -13,7 +13,7 @@ export function deriveCombat(
   equipment: Equipment,
 ): CombatStats {
   const leveled = statsAt(base, level)
-  const worn = [equipment.weapon, equipment.armor, equipment.ring, equipment.amulet].map((id) =>
+  const worn = [equipment.weapon, equipment.armor, ...equipment.rings, equipment.amulet].map((id) =>
     equippedDef(inventory, id),
   )
   const bonus = (pick: (d: ItemDef) => number) =>

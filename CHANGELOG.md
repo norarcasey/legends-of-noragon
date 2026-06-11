@@ -23,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Two ring slots: the hero can now wear **two rings** (both bonuses apply).
+  Equipment models rings as a `rings` array; equipping a ring fills the first
+  free ring slot (replacing the older one when both are full). The pack shows two
+  ring-outline slots tucked under the weapon slot.
 - Hero avatar in the pack: an SVG paper-doll below the inventory list whose gear
   updates with what's equipped — armor tints (and, for chainmail/plate, bulks)
   the torso and an amulet hangs at the chest, while the worn weapon and ring show

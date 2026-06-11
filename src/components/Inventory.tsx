@@ -39,7 +39,7 @@ export function Inventory({
   const isEquipped = (item: InventoryItem) =>
     equipment.weapon === item.id ||
     equipment.armor === item.id ||
-    equipment.ring === item.id ||
+    equipment.rings.includes(item.id) ||
     equipment.amulet === item.id
 
   // The kind worn in a slot (by item id), for the paper-doll avatar.
@@ -67,19 +67,20 @@ export function Inventory({
     )
   }
 
-  // An equipment slot beside the avatar: an SVG icon of the worn item + its
-  // name, or a muted placeholder icon when empty. Used for the handheld gear
-  // (ring); `fallbackKind` is the kind drawn (muted) for an empty slot.
-  const equipSlot = (label: string, fallbackKind: ItemKind, id: number | null) => {
+  // A small ring slot showing a ring outline — gold when one's worn (its name +
+  // effect on hover), muted when empty. Two of these sit under the weapon slot.
+  const ringSlot = (i: number) => {
+    const id = equipment.rings[i] ?? null
     const kind = wornKind(id)
-    const def = kind ? ITEMS[kind] : null
     return (
       <div
-        className={`noragon__equip-slot${def ? '' : ' noragon__equip-slot--empty'}`}
-        data-testid={`equip-${label.toLowerCase()}`}
+        key={i}
+        className={`noragon__ring-slot${kind ? '' : ' noragon__ring-slot--empty'}`}
+        data-testid={`equip-ring-${i + 1}`}
       >
-        <ItemIcon kind={kind ?? fallbackKind} />
-        <span className="noragon__equip-label">{def ? def.name : label}</span>
+        <svg className="noragon__ring-outline" viewBox="0 0 24 24" aria-hidden>
+          <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" />
+        </svg>
         {kind && (
           <span className="noragon__item-tip" role="tooltip">
             {itemEffect(kind)}
@@ -188,7 +189,7 @@ export function Inventory({
         <HeroAvatar armor={wornKind(equipment.armor)} amulet={wornKind(equipment.amulet)} />
         <div className="noragon__equip-slots">
           {weaponSlot()}
-          {equipSlot('Ring', 'ringOfProtection', equipment.ring)}
+          <div className="noragon__ring-slots">{[0, 1].map((i) => ringSlot(i))}</div>
         </div>
       </div>
     </section>
