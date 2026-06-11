@@ -1,15 +1,5 @@
-/* The hero paper-doll shown atop the pack. Imported by HeroAvatar. */
-
-.noragon__avatar-frame {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  background: var(--noragon-bg);
-  border: 1px solid var(--noragon-wall-edge);
-  border-radius: 6px;
-}
+/* The hero paper-doll figure. Imported by HeroAvatar. (The framing + equipment
+   slots around it live with the pack — see Inventory.css.) */
 
 .noragon__avatar {
   display: block;

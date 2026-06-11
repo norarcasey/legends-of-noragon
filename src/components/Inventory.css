@@ -1,5 +1,60 @@
 /* The pack / inventory list. Imported by Inventory. */
 
+/* ---- Hero avatar + equipment slots (below the list) ---- */
+.noragon__avatar-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  background: var(--noragon-bg);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 6px;
+}
+
+.noragon__equip-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.noragon__equip-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 7rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 5px;
+  font-size: 0.78rem;
+}
+
+.noragon__equip-slot--empty {
+  border-style: dashed;
+  color: var(--noragon-muted);
+}
+
+.noragon__equip-glyph {
+  width: 1.2em;
+  text-align: center;
+  color: var(--noragon-accent);
+}
+
+.noragon__equip-slot--empty .noragon__equip-glyph {
+  color: var(--noragon-muted);
+}
+
+.noragon__equip-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---- Inventory ---- */
 .noragon__inventory-title {
   margin: 0 0 0.35rem;

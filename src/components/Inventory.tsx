@@ -45,6 +45,29 @@ export function Inventory({
   const wornKind = (id: number | null) =>
     id == null ? null : (inventory.find((i) => i.id === id)?.kind ?? null)
 
+  // An equipment slot beside the avatar: the worn item's glyph + name, or a
+  // muted placeholder when empty. Used for the handheld gear (weapon, ring).
+  const equipSlot = (label: string, placeholder: string, id: number | null) => {
+    const kind = wornKind(id)
+    const def = kind ? ITEMS[kind] : null
+    return (
+      <div
+        className={`noragon__equip-slot${def ? '' : ' noragon__equip-slot--empty'}`}
+        data-testid={`equip-${label.toLowerCase()}`}
+      >
+        <span className="noragon__equip-glyph" aria-hidden>
+          {def ? def.glyph : placeholder}
+        </span>
+        <span className="noragon__equip-label">{def ? def.name : label}</span>
+        {kind && (
+          <span className="noragon__item-tip" role="tooltip">
+            {itemEffect(kind)}
+          </span>
+        )}
+      </div>
+    )
+  }
+
   // Gear keeps its own row each, split by whether it's worn; stackables group by
   // kind, preserving first-seen order so the pack list stays stable in use.
   const gear = inventory.filter((i) => !ITEMS[i.kind].stackable)
@@ -99,14 +122,6 @@ export function Inventory({
   return (
     <section className="noragon__inventory" aria-label="Inventory" data-testid="inventory">
       <h3 className="noragon__inventory-title">Pack — ◉ {gold} gold</h3>
-      <div className="noragon__avatar-frame">
-        <HeroAvatar
-          weapon={wornKind(equipment.weapon)}
-          armor={wornKind(equipment.armor)}
-          ring={wornKind(equipment.ring)}
-          amulet={wornKind(equipment.amulet)}
-        />
-      </div>
       <ul className="noragon__inventory-list">
         {equipped.map(renderGear)}
         {stacks.map(({ kind, items }) => {
@@ -147,6 +162,14 @@ export function Inventory({
         })}
         {unequipped.map(renderGear)}
       </ul>
+
+      <div className="noragon__avatar-frame">
+        <HeroAvatar armor={wornKind(equipment.armor)} amulet={wornKind(equipment.amulet)} />
+        <div className="noragon__equip-slots">
+          {equipSlot('Weapon', '/', equipment.weapon)}
+          {equipSlot('Ring', '○', equipment.ring)}
+        </div>
+      </div>
     </section>
   )
 }

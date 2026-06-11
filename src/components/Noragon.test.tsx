@@ -1795,35 +1795,49 @@ describe('Shop overlay', () => {
 })
 
 describe('HeroAvatar', () => {
-  it('draws only the layers for what is equipped', () => {
+  it('draws only the on-body layers for what is equipped', () => {
     const { rerender } = render(<HeroAvatar />)
     expect(screen.queryByTestId('avatar-armor')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('avatar-weapon')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('avatar-ring')).not.toBeInTheDocument()
     expect(screen.queryByTestId('avatar-amulet')).not.toBeInTheDocument()
 
-    rerender(
-      <HeroAvatar weapon="longSword" armor="plate" ring="ringOfPower" amulet="amuletOfHealth" />,
-    )
-    expect(screen.getByTestId('avatar-weapon')).toBeInTheDocument()
+    rerender(<HeroAvatar armor="plate" amulet="amuletOfHealth" />)
     expect(screen.getByTestId('avatar-armor')).toBeInTheDocument()
-    expect(screen.getByTestId('avatar-ring')).toBeInTheDocument()
     expect(screen.getByTestId('avatar-amulet')).toBeInTheDocument()
   })
 
-  it('reflects the hero’s gear inside the pack', () => {
+  it('puts the worn weapon and ring in slots beside the avatar', () => {
     render(
       <Inventory
-        inventory={[{ id: 0, kind: 'shortSword' }]}
-        equipment={{ weapon: 0, armor: null, ring: null, amulet: null }}
+        inventory={[
+          { id: 0, kind: 'shortSword' },
+          { id: 1, kind: 'ringOfPower' },
+        ]}
+        equipment={{ weapon: 0, armor: null, ring: 1, amulet: null }}
         gold={0}
         onEquip={() => {}}
         onDrink={() => {}}
         onDrop={() => {}}
       />,
     )
-    expect(screen.getByTestId('avatar-weapon')).toBeInTheDocument()
+    expect(screen.getByTestId('equip-weapon')).toHaveTextContent('Short Sword')
+    expect(screen.getByTestId('equip-ring')).toHaveTextContent('Ring of Power')
+    // Armor isn't worn, so the on-body armor layer is absent.
     expect(screen.queryByTestId('avatar-armor')).not.toBeInTheDocument()
+  })
+
+  it('shows an empty weapon slot as a placeholder', () => {
+    render(
+      <Inventory
+        inventory={[]}
+        equipment={{ weapon: null, armor: null, ring: null, amulet: null }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+        onDrop={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('equip-weapon')).toHaveTextContent('Weapon')
+    expect(screen.getByTestId('equip-weapon')).toHaveClass('noragon__equip-slot--empty')
   })
 })
 
