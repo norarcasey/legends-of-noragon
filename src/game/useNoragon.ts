@@ -461,15 +461,15 @@ function reducer(state: GameState, action: GameAction): GameState {
       let dungeon = state.dungeon
       let hp = state.hp
 
+      // Either way the trap is neutralized — its tile reverts to plain floor.
+      // The difference is the fumble: it springs on you for full, armor-piercing,
+      // depth-scaled damage on the way out.
+      const tiles = dungeon.tiles.map((row) => [...row])
+      tiles[target.y][target.x] = 'floor'
+      dungeon = { ...dungeon, tiles }
       if (rng.roll() < TRAP.disarmChance) {
-        // Clean disarm: pluck the trap out of play, no harm done.
-        const tiles = dungeon.tiles.map((row) => [...row])
-        tiles[target.y][target.x] = 'floor'
-        dungeon = { ...dungeon, tiles }
         messages.push('You carefully disarm the trap.')
       } else {
-        // Fumbled it — the trap springs (full, armor-piercing, depth-scaled
-        // damage), and remains armed for another go.
         const dmg = TRAP.damage + (state.depth - 1) * TRAP.damagePerDepth
         hp = Math.max(0, hp - dmg)
         messages.push(`You fumble the disarm — the trap springs! You take ${dmg} damage.`)

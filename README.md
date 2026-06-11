@@ -29,7 +29,7 @@ Some rooms also hide **spring-traps** (`✕`): they're visible, so you can step
 around them, but blunder onto one and it deals flat, armor-piercing damage that
 grows the deeper you delve before disarming itself. Or stand beside one and press
 **E** to **attempt a disarm** — succeed and it's plucked out of play unharmed;
-fumble and it springs on you anyway and stays armed for another try.
+fumble and it springs on you for full damage but is still cleared on the way out.
 You start safe in **the entry hall**; the farthest room (a
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
 (`>`). One room is a safe **shop** — bump the **merchant** (`⚖`) to open their

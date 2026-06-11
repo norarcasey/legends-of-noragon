@@ -26,8 +26,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Disarm traps: stand beside a trap and press **E** (or click the **Disarm**
   prompt) to attempt to disarm it. A flat 50% roll (a `TRAP.disarmChance` tuning
   constant — class/level scaling can layer on later) decides it: succeed and the
-  trap is removed unharmed; fumble and it springs for full damage and stays
-  armed. The attempt costs a turn, so foes in the room get to act. The hook
+  trap is removed unharmed; fumble and it springs for full damage — but either
+  way the trap is neutralized and its tile clears. The attempt costs a turn, so
+  foes in the room get to act. The hook
   exposes `adjacentTrap` (the direction of a disarmable neighbour) and a
   `disarm(dir)` action; `useNoragonKeyboard` binds it to `E`.
 - Spring-traps: rooms now occasionally hide a visible trap tile (`✕`). They're

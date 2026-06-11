@@ -1543,14 +1543,15 @@ describe('useNoragon — traps', () => {
       act(() => result.current.disarm(setup.dir))
       const tile = result.current.board.tiles[setup.trap.y][setup.trap.x]
       if (result.current.log.some((l) => /disarm the trap/i.test(l.text))) {
-        // Clean disarm: trap gone, no damage taken, nothing left to disarm here.
+        // Clean disarm: trap gone, no damage taken.
         expect(tile).toBe('floor')
         expect(result.current.hero.hp).toBe(hpBefore)
         sawSuccess = true
       } else {
-        // Fumble: trap still armed and it sprang for its flat depth-1 damage (3).
+        // Fumble: it springs for its flat depth-1 damage (3) but is still
+        // neutralized — the tile clears either way.
         expect(result.current.log.some((l) => /fumble the disarm/i.test(l.text))).toBe(true)
-        expect(tile).toBe('trap')
+        expect(tile).toBe('floor')
         expect(result.current.hero.hp).toBe(hpBefore - 3)
         sawFailure = true
       }
