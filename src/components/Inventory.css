@@ -105,6 +105,22 @@
   gap: 0.3rem;
 }
 
+/* Worn gear is pinned above the scroll box so it never scrolls out of focus. */
+.noragon__inventory-worn {
+  margin-bottom: 0.3rem;
+}
+
+/* Everything unworn (consumables + spare gear) scrolls within a capped box, so
+   the worn gear and the avatar below it always sit in the same place no matter
+   how much loot is carried. The bottom padding leaves room for the last row's
+   effect tooltip (which sits just below it) so it isn't clipped by the scroll. */
+.noragon__inventory-spare {
+  max-height: 12rem;
+  overflow-y: auto;
+  padding-bottom: 1.4rem;
+  scrollbar-width: thin;
+}
+
 .noragon__item {
   display: flex;
   align-items: center;

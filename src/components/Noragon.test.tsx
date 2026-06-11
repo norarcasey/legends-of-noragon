@@ -2236,6 +2236,35 @@ describe('Inventory grouping', () => {
     expect(names[3]).toContain('Plate Armor')
   })
 
+  it('keeps worn gear out of the scrollable spare box (it stays pinned)', () => {
+    const { container } = render(
+      <Inventory
+        inventory={[
+          { id: 0, kind: 'dagger' }, // spare weapon
+          { id: 1, kind: 'healthPotion' }, // consumable (unworn)
+          { id: 2, kind: 'shortSword' }, // equipped weapon
+          { id: 3, kind: 'leather' }, // equipped armor
+        ]}
+        equipment={{ weapon: 2, armor: 3, rings: [], amulet: null }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+        onDrop={() => {}}
+      />,
+    )
+    const spare = screen.getByTestId('inventory-spare')
+    const spareText = spare.textContent ?? ''
+    // The scroll box holds the unworn items…
+    expect(spareText).toContain('Dagger')
+    expect(spareText).toContain('Health Potion')
+    // …and never the worn gear, which lives in the pinned worn list above it.
+    expect(spareText).not.toContain('Short Sword')
+    expect(spareText).not.toContain('Leather Armor')
+    const worn = container.querySelector('.noragon__inventory-worn')
+    expect(worn?.textContent).toContain('Short Sword')
+    expect(worn?.textContent).toContain('Leather Armor')
+  })
+
   it('offers a Drop button on every row that reports the item id', () => {
     let dropped: number | null = null
     render(

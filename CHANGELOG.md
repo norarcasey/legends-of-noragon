@@ -149,6 +149,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The pack now splits into a pinned worn-gear list and a capped, scrollable box
+  for everything unworn (consumables and spare gear). As loot piles up only the
+  unworn box scrolls, so the worn gear and the hero avatar beneath it always sit
+  in the same place instead of being pushed down the column.
 - The `Board` component now ships the overlays that belong over the grid — the
   aim banner, the stairs prompt, and the start/death overlay — inside its own
   positioning context, so a standalone `<Board>` renders them too. They're

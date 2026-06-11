@@ -27,6 +27,9 @@ export interface InventoryProps {
  *
  * Rows are ordered equipped gear first, then consumables, then spare gear — so
  * what's in use and what's quaffable sit at the top, with swap-in spares below.
+ * Worn gear is pinned in its own list; everything unworn scrolls within a capped
+ * box, so the worn gear and the hero avatar beneath it stay in a fixed spot no
+ * matter how much loot is carried.
  */
 export function Inventory({
   inventory,
@@ -105,6 +108,43 @@ export function Inventory({
     else stacks.push({ kind: item.kind, items: [item] })
   }
 
+  const renderStack = ({ kind, items }: { kind: ItemKind; items: InventoryItem[] }) => {
+    const def = ITEMS[kind]
+    const count = items.length
+    return (
+      <li key={`stack-${kind}`} className="noragon__item" data-testid="inventory-item">
+        <span className="noragon__item-glyph" aria-hidden>
+          {def.glyph}
+        </span>
+        <span className="noragon__item-name">
+          {def.name}
+          {count > 1 && <span className="noragon__item-count"> ({count})</span>}
+        </span>
+        <span className="noragon__item-actions">
+          {def.category === 'potion' && (
+            <button
+              type="button"
+              className="noragon__item-button"
+              onClick={() => onDrink(items[0].id)}
+            >
+              Drink
+            </button>
+          )}
+          <button
+            type="button"
+            className="noragon__item-button noragon__item-button--drop"
+            onClick={() => onDrop(items[0].id)}
+          >
+            Drop
+          </button>
+        </span>
+        <span className="noragon__item-tip" role="tooltip">
+          {itemEffect(kind)}
+        </span>
+      </li>
+    )
+  }
+
   const renderGear = (item: InventoryItem) => {
     const def = ITEMS[item.kind]
     const worn = isEquipped(item)
@@ -144,44 +184,21 @@ export function Inventory({
   return (
     <section className="noragon__inventory" aria-label="Inventory" data-testid="inventory">
       <h3 className="noragon__inventory-title">Pack — ◉ {gold} gold</h3>
-      <ul className="noragon__inventory-list">
-        {equipped.map(renderGear)}
-        {stacks.map(({ kind, items }) => {
-          const def = ITEMS[kind]
-          const count = items.length
-          return (
-            <li key={`stack-${kind}`} className="noragon__item" data-testid="inventory-item">
-              <span className="noragon__item-glyph" aria-hidden>
-                {def.glyph}
-              </span>
-              <span className="noragon__item-name">
-                {def.name}
-                {count > 1 && <span className="noragon__item-count"> ({count})</span>}
-              </span>
-              <span className="noragon__item-actions">
-                {def.category === 'potion' && (
-                  <button
-                    type="button"
-                    className="noragon__item-button"
-                    onClick={() => onDrink(items[0].id)}
-                  >
-                    Drink
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="noragon__item-button noragon__item-button--drop"
-                  onClick={() => onDrop(items[0].id)}
-                >
-                  Drop
-                </button>
-              </span>
-              <span className="noragon__item-tip" role="tooltip">
-                {itemEffect(kind)}
-              </span>
-            </li>
-          )
-        })}
+
+      {/* Worn gear stays pinned at the top so it never scrolls out of focus. */}
+      {equipped.length > 0 && (
+        <ul className="noragon__inventory-list noragon__inventory-worn">
+          {equipped.map(renderGear)}
+        </ul>
+      )}
+
+      {/* Everything not worn — consumables and spare gear — scrolls within a
+          capped box, keeping the worn gear and avatar below it in a fixed spot. */}
+      <ul
+        className="noragon__inventory-list noragon__inventory-spare"
+        data-testid="inventory-spare"
+      >
+        {stacks.map(renderStack)}
         {unequipped.map(renderGear)}
       </ul>
 
