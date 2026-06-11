@@ -27,7 +27,9 @@ the dark between them. Rooms are strewn with impassable **rubble** (`▲`) — c
 that both you and your foes must move around, so positioning matters in a fight.
 Some rooms also hide **spring-traps** (`✕`): they're visible, so you can step
 around them, but blunder onto one and it deals flat, armor-piercing damage that
-grows the deeper you delve before disarming itself.
+grows the deeper you delve before disarming itself. Or stand beside one and press
+**E** to **attempt a disarm** — succeed and it's plucked out of play unharmed;
+fumble and it springs on you anyway and stays armed for another try.
 You start safe in **the entry hall**; the farthest room (a
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
 (`>`). One room is a safe **shop** — bump the **merchant** (`⚖`) to open their
@@ -182,10 +184,11 @@ const game = useNoragon({
 //                 equipment, onStairs }
 // game.run    — { status, depth, kills, turns }
 // game.enemies, game.activeEnemies, game.currentRoom, game.revealedRooms
-// game.aiming, game.targetId, game.log (turn-by-turn LogEntry[])
+// game.aiming, game.targetId, game.adjacentTrap, game.log (turn-by-turn LogEntry[])
 
 // Actions stay top-level:
 // game.start(), game.reset(), game.move("up" | "down" | "left" | "right")
+// game.disarm("up" | "down" | "left" | "right")  // disarm an adjacent trap
 // game.descend(), game.equip(itemId), game.drink(itemId), game.drop(itemId)
 // game.aimStart(), game.aimCycle(+1 | -1), game.aimCancel(), game.fire()
 ```
@@ -275,8 +278,8 @@ export function MyDungeon() {
 The parts are presentational only. For the default controls, call
 `useNoragonKeyboard(game)` — it attaches a `window` keydown listener for the same
 keys `<Noragon />` uses (arrows/WASD to move, Enter to start, `F` to toggle aim
-with Enter to fire, `>` to descend, `Q` to quaff), and takes `{ enabled }` to
-toggle it:
+with Enter to fire, `>` to descend, `Q` to quaff, `E` to disarm an adjacent
+trap), and takes `{ enabled }` to toggle it:
 
 ```tsx
 const game = useNoragon()

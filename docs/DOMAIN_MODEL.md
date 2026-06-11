@@ -289,6 +289,7 @@ classDiagram
     reset
     start
     move
+    disarm
     descend
     equip
     drink
@@ -406,6 +407,7 @@ classDiagram
     +revealedRooms : number[]
     +aiming : boolean
     +targetId : number / null
+    +adjacentTrap : Direction / null
     +log : LogEntry[]
     +effects : CombatFloat[]
     +projectiles : Projectile[]
@@ -415,6 +417,7 @@ classDiagram
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
+    +disarm : () ↦ void
     +descend : () ↦ void
     +equip : () ↦ void
     +drink : () ↦ void
@@ -451,6 +454,9 @@ classDiagram
   class Enemy {
     <<external>>
   }
+  class Direction {
+    <<external>>
+  }
   class LogEntry {
     <<external>>
   }
@@ -461,9 +467,6 @@ classDiagram
     <<external>>
   }
   class ShopItem {
-    <<external>>
-  }
-  class Direction {
     <<external>>
   }
   UseNoragonOptions --> AttackProfiles : attacks
@@ -478,11 +481,11 @@ classDiagram
   NoragonApi --> HeroView : hero
   NoragonApi --> RunView : run
   NoragonApi --> Enemy : enemies, activeEnemies, fadingEnemies
+  NoragonApi --> Direction : adjacentTrap, move, disarm
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles
   NoragonApi --> ShopItem : shopStock
-  NoragonApi --> Direction : move
 ```
 
 ## Full model
@@ -665,6 +668,7 @@ classDiagram
     +revealedRooms : number[]
     +aiming : boolean
     +targetId : number / null
+    +adjacentTrap : Direction / null
     +log : LogEntry[]
     +effects : CombatFloat[]
     +projectiles : Projectile[]
@@ -674,6 +678,7 @@ classDiagram
     +start : () ↦ void
     +reset : () ↦ void
     +move : () ↦ void
+    +disarm : () ↦ void
     +descend : () ↦ void
     +equip : () ↦ void
     +drink : () ↦ void
@@ -725,6 +730,7 @@ classDiagram
     reset
     start
     move
+    disarm
     descend
     equip
     drink
@@ -827,11 +833,11 @@ classDiagram
   NoragonApi --> HeroView : hero
   NoragonApi --> RunView : run
   NoragonApi --> Enemy : enemies, activeEnemies, fadingEnemies
+  NoragonApi --> Direction : adjacentTrap, move, disarm
   NoragonApi --> LogEntry : log
   NoragonApi --> CombatFloat : effects
   NoragonApi --> Projectile : projectiles
   NoragonApi --> ShopItem : shopStock
-  NoragonApi --> Direction : move
   HeroStats <|-- GameState
   GameState --> Dungeon : dungeon
   GameState --> HeroStats : base

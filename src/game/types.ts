@@ -321,6 +321,9 @@ export interface NoragonApi {
   aiming: boolean
   /** Id of the enemy in the crosshairs while aiming, else `null`. */
   targetId: number | null
+  /** Direction of an adjacent trap the hero could attempt to disarm, else `null`
+   *  (drives the disarm prompt and the `E` key). */
+  adjacentTrap: Direction | null
   /** A running log of what happened each turn, oldest entry first. */
   log: LogEntry[]
   /** Floating combat numbers from the latest turn (damage/heal), for the UI to
@@ -343,6 +346,10 @@ export interface NoragonApi {
   reset: () => void
   /** Step the hero one tile. Bumping an enemy attacks it; a wall is ignored. */
   move: (dir: Direction) => void
+  /** Attempt to disarm a trap on the adjacent tile in `dir` (costs a turn). On
+   *  success the trap is removed unharmed; on failure it springs for full
+   *  damage. No-op if that tile isn't a trap. */
+  disarm: (dir: Direction) => void
   /** Take the stairs down to the next, deeper level. No-op unless on stairs. */
   descend: () => void
   /** Equip a carried weapon or armor by its inventory item id. */
@@ -444,6 +451,7 @@ export type GameAction =
   | { type: 'reset'; seed: number }
   | { type: 'start'; seed: number }
   | { type: 'move'; dir: Direction }
+  | { type: 'disarm'; dir: Direction }
   | { type: 'descend' }
   | { type: 'equip'; itemId: number }
   | { type: 'drink'; itemId: number }

@@ -1489,6 +1489,85 @@ describe('useNoragon — traps', () => {
     }
     expect(tested).toBe(true)
   })
+
+  /** Stand the hero beside a trap with no active foes (so the enemy phase is
+   *  inert and trap damage is the only HP change). Returns the disarm direction
+   *  and the trap point, or null if this seed offered no clean setup. */
+  function standBesideTrap(result: Hook): { dir: Direction; trap: Point } | null {
+    const found = findStandAndTrap(result.current.board.tiles, result.current.hero.position)
+    if (!found) return null
+    navigateToTile(result, found.stand)
+    const p = result.current.hero.position
+    if (
+      p.x !== found.stand.x ||
+      p.y !== found.stand.y ||
+      result.current.run.status !== 'playing' ||
+      result.current.board.tiles[found.trap.y][found.trap.x] !== 'trap' ||
+      result.current.activeEnemies.length > 0
+    ) {
+      return null
+    }
+    const dir = DIRECTIONS.find(
+      (d) => DELTA[d].x === found.trap.x - p.x && DELTA[d].y === found.trap.y - p.y,
+    )
+    return dir ? { dir, trap: found.trap } : null
+  }
+
+  it('exposes the adjacent trap so the hero can target a disarm', () => {
+    let tested = false
+    for (let seed = 1; seed <= 60 && !tested; seed++) {
+      const { result, unmount } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      const setup = standBesideTrap(result)
+      if (setup) {
+        expect(result.current.adjacentTrap).toBe(setup.dir)
+        tested = true
+      }
+      unmount()
+    }
+    expect(tested).toBe(true)
+  })
+
+  it('disarms cleanly on success and springs the trap on a fumble', () => {
+    let sawSuccess = false
+    let sawFailure = false
+    for (let seed = 1; seed <= 80 && !(sawSuccess && sawFailure); seed++) {
+      const { result, unmount } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      const setup = standBesideTrap(result)
+      if (!setup) {
+        unmount()
+        continue
+      }
+      const hpBefore = result.current.hero.hp
+      act(() => result.current.disarm(setup.dir))
+      const tile = result.current.board.tiles[setup.trap.y][setup.trap.x]
+      if (result.current.log.some((l) => /disarm the trap/i.test(l.text))) {
+        // Clean disarm: trap gone, no damage taken, nothing left to disarm here.
+        expect(tile).toBe('floor')
+        expect(result.current.hero.hp).toBe(hpBefore)
+        sawSuccess = true
+      } else {
+        // Fumble: trap still armed and it sprang for its flat depth-1 damage (3).
+        expect(result.current.log.some((l) => /fumble the disarm/i.test(l.text))).toBe(true)
+        expect(tile).toBe('trap')
+        expect(result.current.hero.hp).toBe(hpBefore - 3)
+        sawFailure = true
+      }
+      unmount()
+    }
+    expect(sawSuccess).toBe(true)
+    expect(sawFailure).toBe(true)
+  })
+
+  it('ignores a disarm aimed at a tile with no trap (no turn passes)', () => {
+    const { result } = renderHook(() => useNoragon({ seed: 7 }))
+    act(() => result.current.start())
+    const turnsBefore = result.current.run.turns
+    // The hero starts at a room centre surrounded by plain floor — nothing to disarm.
+    act(() => result.current.disarm('up'))
+    expect(result.current.run.turns).toBe(turnsBefore)
+  })
 })
 
 describe('enemy depth scaling', () => {

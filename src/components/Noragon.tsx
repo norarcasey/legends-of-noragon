@@ -47,7 +47,8 @@ export function Noragon({
   const { board, hero, run } = game
   const { status } = run
   const { onStairs } = hero
-  const { aiming, start, descend, equip, drink, drop } = game
+  const { aiming, start, descend, disarm, equip, drink, drop } = game
+  const { adjacentTrap } = game
 
   useNoragonKeyboard(game, { enabled: enableKeyboard })
 
@@ -92,11 +93,13 @@ export function Noragon({
 
   // A prompt (if any) hangs off the bottom of the frame; flag the column so the
   // frame's bottom corners square off and the two read as one connected piece.
-  const prompt: 'aim' | 'stairs' | null = aiming
+  const prompt: 'aim' | 'trap' | 'stairs' | null = aiming
     ? 'aim'
-    : status === 'playing' && onStairs
-      ? 'stairs'
-      : null
+    : status === 'playing' && adjacentTrap
+      ? 'trap'
+      : status === 'playing' && onStairs
+        ? 'stairs'
+        : null
 
   return (
     <NoragonRoot className={className} ariaLabel={title ?? 'Legends of Noragon dungeon crawler'}>
@@ -156,6 +159,19 @@ export function Noragon({
             >
               Aiming — <kbd>Tab</kbd>/arrows switch · <kbd>Enter</kbd> fire · <kbd>F</kbd>/
               <kbd>Esc</kbd> cancel
+            </div>
+          ) : prompt === 'trap' ? (
+            <div className="noragon__prompt" role="status" data-testid="trap-banner">
+              <span>
+                A trap lies in wait. Press <kbd>E</kbd> to attempt a disarm.
+              </span>
+              <button
+                type="button"
+                className="noragon__descend-button"
+                onClick={() => adjacentTrap && disarm(adjacentTrap)}
+              >
+                Disarm ✕
+              </button>
             </div>
           ) : prompt === 'stairs' ? (
             <div className="noragon__prompt" role="status" data-testid="stairs-banner">

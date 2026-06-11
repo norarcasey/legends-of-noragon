@@ -21,8 +21,8 @@ export interface UseNoragonKeyboardOptions {
  * Wire the default keyboard controls to a {@link NoragonApi} from `useNoragon()`:
  * arrow keys / WASD move (and start a stopped run on the first step), Enter
  * begins/restarts, `F` toggles aim on/off (while aiming, Enter fires, Tab/arrows
- * switch targets, Esc cancels), `>`/Enter descends on the stairs, and `Q` quaffs
- * a health potion.
+ * switch targets, Esc cancels), `>`/Enter descends on the stairs, `Q` quaffs
+ * a health potion, and `E` attempts to disarm an adjacent trap.
  *
  * Attaches a single `window` keydown listener. `<Noragon />` uses this; call it
  * yourself when composing your own layout from the exported parts.
@@ -34,7 +34,7 @@ export function useNoragonKeyboard(
   const enabled = options.enabled ?? true
   const { aiming, shopping, start, move, descend, drink, aimStart, aimCycle, aimCancel, fire } =
     game
-  const { closeShop } = game
+  const { closeShop, disarm, adjacentTrap } = game
   const { status } = game.run
   const { onStairs } = game.hero
   const firstPotion = game.hero.inventory.find((i) => i.kind === 'healthPotion')
@@ -100,6 +100,12 @@ export function useNoragonKeyboard(
         drink(firstPotion.id)
         return
       }
+      // Attempt to disarm an adjacent trap with E (auto-targets the neighbour).
+      if (status === 'playing' && (e.key === 'e' || e.key === 'E') && adjacentTrap) {
+        e.preventDefault()
+        disarm(adjacentTrap)
+        return
+      }
 
       const dir = KEY_TO_DIRECTION[e.key]
       if (!dir) return
@@ -122,10 +128,12 @@ export function useNoragonKeyboard(
     shopping,
     onStairs,
     firstPotion,
+    adjacentTrap,
     start,
     move,
     descend,
     drink,
+    disarm,
     aimStart,
     aimCycle,
     aimCancel,

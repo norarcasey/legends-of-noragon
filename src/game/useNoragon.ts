@@ -43,6 +43,9 @@ import {
   xpToNext,
 } from './utils'
 
+/** Fixed order to scan neighbours for a disarmable trap (stable across renders). */
+const DISARM_SCAN: Direction[] = ['up', 'down', 'left', 'right']
+
 // The whole level lives in one reducer, so each turn — the hero's step plus every
 // enemy's response — is computed from the previous state in a single pure
 // transition. That keeps it correct under StrictMode's double-invocation, the
@@ -439,6 +442,79 @@ function reducer(state: GameState, action: GameAction): GameState {
         // Stepping ends any aim that was somehow still open.
         aiming: false,
         targetId: null,
+        ...logLines(state.log, state.nextLogId, messages),
+      }
+    }
+    case 'disarm': {
+      // Deliberate attempt to disarm an adjacent trap without stepping on it.
+      // Costs a turn (the foes get to act); succeed and the trap is removed
+      // unharmed, fail and it springs on you for full damage and stays put.
+      if (state.status !== 'playing' || state.shopping) return state
+      const delta = DELTA[action.dir]
+      const target = { x: state.player.x + delta.x, y: state.player.y + delta.y }
+      if (tileAt(state.dungeon, target.x, target.y) !== 'trap') return state
+
+      const rng = makeRoller(state.rngState)
+      const messages: string[] = []
+      const floats: CombatFloat[] = []
+      let nextEffectId = state.nextEffectId
+      let dungeon = state.dungeon
+      let hp = state.hp
+
+      if (rng.roll() < TRAP.disarmChance) {
+        // Clean disarm: pluck the trap out of play, no harm done.
+        const tiles = dungeon.tiles.map((row) => [...row])
+        tiles[target.y][target.x] = 'floor'
+        dungeon = { ...dungeon, tiles }
+        messages.push('You carefully disarm the trap.')
+      } else {
+        // Fumbled it — the trap springs (full, armor-piercing, depth-scaled
+        // damage), and remains armed for another go.
+        const dmg = TRAP.damage + (state.depth - 1) * TRAP.damagePerDepth
+        hp = Math.max(0, hp - dmg)
+        messages.push(`You fumble the disarm — the trap springs! You take ${dmg} damage.`)
+        floats.push({
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: dmg,
+          tone: 'damage',
+        })
+      }
+
+      const phase = runEnemyPhase(
+        dungeon,
+        state.player,
+        state.enemies,
+        hp,
+        state.defense,
+        rng.roll,
+        messages,
+      )
+      const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
+      if (status === 'dead') messages.push('You collapse, slain in the dark.')
+      if (hp - phase.hp > 0) {
+        floats.push({
+          id: nextEffectId++,
+          x: state.player.x,
+          y: state.player.y,
+          amount: hp - phase.hp,
+          tone: 'damage',
+        })
+      }
+
+      return {
+        ...state,
+        dungeon,
+        hp: Math.max(0, phase.hp),
+        enemies: phase.enemies,
+        status,
+        turns: state.turns + 1,
+        effects: floats,
+        projectiles: [],
+        fadingEnemies: [],
+        nextEffectId,
+        rngState: rng.state(),
         ...logLines(state.log, state.nextLogId, messages),
       }
     }
@@ -839,6 +915,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
   const start = useCallback(() => dispatch({ type: 'start', seed: makeSeed() }), [makeSeed])
   const reset = useCallback(() => dispatch({ type: 'reset', seed: makeSeed() }), [makeSeed])
   const move = useCallback((dir: Direction) => dispatch({ type: 'move', dir }), [])
+  const disarm = useCallback((dir: Direction) => dispatch({ type: 'disarm', dir }), [])
   const descendAction = useCallback(() => dispatch({ type: 'descend' }), [])
   const equip = useCallback((itemId: number) => dispatch({ type: 'equip', itemId }), [])
   const drink = useCallback((itemId: number) => dispatch({ type: 'drink', itemId }), [])
@@ -862,6 +939,17 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     roomsByDoor(state.dungeon, state.player),
   )
   const onStairs = tileAt(state.dungeon, state.player.x, state.player.y) === 'stairs'
+
+  // The first orthogonally adjacent trap, if any — what the disarm prompt and the
+  // `E` key act on. Scanned in a fixed order so it's stable across renders.
+  const adjacentTrap: Direction | null =
+    state.status === 'playing'
+      ? (DISARM_SCAN.find(
+          (d) =>
+            tileAt(state.dungeon, state.player.x + DELTA[d].x, state.player.y + DELTA[d].y) ===
+            'trap',
+        ) ?? null)
+      : null
 
   // Fog: revealed rooms (plus a doorway peek) lit permanently, with the torch
   // trail overlaid so explored corridors stay visible.
@@ -909,6 +997,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     revealedRooms: state.revealedRooms,
     aiming: state.aiming,
     targetId: state.targetId,
+    adjacentTrap,
     log: state.log,
     effects: state.effects,
     projectiles: state.projectiles,
@@ -918,6 +1007,7 @@ export function useNoragon(options: UseNoragonOptions = {}): NoragonApi {
     start,
     reset,
     move,
+    disarm,
     descend: descendAction,
     equip,
     drink,

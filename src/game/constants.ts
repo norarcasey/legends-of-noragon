@@ -50,6 +50,9 @@ export const TRAP = {
   damage: 3,
   damagePerDepth: 1,
   chance: 0.45,
+  /** Odds (0–1) a disarm attempt succeeds. Flat for now; class/level scaling
+   *  can layer on later. Fail and the trap springs on you for full damage. */
+  disarmChance: 0.5,
 }
 
 /** The tile offset for each direction. Origin top-left; x grows right, y down. */

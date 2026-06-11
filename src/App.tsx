@@ -9,6 +9,7 @@ const CONTROLS: [string[], string][] = [
   [['Enter'], 'Loose an arrow at the target'],
   [['F', 'Esc'], 'Cancel aiming'],
   [['Q'], 'Quaff a health potion'],
+  [['E'], 'Disarm an adjacent trap (✕)'],
   [['>', 'Enter'], 'Descend the stairs (while on them)'],
   [['(bump ⚖)'], 'Open the merchant’s shop'],
   [['Esc'], 'Leave the shop'],
