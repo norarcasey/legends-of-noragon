@@ -4,6 +4,7 @@ import type {
   AttackProfiles,
   CombatFloat,
   Direction,
+  Dungeon,
   Enemy,
   Equipment,
   GameAction,
@@ -38,6 +39,7 @@ import {
   roomAt,
   roomsByDoor,
   runEnemyPhase,
+  trapDamage,
   sellPrice,
   tileAt,
   xpToNext,
@@ -45,6 +47,15 @@ import {
 
 /** Fixed order to scan neighbours for a disarmable trap (stable across renders). */
 const DISARM_SCAN: Direction[] = ['up', 'down', 'left', 'right']
+
+/** Revert any traps foes sprang this phase back to plain floor. Returns the same
+ *  dungeon untouched when nothing was sprung, so unaffected turns don't churn. */
+function clearSprungTraps(dungeon: Dungeon, hits: ReadonlyArray<Point>): Dungeon {
+  if (hits.length === 0) return dungeon
+  const tiles = dungeon.tiles.map((row) => [...row])
+  for (const h of hits) tiles[h.y][h.x] = 'floor'
+  return { ...dungeon, tiles }
+}
 
 // The whole level lives in one reducer, so each turn — the hero's step plus every
 // enemy's response — is computed from the previous state in a single pure
@@ -377,7 +388,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         // Spring a trap underfoot: flat damage that bypasses armor and grows with
         // depth. The trap then disarms (its tile reverts to plain floor).
         if (tile === 'trap') {
-          const dmg = TRAP.damage + (state.depth - 1) * TRAP.damagePerDepth
+          const dmg = trapDamage(state.depth)
           hp = Math.max(0, hp - dmg)
           messages.push(`A hidden trap springs! You take ${dmg} damage.`)
           floats.push({ id: nextEffectId++, x: player.x, y: player.y, amount: dmg, tone: 'damage' })
@@ -395,7 +406,16 @@ function reducer(state: GameState, action: GameAction): GameState {
       // Light up the room the hero just stepped into (a no-op if already known).
       const revealedRooms = reveal(state.revealedRooms, roomAt(dungeon.rooms, player.x, player.y))
 
-      const phase = runEnemyPhase(dungeon, player, enemies, hp, defense, rng.roll, messages)
+      const phase = runEnemyPhase(
+        dungeon,
+        player,
+        enemies,
+        hp,
+        defense,
+        rng.roll,
+        messages,
+        state.depth,
+      )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
       // Over the hero's tile: the damage the foes dealt this phase, or — if they
@@ -411,6 +431,12 @@ function reducer(state: GameState, action: GameAction): GameState {
       } else if (phase.misses > 0) {
         floats.push({ id: nextEffectId++, x: player.x, y: player.y, amount: 0, tone: 'miss' })
       }
+      // Foes that blundered into traps: float the damage over each and clear the
+      // spent trap from the map.
+      for (const h of phase.trapHits) {
+        floats.push({ id: nextEffectId++, x: h.x, y: h.y, amount: h.amount, tone: 'damage' })
+      }
+      dungeon = clearSprungTraps(dungeon, phase.trapHits)
 
       return {
         ...state,
@@ -470,7 +496,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       if (rng.roll() < TRAP.disarmChance) {
         messages.push('You carefully disarm the trap.')
       } else {
-        const dmg = TRAP.damage + (state.depth - 1) * TRAP.damagePerDepth
+        const dmg = trapDamage(state.depth)
         hp = Math.max(0, hp - dmg)
         messages.push(`You fumble the disarm — the trap springs! You take ${dmg} damage.`)
         floats.push({
@@ -490,6 +516,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         state.defense,
         rng.roll,
         messages,
+        state.depth,
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
@@ -502,6 +529,10 @@ function reducer(state: GameState, action: GameAction): GameState {
           tone: 'damage',
         })
       }
+      for (const h of phase.trapHits) {
+        floats.push({ id: nextEffectId++, x: h.x, y: h.y, amount: h.amount, tone: 'damage' })
+      }
+      dungeon = clearSprungTraps(dungeon, phase.trapHits)
 
       return {
         ...state,
@@ -594,6 +625,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         state.defense,
         rng.roll,
         messages,
+        state.depth,
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
       if (status === 'dead') messages.push('You collapse, slain in the dark.')
@@ -606,9 +638,13 @@ function reducer(state: GameState, action: GameAction): GameState {
           tone: 'damage',
         })
       }
+      for (const h of phase.trapHits) {
+        floats.push({ id: nextEffectId++, x: h.x, y: h.y, amount: h.amount, tone: 'damage' })
+      }
       return {
         ...state,
         inventory,
+        dungeon: clearSprungTraps(state.dungeon, phase.trapHits),
         hp: Math.max(0, phase.hp),
         enemies: phase.enemies,
         status,
@@ -720,6 +756,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         a.defense,
         rng.roll,
         messages,
+        state.depth,
         engaged,
       )
       const status: GameStatus = phase.hp <= 0 ? 'dead' : 'playing'
@@ -782,9 +819,13 @@ function reducer(state: GameState, action: GameAction): GameState {
           tone: 'miss',
         })
       }
+      for (const h of phase.trapHits) {
+        floats.push({ id: nextEffectId++, x: h.x, y: h.y, amount: h.amount, tone: 'damage' })
+      }
 
       return {
         ...state,
+        dungeon: clearSprungTraps(state.dungeon, phase.trapHits),
         hp: Math.max(0, phase.hp),
         maxHp: a.maxHp,
         attacks: a.attacks,

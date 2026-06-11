@@ -38,7 +38,16 @@ const rolls = (...values: number[]) => {
 describe('runEnemyPhase', () => {
   it('an adjacent foe that hits deals damage minus armor', () => {
     const messages: string[] = []
-    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [foe(0, 2, 3, 0)], 20, 1, rolls(0), messages)
+    const r = runEnemyPhase(
+      dungeon,
+      { x: 2, y: 2 },
+      [foe(0, 2, 3, 0)],
+      20,
+      1,
+      rolls(0),
+      messages,
+      1,
+    )
     expect(r.hp).toBe(20 - (3 - 1)) // 18
     expect(messages[0]).toMatch(/Goblin/)
   })
@@ -46,7 +55,7 @@ describe('runEnemyPhase', () => {
   it('armor can fully soak a hit', () => {
     const messages: string[] = []
     const weak = foe(0, 2, 3, 0, { damage: 1 })
-    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [weak], 20, 5, rolls(0), messages)
+    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [weak], 20, 5, rolls(0), messages, 1)
     expect(r.hp).toBe(20)
     expect(messages[0]).toMatch(/armor holds/)
   })
@@ -61,6 +70,7 @@ describe('runEnemyPhase', () => {
       0,
       rolls(0.99),
       messages,
+      1,
     )
     expect(r.hp).toBe(20)
     expect(messages[0]).toMatch(/misses you/)
@@ -68,7 +78,7 @@ describe('runEnemyPhase', () => {
 
   it('a non-adjacent foe in the room chases one step closer', () => {
     const messages: string[] = []
-    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [foe(0, 4, 4, 0)], 20, 0, rolls(), messages)
+    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [foe(0, 4, 4, 0)], 20, 0, rolls(), messages, 1)
     expect(r.enemies[0]).toMatchObject({ x: 3, y: 4 }) // stepped toward the hero on x
     expect(r.hp).toBe(20)
   })
@@ -76,7 +86,7 @@ describe('runEnemyPhase', () => {
   it('a foe in another room (not adjacent) stays put', () => {
     const messages: string[] = []
     const idle = foe(0, 11, 11, 1)
-    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [idle], 20, 0, rolls(), messages)
+    const r = runEnemyPhase(dungeon, { x: 2, y: 2 }, [idle], 20, 0, rolls(), messages, 1)
     expect(r.enemies[0]).toEqual(idle)
     expect(messages).toHaveLength(0)
   })
@@ -86,9 +96,38 @@ describe('runEnemyPhase', () => {
     const hero = { x: 6, y: 2 }
     const f = foe(0, 4, 4, 0)
     // Dormant by default — not the hero's room, not adjacent.
-    expect(runEnemyPhase(dungeon, hero, [f], 20, 0, rolls(), [], []).enemies[0]).toEqual(f)
+    expect(runEnemyPhase(dungeon, hero, [f], 20, 0, rolls(), [], 1, []).enemies[0]).toEqual(f)
     // Engaging room 0 (a doorway shot) makes it chase a step closer.
-    const roused = runEnemyPhase(dungeon, hero, [f], 20, 0, rolls(), [], [0])
+    const roused = runEnemyPhase(dungeon, hero, [f], 20, 0, rolls(), [], 1, [0])
     expect(roused.enemies[0]).not.toEqual(f)
+  })
+
+  it('a foe that chases onto a trap springs it, taking depth-scaled damage', () => {
+    const messages: string[] = []
+    // Trap on the tile the foe will step to (between it and the hero).
+    const trapped: Dungeon = {
+      ...dungeon,
+      tiles: dungeon.tiles.map((row) => [...row]),
+    }
+    trapped.tiles[4][3] = 'trap'
+    const r = runEnemyPhase(trapped, { x: 2, y: 4 }, [foe(0, 4, 4, 0)], 20, 0, rolls(), messages, 2)
+    // It stepped onto (3,4), sprang the trap (3 base + 1 for depth 2 = 4 damage).
+    expect(r.trapHits).toEqual([{ x: 3, y: 4, amount: 4 }])
+    expect(r.enemies[0]).toMatchObject({ x: 3, y: 4, hp: 8 - 4 })
+    expect(messages[0]).toMatch(/blunders into a trap/)
+  })
+
+  it('a trap that overkills a chasing foe destroys it (removed from play)', () => {
+    const messages: string[] = []
+    const trapped: Dungeon = {
+      ...dungeon,
+      tiles: dungeon.tiles.map((row) => [...row]),
+    }
+    trapped.tiles[4][3] = 'trap'
+    const frail = foe(0, 4, 4, 0, { hp: 2 })
+    const r = runEnemyPhase(trapped, { x: 2, y: 4 }, [frail], 20, 0, rolls(), messages, 1)
+    expect(r.enemies).toHaveLength(0)
+    expect(r.trapHits).toEqual([{ x: 3, y: 4, amount: 3 }])
+    expect(messages[0]).toMatch(/destroyed/)
   })
 })

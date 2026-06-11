@@ -23,6 +23,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Foes spring traps too: an enemy that chases onto a trap tile trips it, taking
+  the same depth-scaled, armor-ignoring damage the hero would — and is destroyed
+  outright if it can't survive the hit. The trap is spent either way (its tile
+  clears and the damage floats over the foe), so a trap between you and a charging
+  monster can work in your favor. (`runEnemyPhase` now reports `trapHits`; the
+  shared `trapDamage(depth)` helper backs both the hero's and foes' trap damage.)
 - Disarm traps: stand beside a trap and press **E** (or click the **Disarm**
   prompt) to attempt to disarm it. A flat 50% roll (a `TRAP.disarmChance` tuning
   constant — class/level scaling can layer on later) decides it: succeed and the
