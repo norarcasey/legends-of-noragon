@@ -23,6 +23,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Hero avatar in the pack: an SVG paper-doll at the top of the inventory whose
+  gear updates with what's equipped — armor tints (and bulks) the torso, the
+  weapon fills the hand (sword/dagger/axe by kind), a ring bands the other hand,
+  an amulet hangs at the chest. Exported as `HeroAvatar`; built layer-by-layer so
+  future slots (helmet, boots, cape, bracers) are just more layers.
 - Enemy cards are now flip cards: the panel always holds a few skeleton
   placeholders (a Noragon roundel with a faint shimmer), and when the hero enters
   a room with foes the placeholders flip over to reveal each enemy's name,

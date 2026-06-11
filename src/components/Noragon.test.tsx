@@ -5,6 +5,7 @@ import { Inventory } from './Inventory'
 import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
+import { HeroAvatar } from './HeroAvatar'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
@@ -1790,6 +1791,39 @@ describe('Shop overlay', () => {
     expect(screen.getAllByTestId('shop-sell')).toHaveLength(2) // potion stack + short sword
     expect(screen.getByText('(2)')).toBeInTheDocument() // 2 potions in stock
     expect(screen.getByText('(3)')).toBeInTheDocument() // 3 potions in pack
+  })
+})
+
+describe('HeroAvatar', () => {
+  it('draws only the layers for what is equipped', () => {
+    const { rerender } = render(<HeroAvatar />)
+    expect(screen.queryByTestId('avatar-armor')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('avatar-weapon')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('avatar-ring')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('avatar-amulet')).not.toBeInTheDocument()
+
+    rerender(
+      <HeroAvatar weapon="longSword" armor="plate" ring="ringOfPower" amulet="amuletOfHealth" />,
+    )
+    expect(screen.getByTestId('avatar-weapon')).toBeInTheDocument()
+    expect(screen.getByTestId('avatar-armor')).toBeInTheDocument()
+    expect(screen.getByTestId('avatar-ring')).toBeInTheDocument()
+    expect(screen.getByTestId('avatar-amulet')).toBeInTheDocument()
+  })
+
+  it('reflects the hero’s gear inside the pack', () => {
+    render(
+      <Inventory
+        inventory={[{ id: 0, kind: 'shortSword' }]}
+        equipment={{ weapon: 0, armor: null, ring: null, amulet: null }}
+        gold={0}
+        onEquip={() => {}}
+        onDrink={() => {}}
+        onDrop={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('avatar-weapon')).toBeInTheDocument()
+    expect(screen.queryByTestId('avatar-armor')).not.toBeInTheDocument()
   })
 })
 

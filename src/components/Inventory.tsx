@@ -1,6 +1,7 @@
 import { ITEMS, itemEffect } from '../game/items'
 import type { ItemKind } from '../game/items'
 import type { Equipment, InventoryItem } from '../game/types'
+import { HeroAvatar } from './HeroAvatar'
 import './Inventory.css'
 
 export interface InventoryProps {
@@ -39,6 +40,10 @@ export function Inventory({
     equipment.armor === item.id ||
     equipment.ring === item.id ||
     equipment.amulet === item.id
+
+  // The kind worn in a slot (by item id), for the paper-doll avatar.
+  const wornKind = (id: number | null) =>
+    id == null ? null : (inventory.find((i) => i.id === id)?.kind ?? null)
 
   // Gear keeps its own row each, split by whether it's worn; stackables group by
   // kind, preserving first-seen order so the pack list stays stable in use.
@@ -94,6 +99,14 @@ export function Inventory({
   return (
     <section className="noragon__inventory" aria-label="Inventory" data-testid="inventory">
       <h3 className="noragon__inventory-title">Pack — ◉ {gold} gold</h3>
+      <div className="noragon__avatar-frame">
+        <HeroAvatar
+          weapon={wornKind(equipment.weapon)}
+          armor={wornKind(equipment.armor)}
+          ring={wornKind(equipment.ring)}
+          amulet={wornKind(equipment.amulet)}
+        />
+      </div>
       <ul className="noragon__inventory-list">
         {equipped.map(renderGear)}
         {stacks.map(({ kind, items }) => {
