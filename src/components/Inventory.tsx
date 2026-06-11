@@ -27,10 +27,9 @@ export interface InventoryProps {
  *
  * Rows are ordered equipped gear first, then consumables, then spare gear — so
  * what's in use and what's quaffable sit at the top, with swap-in spares below.
- * Worn gear is pinned in its own list; everything unworn scrolls within a
- * fixed-height box (full-size from the start), so the worn gear and the hero
- * avatar beneath it stay in exactly the same spot no matter how much loot is
- * carried.
+ * Worn gear is pinned in its own list; everything unworn scrolls within a capped
+ * box, so once the pack fills the worn gear and the hero avatar beneath it stay
+ * in place rather than being pushed down the column (a light pack stays compact).
  */
 export function Inventory({
   inventory,

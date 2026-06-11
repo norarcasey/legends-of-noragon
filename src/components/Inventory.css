@@ -110,13 +110,13 @@
   margin-bottom: 0.3rem;
 }
 
-/* Everything unworn (consumables + spare gear) scrolls within a fixed-height box,
-   so the worn gear and the avatar below it always sit in exactly the same place
-   no matter how much loot is carried — the box is full-size from the start. The
+/* Everything unworn (consumables + spare gear) scrolls within a capped box, so
+   the worn gear and the avatar below it stay in place once the pack fills up,
+   while a light pack stays compact (the box grows only to fit its rows). The
    bottom padding leaves room for the last row's effect tooltip (which sits just
    below it) so it isn't clipped by the scroll. */
 .noragon__inventory-spare {
-  height: 12rem;
+  max-height: 12rem;
   overflow-y: auto;
   padding-bottom: 1.4rem;
   scrollbar-width: thin;
