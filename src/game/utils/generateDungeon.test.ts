@@ -116,6 +116,44 @@ describe('generateDungeon', () => {
     expect(total).toBeGreaterThan(0)
   })
 
+  it('scatters side-steppable traps inside rooms, never the start hall', () => {
+    let total = 0
+    for (const seed of SEEDS) {
+      const d = generateDungeon(seed, 3)
+      const startRoom = d.rooms.find(
+        (r) =>
+          d.playerStart.x >= r.x0 &&
+          d.playerStart.x <= r.x1 &&
+          d.playerStart.y >= r.y0 &&
+          d.playerStart.y <= r.y1,
+      )
+      for (let y = 0; y < d.rows; y++) {
+        for (let x = 0; x < d.cols; x++) {
+          if (d.tiles[y][x] !== 'trap') continue
+          total++
+          // Traps live inside a room, so there's always an adjacent walkable tile
+          // to skirt them — never in a one-wide corridor or doorway.
+          const room = d.rooms.find((r) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1)
+          expect(room).toBeTruthy()
+          // The safe entry hall stays trap-free.
+          if (startRoom) {
+            const inStart =
+              x >= startRoom.x0 && x <= startRoom.x1 && y >= startRoom.y0 && y <= startRoom.y1
+            expect(inStart).toBe(false)
+          }
+        }
+      }
+      // The chest stays reachable (traps are walkable, so the path is never cut).
+      let chest: Point | null = null
+      for (let y = 0; y < d.rows; y++) {
+        for (let x = 0; x < d.cols; x++) if (d.tiles[y][x] === 'chest') chest = { x, y }
+      }
+      if (chest) expect(reaches(d, d.playerStart, chest)).toBe(true)
+    }
+    // Traps actually appear across the sampled levels.
+    expect(total).toBeGreaterThan(0)
+  })
+
   it('places a stocked merchant in a safe shop room', () => {
     for (const seed of SEEDS) {
       const d = generateDungeon(seed, 2)

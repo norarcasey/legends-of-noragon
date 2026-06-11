@@ -52,6 +52,7 @@ classDiagram
     stairs
     rubble
     merchant
+    trap
   }
   class Room {
     +id : number
@@ -512,6 +513,7 @@ classDiagram
     stairs
     rubble
     merchant
+    trap
   }
   class Room {
     +id : number

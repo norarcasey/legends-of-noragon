@@ -64,6 +64,7 @@ const TILE_GLYPH: Record<TileType, string> = {
   stairs: '>',
   rubble: '▲',
   merchant: '⚖',
+  trap: '✕',
 }
 
 /** Every floor pickup looks the same — a satchel — so its contents stay a

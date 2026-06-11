@@ -22,6 +22,7 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
  *  - `stairs`   — walkable; the way down to the next level (inert in the MVP).
  *  - `rubble`   — impassable obstacle inside a room; cover to fight around.
  *  - `merchant` — impassable; the shopkeeper. Bump it to open the shop.
+ *  - `trap`     — walkable but harmful; stepping on it springs it (then clears).
  */
 export type TileType =
   | 'wall'
@@ -32,6 +33,7 @@ export type TileType =
   | 'stairs'
   | 'rubble'
   | 'merchant'
+  | 'trap'
 
 /**
  * A rectangular room, in inclusive interior tile coordinates. Enemies only act

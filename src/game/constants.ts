@@ -41,6 +41,17 @@ export const SHOP = {
   stockSize: 5,
 }
 
+/**
+ * Traps. They're visible, so the hero can step around them; springing one deals
+ * flat damage (armor doesn't help against spikes) that grows with depth. A room
+ * gets a trap with probability `chance`.
+ */
+export const TRAP = {
+  damage: 3,
+  damagePerDepth: 1,
+  chance: 0.45,
+}
+
 /** The tile offset for each direction. Origin top-left; x grows right, y down. */
 export const DELTA: Record<Direction, Point> = {
   up: { x: 0, y: -1 },

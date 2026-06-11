@@ -25,6 +25,9 @@ are missing, giving L-shapes and notches), **room sizes vary** (cramped closets
 next to open halls), and the rooms are linked by **corridors** that twist through
 the dark between them. Rooms are strewn with impassable **rubble** (`▲`) — cover
 that both you and your foes must move around, so positioning matters in a fight.
+Some rooms also hide **spring-traps** (`✕`): they're visible, so you can step
+around them, but blunder onto one and it deals flat, armor-piercing damage that
+grows the deeper you delve before disarming itself.
 You start safe in **the entry hall**; the farthest room (a
 guarded **vault**) holds a **chest** (`▣`, treasure) and the **stairs down**
 (`>`). One room is a safe **shop** — bump the **merchant** (`⚖`) to open their
@@ -143,7 +146,8 @@ The tokens, by group:
 - **Surfaces** — `--noragon-bg`, `--noragon-wall`, `--noragon-wall-edge`,
   `--noragon-floor`, `--noragon-floor-line`, `--noragon-corridor`.
 - **Tiles & hero** — `--noragon-door`, `--noragon-chest`, `--noragon-stairs`,
-  `--noragon-rubble`, `--noragon-merchant`, `--noragon-player`, `--noragon-loot`.
+  `--noragon-rubble`, `--noragon-merchant`, `--noragon-trap`, `--noragon-player`,
+  `--noragon-loot`.
 - **Enemies** (one per kind) — `--noragon-bat`, `--noragon-kobold`,
   `--noragon-spider`, `--noragon-direWolf`, `--noragon-skeleton`,
   `--noragon-goblin`, `--noragon-orc`, `--noragon-ogre`, `--noragon-troll`,

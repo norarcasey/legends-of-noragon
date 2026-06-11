@@ -52,6 +52,8 @@ function findTile(tiles: TileType[][], type: TileType): Point | null {
 function bfsDir(tiles: TileType[][], from: Point, to: Point, blockChest = false): Direction | null {
   const walkable = (x: number, y: number) => {
     const t = tiles[y]?.[x]
+    // Traps are walkable (the hero just takes damage crossing one), so the path
+    // finder treats them as floor — never blocking a route the way rubble does.
     if (!t || t === 'wall' || t === 'rubble' || t === 'merchant') return false
     if (blockChest && t === 'chest') return false
     return true
@@ -1419,6 +1421,76 @@ describe('useNoragon — loot & equipment', () => {
   })
 })
 
+describe('useNoragon — traps', () => {
+  /** Find a trap with a reachable floor neighbour the hero can stand on to step in. */
+  function findStandAndTrap(
+    tiles: TileType[][],
+    start: Point,
+  ): { stand: Point; trap: Point } | null {
+    for (let y = 0; y < tiles.length; y++) {
+      for (let x = 0; x < tiles[y].length; x++) {
+        if (tiles[y][x] !== 'trap') continue
+        for (const dir of DIRECTIONS) {
+          const s = { x: x + DELTA[dir].x, y: y + DELTA[dir].y }
+          if (tiles[s.y]?.[s.x] !== 'floor') continue
+          if (bfsDir(tiles, start, s, true) !== null || (s.x === start.x && s.y === start.y)) {
+            return { stand: s, trap: { x, y } }
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  it('springs underfoot: deals damage, logs it, then disarms the tile', () => {
+    let tested = false
+    for (const seed of SEEDS) {
+      const { result, unmount } = renderHook(() => useNoragon({ seed }))
+      act(() => result.current.start())
+      const found = findStandAndTrap(result.current.board.tiles, result.current.hero.position)
+      if (!found) {
+        unmount()
+        continue
+      }
+      navigateToTile(result, found.stand)
+      const p = result.current.hero.position
+      // Bail if the trek itself sprang the trap (path crossed it), stalled, or a
+      // wandering foe parked on the trap tile (the bump would be an attack, not a
+      // step) — any of which would muddy the clean trap-step we're measuring.
+      const foeOnTrap = result.current.enemies.some(
+        (e) => e.x === found.trap.x && e.y === found.trap.y,
+      )
+      if (
+        p.x !== found.stand.x ||
+        p.y !== found.stand.y ||
+        result.current.run.status !== 'playing' ||
+        result.current.board.tiles[found.trap.y][found.trap.x] !== 'trap' ||
+        foeOnTrap
+      ) {
+        unmount()
+        continue
+      }
+      const bump = DIRECTIONS.find(
+        (d) => DELTA[d].x === found.trap.x - p.x && DELTA[d].y === found.trap.y - p.y,
+      )
+      if (!bump) {
+        unmount()
+        continue
+      }
+      const hpBefore = result.current.hero.hp
+      act(() => result.current.move(bump))
+      // The trap hurt the hero, said so in the log, and reverted to plain floor.
+      expect(result.current.hero.hp).toBeLessThan(hpBefore)
+      expect(result.current.log.some((l) => /trap springs/i.test(l.text))).toBe(true)
+      expect(result.current.board.tiles[found.trap.y][found.trap.x]).toBe('floor')
+      tested = true
+      unmount()
+      break
+    }
+    expect(tested).toBe(true)
+  })
+})
+
 describe('enemy depth scaling', () => {
   const KINDS = ['bat', 'spider', 'goblin', 'orc', 'troll'] as const
 
@@ -1649,6 +1721,16 @@ describe('Board combat floats', () => {
       />,
     )
     expect(container.querySelector('.noragon__tile--rubble')?.textContent).toBe('▲')
+  })
+
+  it('draws a visible trap tile so it can be side-stepped', () => {
+    const tiles = board.tiles.map((row) => [...row])
+    tiles[1][1] = 'trap'
+    const trapBoard = { ...board, tiles }
+    const { container } = render(
+      <Board board={trapBoard} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
+    )
+    expect(container.querySelector('.noragon__tile--trap')?.textContent).toBe('✕')
   })
 
   it('draws floor loot as a generic satchel, not its specific kind', () => {

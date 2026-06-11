@@ -12,7 +12,7 @@ import { ENEMY_INFO } from '../enemies'
 import type { EnemyKind } from '../enemies'
 import { AMULET_KINDS, ARMOR_KINDS, RING_KINDS, WEAPON_KINDS } from '../items'
 import type { ItemKind } from '../items'
-import { CELL, MAX_ROOM, MIN_CELLS, MIN_ROOM, ROOM_NAMES, SHOP } from '../constants'
+import { CELL, MAX_ROOM, MIN_CELLS, MIN_ROOM, ROOM_NAMES, SHOP, TRAP } from '../constants'
 import { makeRng } from './makeRng'
 import { spawnEnemy } from './spawnEnemy'
 
@@ -394,6 +394,25 @@ export function generateDungeon(seed: number, depth: number): Dungeon {
       const pool = rng.next() < 0.6 ? RING_KINDS : AMULET_KINDS
       dropIn(room, pool[rng.int(pool.length)], 1)
     }
+  }
+
+  // Spring-traps: scatter the occasional one on a free room-floor tile. Only
+  // inside rooms (never corridors or doorways) so the hero always has a clear
+  // tile to step around them, and never in the start or shop room.
+  for (const cell of cells) {
+    if (cell === startCell || cell === shopCell) continue
+    if (rng.next() >= TRAP.chance) continue
+    const room = roomOf(cell)
+    const free: Point[] = []
+    for (let y = room.y0; y <= room.y1; y++) {
+      for (let x = room.x0; x <= room.x1; x++) {
+        if (tiles[y][x] === 'floor' && !taken.has(`${x},${y}`)) free.push({ x, y })
+      }
+    }
+    if (free.length === 0) continue
+    const spot = free[rng.int(free.length)]
+    taken.add(`${spot.x},${spot.y}`)
+    tiles[spot.y][spot.x] = 'trap'
   }
 
   return { cols, rows, tiles, rooms, playerStart, enemies, items, shop }

@@ -19,7 +19,7 @@ import type {
 import { RING_SLOTS } from './types'
 import { ENEMY_INFO } from './enemies'
 import { AMULET_KINDS, ARMOR_KINDS, ITEMS, RING_KINDS, STARTING_GOLD, WEAPON_KINDS } from './items'
-import { DEFAULT_ATTACKS, DEFAULTS, DELTA, DIR_NAME } from './constants'
+import { DEFAULT_ATTACKS, DEFAULTS, DELTA, DIR_NAME, TRAP } from './constants'
 import {
   activeEnemiesOf,
   applyXp,
@@ -370,6 +370,17 @@ function reducer(state: GameState, action: GameAction): GameState {
             inventory = [...inventory, { id: nextItemId++, kind: loot.kind }]
             messages.push(`You pick up a ${ITEMS[loot.kind].name}.`)
           }
+        }
+        // Spring a trap underfoot: flat damage that bypasses armor and grows with
+        // depth. The trap then disarms (its tile reverts to plain floor).
+        if (tile === 'trap') {
+          const dmg = TRAP.damage + (state.depth - 1) * TRAP.damagePerDepth
+          hp = Math.max(0, hp - dmg)
+          messages.push(`A hidden trap springs! You take ${dmg} damage.`)
+          floats.push({ id: nextEffectId++, x: player.x, y: player.y, amount: dmg, tone: 'damage' })
+          const tiles = dungeon.tiles.map((row) => [...row])
+          tiles[player.y][player.x] = 'floor'
+          dungeon = { ...dungeon, tiles }
         }
         // Announce crossing into a room the hero hasn't been in before.
         const steppedInto = roomAt(dungeon.rooms, player.x, player.y)
