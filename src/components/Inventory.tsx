@@ -2,6 +2,7 @@ import { ITEMS, itemEffect } from '../game/items'
 import type { ItemKind } from '../game/items'
 import type { Equipment, InventoryItem } from '../game/types'
 import { HeroAvatar } from './HeroAvatar'
+import { ItemIcon } from './ItemIcon'
 import './Inventory.css'
 
 export interface InventoryProps {
@@ -45,9 +46,10 @@ export function Inventory({
   const wornKind = (id: number | null) =>
     id == null ? null : (inventory.find((i) => i.id === id)?.kind ?? null)
 
-  // An equipment slot beside the avatar: the worn item's glyph + name, or a
-  // muted placeholder when empty. Used for the handheld gear (weapon, ring).
-  const equipSlot = (label: string, placeholder: string, id: number | null) => {
+  // An equipment slot beside the avatar: an SVG icon of the worn item + its
+  // name, or a muted placeholder icon when empty. Used for the handheld gear
+  // (weapon, ring); `fallbackKind` is the kind drawn (muted) for an empty slot.
+  const equipSlot = (label: string, fallbackKind: ItemKind, id: number | null) => {
     const kind = wornKind(id)
     const def = kind ? ITEMS[kind] : null
     return (
@@ -55,9 +57,7 @@ export function Inventory({
         className={`noragon__equip-slot${def ? '' : ' noragon__equip-slot--empty'}`}
         data-testid={`equip-${label.toLowerCase()}`}
       >
-        <span className="noragon__equip-glyph" aria-hidden>
-          {def ? def.glyph : placeholder}
-        </span>
+        <ItemIcon kind={kind ?? fallbackKind} />
         <span className="noragon__equip-label">{def ? def.name : label}</span>
         {kind && (
           <span className="noragon__item-tip" role="tooltip">
@@ -166,8 +166,8 @@ export function Inventory({
       <div className="noragon__avatar-frame">
         <HeroAvatar armor={wornKind(equipment.armor)} amulet={wornKind(equipment.amulet)} />
         <div className="noragon__equip-slots">
-          {equipSlot('Weapon', '/', equipment.weapon)}
-          {equipSlot('Ring', '○', equipment.ring)}
+          {equipSlot('Weapon', 'shortSword', equipment.weapon)}
+          {equipSlot('Ring', 'ringOfProtection', equipment.ring)}
         </div>
       </div>
     </section>

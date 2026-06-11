@@ -6,6 +6,7 @@ import { ActivityLog } from './ActivityLog'
 import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
 import { HeroAvatar } from './HeroAvatar'
+import { ItemIcon } from './ItemIcon'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import { ITEMS } from '../game/items'
@@ -1791,6 +1792,15 @@ describe('Shop overlay', () => {
     expect(screen.getAllByTestId('shop-sell')).toHaveLength(2) // potion stack + short sword
     expect(screen.getByText('(2)')).toBeInTheDocument() // 2 potions in stock
     expect(screen.getByText('(3)')).toBeInTheDocument() // 3 potions in pack
+  })
+})
+
+describe('ItemIcon', () => {
+  it('renders an svg icon for weapons and rings', () => {
+    const { container, rerender } = render(<ItemIcon kind="battleAxe" />)
+    expect(container.querySelector('svg.noragon__item-icon')).not.toBeNull()
+    rerender(<ItemIcon kind="ringOfProtection" />)
+    expect(container.querySelector('svg.noragon__item-icon')).not.toBeNull()
   })
 })
 

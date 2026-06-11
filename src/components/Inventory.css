@@ -37,14 +37,13 @@
   color: var(--noragon-muted);
 }
 
-.noragon__equip-glyph {
-  width: 1.2em;
-  text-align: center;
-  color: var(--noragon-accent);
+.noragon__equip-slot .noragon__item-icon {
+  width: 1.6rem;
+  height: 1.6rem;
 }
 
-.noragon__equip-slot--empty .noragon__equip-glyph {
-  color: var(--noragon-muted);
+.noragon__equip-slot--empty .noragon__item-icon {
+  opacity: 0.4;
 }
 
 .noragon__equip-label {
