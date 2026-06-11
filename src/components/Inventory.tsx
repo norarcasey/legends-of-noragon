@@ -27,9 +27,10 @@ export interface InventoryProps {
  *
  * Rows are ordered equipped gear first, then consumables, then spare gear — so
  * what's in use and what's quaffable sit at the top, with swap-in spares below.
- * Worn gear is pinned in its own list; everything unworn scrolls within a capped
- * box, so once the pack fills the worn gear and the hero avatar beneath it stay
- * in place rather than being pushed down the column (a light pack stays compact).
+ * The hero avatar sits at the top; below it, worn gear is pinned in its own list
+ * and everything unworn scrolls within a capped box, so the avatar and worn gear
+ * stay put as loot fills the box rather than being pushed around (a light pack
+ * stays compact).
  */
 export function Inventory({
   inventory,
@@ -183,6 +184,14 @@ export function Inventory({
 
   return (
     <section className="noragon__inventory" aria-label="Inventory" data-testid="inventory">
+      <div className="noragon__avatar-frame">
+        <HeroAvatar armor={wornKind(equipment.armor)} amulet={wornKind(equipment.amulet)} />
+        <div className="noragon__equip-slots">
+          {weaponSlot()}
+          <div className="noragon__ring-slots">{[0, 1].map((i) => ringSlot(i))}</div>
+        </div>
+      </div>
+
       <h3 className="noragon__inventory-title">Pack — ◉ {gold} gold</h3>
 
       {/* Worn gear stays pinned at the top so it never scrolls out of focus. */}
@@ -201,14 +210,6 @@ export function Inventory({
         {stacks.map(renderStack)}
         {unequipped.map(renderGear)}
       </ul>
-
-      <div className="noragon__avatar-frame">
-        <HeroAvatar armor={wornKind(equipment.armor)} amulet={wornKind(equipment.amulet)} />
-        <div className="noragon__equip-slots">
-          {weaponSlot()}
-          <div className="noragon__ring-slots">{[0, 1].map((i) => ringSlot(i))}</div>
-        </div>
-      </div>
     </section>
   )
 }

@@ -106,19 +106,12 @@ export function Noragon({
       {title !== null && <h2 className="noragon__title">{title}</h2>}
 
       <div className="noragon__layout">
-        <aside className="noragon__info">
-          {status !== 'idle' && (
-            <Inventory
-              inventory={hero.inventory}
-              equipment={hero.equipment}
-              gold={hero.gold}
-              onEquip={equip}
-              onDrink={drink}
-              onDrop={drop}
-            />
-          )}
+        <aside className="noragon__panel">
+          {status !== 'idle' && <ActivityLog entries={game.log} />}
 
-          {footer != null && <div className="noragon__note">{footer}</div>}
+          {status === 'playing' && (
+            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+          )}
         </aside>
 
         <div className="noragon__divider" aria-hidden />
@@ -187,12 +180,19 @@ export function Noragon({
 
         <div className="noragon__divider" aria-hidden />
 
-        <aside className="noragon__panel">
-          {status !== 'idle' && <ActivityLog entries={game.log} />}
-
-          {status === 'playing' && (
-            <EnemyCards enemies={game.activeEnemies} targetId={aiming ? game.targetId : null} />
+        <aside className="noragon__info">
+          {status !== 'idle' && (
+            <Inventory
+              inventory={hero.inventory}
+              equipment={hero.equipment}
+              gold={hero.gold}
+              onEquip={equip}
+              onDrink={drink}
+              onDrop={drop}
+            />
           )}
+
+          {footer != null && <div className="noragon__note">{footer}</div>}
         </aside>
       </div>
     </NoragonRoot>

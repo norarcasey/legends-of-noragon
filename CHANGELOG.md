@@ -149,6 +149,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Swapped the side columns: the activity log and enemy cards now sit on the left,
+  and the pack on the right. The hero avatar moved to the top of the pack, with
+  the gold/worn gear/spare-loot lists beneath it.
 - The pack now splits into a pinned worn-gear list and a capped, scrollable box
   for everything unworn (consumables and spare gear). As loot piles up only the
   unworn box scrolls, so the worn gear and the hero avatar beneath it stay in
