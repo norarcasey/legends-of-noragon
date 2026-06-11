@@ -306,24 +306,52 @@ locally with `npm run docs:render`.
 
 ## Roadmap
 
-You explore a seed-generated dungeon, fight bats and goblins, and grab the
-guarded chest. Planned next, in roughly the order it was dreamed up:
+You explore a seed-generated dungeon, fight bats through trolls, disarm traps,
+trade at the merchant, level up, and descend. Planned next — the running wish
+list, roughly grouped:
 
-- **Spell attacks & ammo** — ranged bow/throw fire is wired up; next is the
-  `spell` profile (targeted the same way) and an arrow/quiver resource for ranged.
-- **Deeper combat** — building on the chance-to-hit + variable-damage rolls, add
-  enemy evasion, criticals, line-of-sight/cover, and per-weapon damage profiles.
-- **More loot & equipment** — building on weapons/armor/rings/amulets/potions/gold
-  and the merchant: shields, more trinket effects, restocking/again-cost shops,
-  and chests that sometimes spring traps.
-- **Run depth & payoff** — a boss/▼victory at a target depth, rest/heal sites,
-  and run summaries, building on the endless-descent loop.
-- **Richer generation** — building on variable size / irregular footprint /
-  varied rooms / winding corridors: locked doors and keys, interior cover
-  (pillars), and themed rooms.
-- **More monsters & boss fights** — beyond bats, spiders, goblins, orcs, and
-  trolls; special abilities (poison, pack tactics) and a depth boss.
-- **Sprites/SVGs** — replacing the block tiles with real art.
+**Progression & endgame**
+
+- **Beyond the soft cap** — the hero currently tops out around level 6–7 (full
+  gear, gold to spare, a stack of potions); decide what keeps a deep run
+  compelling after that — steeper scaling, prestige/ascension, set bonuses, or a
+  true win condition.
+- **Boss fights** — a whole large room (the entire dungeon at that depth) given
+  over to one fight. The boss is meatier and can conjure hazards (fire, traps,
+  summoned enemies); it may occupy more than one tile, with only certain parts
+  (weak points) that take damage.
+
+**Combat feel**
+
+- **Agility mini-games** — skill-timed inputs instead of a pure dice roll: e.g.
+  firing a projectile pops a timing meter you have to stop in the green
+  (NES-golf-swing style). Strongest fit for boss fights to make aiming tense, but
+  reusable for other actions (disarming, lockpicking, big swings).
+- **Spell attacks & ammo** — the `spell` profile (targeted like ranged) and an
+  arrow/quiver resource for the bow.
+- **Deeper combat** — enemy evasion, criticals, line-of-sight/cover, and
+  per-weapon damage profiles.
+
+**Enemies**
+
+- **Nastier foes** — ranged attackers, healers, area attacks, stuns, poison, pack
+  tactics — well beyond the current melee-chase behavior.
+
+**Loot & character**
+
+- **More, more varied gear** — new slots (e.g. boots) with distinct buffs;
+  shields; more trinket effects; restocking / re-cost shops.
+- **Character creation** — multiple classes, races, and genders (classes already
+  have a hook: the trap `disarmChance` is a flat constant meant to become
+  class/level-scaled), plus naming your character.
+
+**Presentation & meta**
+
+- **Stylized art** — replace the block/glyph tiles with real SVG sprites.
+- **Save & resume** — persist a run so a player can come back to it.
+- **Richer generation** — locked doors and keys, interior cover (pillars), themed
+  rooms.
+- **Multiplayer** — very much an open question, parked here so it isn't forgotten.
 
 ## License
 
