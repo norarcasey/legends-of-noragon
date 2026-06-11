@@ -149,6 +149,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The activity log's lines are now right-aligned.
 - Swapped the side columns: the activity log and enemy cards now sit on the left,
   and the pack on the right. The hero avatar moved to the top of the pack, with
   the gold/worn gear/spare-loot lists beneath it.

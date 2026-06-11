@@ -26,6 +26,8 @@
   border-radius: 6px;
   font-size: 0.82rem;
   line-height: 1.5;
+  /* Right-aligned so the feed reads from the edge nearest the board. */
+  text-align: right;
 }
 
 .noragon__log-entry {
