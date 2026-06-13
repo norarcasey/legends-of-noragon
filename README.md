@@ -4,6 +4,8 @@ An embeddable React + TypeScript **turn-based, top-down dungeon crawler**. Move
 the hero one tile at a time with the **arrow keys** (or **WASD**), bump bats to
 slay them, clear the room, and step onto the chest to complete the level.
 
+**▶ Play it: [legendsofnoragon.com](https://legendsofnoragon.com)**
+
 Built with **Vite** and tested with **Vitest** + **React Testing Library**.
 
 ## Quick start
