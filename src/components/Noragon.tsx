@@ -9,6 +9,7 @@ import { NoragonRoot } from './NoragonRoot'
 import { Overlay } from './Overlay'
 import { Shop } from './Shop'
 import { useNoragonKeyboard } from './useNoragonKeyboard'
+import { useZoom } from './useZoom'
 import './Noragon.css'
 
 export interface NoragonProps {
@@ -21,6 +22,10 @@ export interface NoragonProps {
   seed?: number
   /** Move with the arrow keys / WASD. Default `true`. */
   enableKeyboard?: boolean
+  /** Initial zoom — how many tiles span the board (snapped to the nearest
+   *  preset). Used only until the player adjusts it; their choice is then
+   *  remembered. Default `11`. */
+  zoom?: number
   /** Heading shown above the dungeon. Pass `null` to hide it. */
   title?: string | null
   /** Extra class on the root element. */
@@ -38,6 +43,7 @@ export function Noragon({
   attacks,
   seed,
   enableKeyboard = true,
+  zoom: initialZoom,
   title = 'Legends of Noragon',
   className,
   intro,
@@ -49,8 +55,13 @@ export function Noragon({
   const { onStairs } = hero
   const { aiming, start, descend, disarm, equip, drink, drop } = game
   const { adjacentTrap } = game
+  const zoom = useZoom(initialZoom)
 
-  useNoragonKeyboard(game, { enabled: enableKeyboard })
+  useNoragonKeyboard(game, {
+    enabled: enableKeyboard,
+    onZoomIn: zoom.zoomIn,
+    onZoomOut: zoom.zoomOut,
+  })
 
   const shop = game.shopping
     ? {
@@ -128,6 +139,7 @@ export function Noragon({
               projectiles={game.projectiles}
               fadingEnemies={game.fadingEnemies}
               banners={false}
+              visibleTiles={zoom.visible}
             />
 
             <div className="noragon__chrome noragon__chrome--top" aria-live="polite">
@@ -137,6 +149,32 @@ export function Noragon({
             <div className="noragon__chrome noragon__chrome--bottom" aria-live="polite">
               <div className="noragon__chrome-group">{bottomStats.map(chip)}</div>
             </div>
+
+            {/* Zoom stepper, tucked in a board corner during play. */}
+            {status === 'playing' && !shop && (
+              <div className="noragon__zoom" role="group" aria-label="Board zoom">
+                <button
+                  type="button"
+                  className="noragon__zoom-btn"
+                  onClick={zoom.zoomOut}
+                  disabled={!zoom.canZoomOut}
+                  aria-label="Zoom out"
+                  title="Zoom out (−)"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  className="noragon__zoom-btn"
+                  onClick={zoom.zoomIn}
+                  disabled={!zoom.canZoomIn}
+                  aria-label="Zoom in"
+                  title="Zoom in (+)"
+                >
+                  +
+                </button>
+              </div>
+            )}
 
             {/* Full-frame overlays — cover the board and its chrome. */}
             <Overlay status={status} depth={run.depth} onStart={start} intro={intro} />

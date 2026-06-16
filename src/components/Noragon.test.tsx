@@ -2017,6 +2017,63 @@ describe('board sprites', () => {
   })
 })
 
+describe('board zoom', () => {
+  const board = {
+    cols: 3,
+    rows: 3,
+    tiles: Array.from({ length: 3 }, () => Array.from({ length: 3 }, (): TileType => 'floor')),
+    visible: Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => true)),
+    floorItems: [],
+  }
+  const visibleOf = (c: HTMLElement) =>
+    c
+      .querySelector('.noragon__board-wrap')
+      ?.getAttribute('style')
+      ?.match(/--noragon-visible:\s*(\d+)/)?.[1]
+
+  it('passes visibleTiles to the board as --noragon-visible', () => {
+    const { container } = render(
+      <Board
+        board={board}
+        hero={{ x: 0, y: 0 }}
+        enemies={[]}
+        aiming={false}
+        targetId={null}
+        visibleTiles={9}
+      />,
+    )
+    expect(visibleOf(container)).toBe('9')
+  })
+
+  it('steps the zoom with the on-screen control and the +/- keys', () => {
+    window.localStorage.clear()
+    const { container } = render(<Noragon seed={7} />)
+    // Start the run so the board (and the zoom control) are on screen.
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(visibleOf(container)).toBe('11') // default
+
+    fireEvent.click(screen.getByLabelText('Zoom out'))
+    expect(visibleOf(container)).toBe('13')
+
+    fireEvent.keyDown(window, { key: '+' })
+    fireEvent.keyDown(window, { key: '+' })
+    expect(visibleOf(container)).toBe('9')
+  })
+
+  it('remembers the zoom choice across mounts (localStorage)', () => {
+    window.localStorage.clear()
+    const first = render(<Noragon seed={7} />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.click(screen.getByLabelText('Zoom out')) // 11 -> 13
+    first.unmount()
+
+    const second = render(<Noragon seed={7} />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(visibleOf(second.container)).toBe('13')
+    window.localStorage.clear()
+  })
+})
+
 describe('HeroAvatar', () => {
   it('draws only the on-body layers for what is equipped', () => {
     const { rerender } = render(<HeroAvatar />)

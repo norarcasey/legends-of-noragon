@@ -45,6 +45,11 @@ die. The stairs are walkable — they don't descend on contact — so you can cr
 them to reach the chest or fight the guards; when you're ready, stand on them and
 press **`>`** (or the **Descend** button) to drop down.
 
+The board is a **camera that stays centred on the hero**, zoomed in so the dungeon
+is large and the surroundings clip at the frame as you move. Use the **−/+ control**
+in the board's corner (or the **`+`/`-`** keys) to zoom out or in; your choice is
+remembered between runs.
+
 Combat:
 
 - **Melee** — bump into a foe to swing. The hero lands a hit 80% of the time for
@@ -118,6 +123,7 @@ export function App() {
 | `attacks`        | `Partial<AttackProfiles>` | melee `0.8` / `3`–`6`  | The hero's level-1 attack profiles; each kind is `{ accuracy, minDamage, maxDamage }` and grows with level. |
 | `seed`           | `number`                  | — (random)             | Fix the combat RNG for reproducible runs.                                                                   |
 | `enableKeyboard` | `boolean`                 | `true`                 | Move with the arrow keys / WASD.                                                                            |
+| `zoom`           | `number`                  | `11`                   | Initial tiles-visible zoom (snapped to the nearest preset); the player's later choice is remembered.        |
 | `title`          | `string \| null`          | `"Legends of Noragon"` | Heading above the dungeon; pass `null` to hide it.                                                          |
 | `className`      | `string`                  | —                      | Extra class on the root element.                                                                            |
 | `intro`          | `ReactNode`               | —                      | How-to-play / flavour shown on the start ("Delve") overlay; replaces the short default control hint.        |
@@ -283,7 +289,7 @@ export function MyDungeon() {
 The parts are presentational only. For the default controls, call
 `useNoragonKeyboard(game)` — it attaches a `window` keydown listener for the same
 keys `<Noragon />` uses (arrows/WASD to move, Enter to start, `F` to toggle aim
-with Enter to fire, `>` to descend, `Q` to quaff, `E` to disarm an adjacent
+with Enter to fire, `>` to descend, `Q` to quaff, `+`/`-` to zoom, `E` to disarm an adjacent
 trap), and takes `{ enabled }` to toggle it:
 
 ```tsx

@@ -55,6 +55,9 @@ export interface BoardProps {
    *  Default `true`. `<Noragon />` sets this `false` and renders those prompts
    *  in its frame chrome instead; the start/death overlay is unaffected. */
   banners?: boolean
+  /** How many tiles span the viewport — the zoom. Smaller = more zoomed in.
+   *  Omit to use the CSS default (`--noragon-visible`, 11). */
+  visibleTiles?: number
 }
 
 /** The board features that draw a sprite; the rest (wall/floor/corridor/door)
@@ -90,18 +93,26 @@ export function Board({
   onStart,
   onDescend,
   banners = true,
+  visibleTiles,
 }: BoardProps) {
   const { cols, rows, tiles, visible, floorItems } = board
+  // Override the CSS zoom default only when a count is supplied.
+  const wrapStyle: (CSSProperties & Record<string, string | number>) | undefined =
+    visibleTiles == null ? undefined : { '--noragon-visible': visibleTiles }
   const gridStyle: CSSProperties = {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   }
-  // The wrap carries the level's aspect ratio (so it can be letterboxed inside a
-  // fixed frame) and `--noragon-cols` (so the grid tiles and the enemy overlay,
-  // a sibling of the grid, scale their glyphs to the column count).
-  const wrapStyle: CSSProperties & Record<string, string | number> = {
+  // The board-wrap is a fixed square viewport that clips; the world inside it is
+  // sized to the whole level (at a fixed tile size) and slid so the hero stays
+  // centred — a camera that follows the hero, with the rest of the level clipped
+  // at the frame. `--hero-x/y` drive the slide; `--noragon-cols/rows` size the
+  // world and scale the tile/enemy sprites to the tiles.
+  const worldStyle: CSSProperties & Record<string, string | number> = {
     '--noragon-cols': cols,
-    '--noragon-aspect': `${cols} / ${rows}`,
+    '--noragon-rows': rows,
+    '--hero-x': hero.x,
+    '--hero-y': hero.y,
   }
 
   const enemyAt = (x: number, y: number) => enemies.find((e) => e.x === x && e.y === y)
@@ -113,141 +124,144 @@ export function Board({
 
   return (
     <div className="noragon__board-wrap" style={wrapStyle}>
-      <div className="noragon__board" style={gridStyle} data-testid="board" aria-hidden>
-        {tiles.flatMap((row, y) =>
-          row.map((tile, x) => {
-            const isPlayer = hero.x === x && hero.y === y
-            // The hero is always lit; everything else stays dark until discovered.
-            const lit = isPlayer || visible[y]?.[x]
-            if (!lit) {
-              return <div key={`${x},${y}`} className="noragon__tile noragon__tile--hidden" />
-            }
-            // Enemies are drawn in their own overlay (so they can animate
-            // between tiles); a tile only hides loot a foe is standing on.
-            const item = enemyAt(x, y) ? undefined : itemAt(x, y)
-            let cls = `noragon__tile noragon__tile--${tile}`
-            let icon: MapIconKind | undefined = TILE_ICON[tile]
-            let testid: string | undefined
-            if (isPlayer) {
-              cls += ' noragon__tile--player'
-              icon = 'player'
-              testid = 'player'
-            } else if (item) {
-              // Loot reads as a generic satchel — its contents are a surprise
-              // revealed only in the log when the hero steps on it.
-              cls += ' noragon__tile--loot'
-              icon = 'loot'
-              testid = 'loot'
-            }
-            return (
-              <div key={`${x},${y}`} className={cls} data-testid={testid}>
-                {icon && <MapIcon kind={icon} />}
-              </div>
-            )
-          }),
-        )}
-      </div>
+      <div className="noragon__world" style={worldStyle}>
+        <div className="noragon__board" style={gridStyle} data-testid="board" aria-hidden>
+          {tiles.flatMap((row, y) =>
+            row.map((tile, x) => {
+              const isPlayer = hero.x === x && hero.y === y
+              // The hero is always lit; everything else stays dark until discovered.
+              const lit = isPlayer || visible[y]?.[x]
+              if (!lit) {
+                return <div key={`${x},${y}`} className="noragon__tile noragon__tile--hidden" />
+              }
+              // Enemies are drawn in their own overlay (so they can animate
+              // between tiles); a tile only hides loot a foe is standing on.
+              const item = enemyAt(x, y) ? undefined : itemAt(x, y)
+              let cls = `noragon__tile noragon__tile--${tile}`
+              let icon: MapIconKind | undefined = TILE_ICON[tile]
+              let testid: string | undefined
+              if (isPlayer) {
+                cls += ' noragon__tile--player'
+                icon = 'player'
+                testid = 'player'
+              } else if (item) {
+                // Loot reads as a generic satchel — its contents are a surprise
+                // revealed only in the log when the hero steps on it.
+                cls += ' noragon__tile--loot'
+                icon = 'loot'
+                testid = 'loot'
+              }
+              return (
+                <div key={`${x},${y}`} className={cls} data-testid={testid}>
+                  {icon && <MapIcon kind={icon} />}
+                </div>
+              )
+            }),
+          )}
+        </div>
 
-      {enemies.map((e) => {
-        // Only foes on a lit tile show. `--deferred` (set while an arrow flies)
-        // holds a foe at its tile through the flight, then glides it to its new
-        // one — so a struck foe doesn't step away before the arrow lands.
-        if (!visible[e.y]?.[e.x]) return null
-        const targeted = aiming && e.id === targetId
-        return (
+        {enemies.map((e) => {
+          // Only foes on a lit tile show. `--deferred` (set while an arrow flies)
+          // holds a foe at its tile through the flight, then glides it to its new
+          // one — so a struck foe doesn't step away before the arrow lands.
+          if (!visible[e.y]?.[e.x]) return null
+          const targeted = aiming && e.id === targetId
+          return (
+            <span
+              key={e.id}
+              className={`noragon__enemy noragon__enemy--${e.kind}${
+                targeted ? ' noragon__enemy--target' : ''
+              }${projectiles?.length ? ' noragon__enemy--deferred' : ''}`}
+              style={centre(e.x, e.y)}
+              data-testid={`enemy-${e.kind}`}
+              aria-hidden
+            >
+              <EnemyIcon kind={e.kind} />
+            </span>
+          )
+        })}
+
+        {fadingEnemies?.map((e) => (
           <span
-            key={e.id}
-            className={`noragon__enemy noragon__enemy--${e.kind}${
-              targeted ? ' noragon__enemy--target' : ''
-            }${projectiles?.length ? ' noragon__enemy--deferred' : ''}`}
+            key={`dying-${e.id}`}
+            className={`noragon__enemy noragon__enemy--${e.kind} noragon__enemy--dying`}
             style={centre(e.x, e.y)}
-            data-testid={`enemy-${e.kind}`}
             aria-hidden
           >
             <EnemyIcon kind={e.kind} />
           </span>
-        )
-      })}
+        ))}
 
-      {fadingEnemies?.map((e) => (
-        <span
-          key={`dying-${e.id}`}
-          className={`noragon__enemy noragon__enemy--${e.kind} noragon__enemy--dying`}
-          style={centre(e.x, e.y)}
-          aria-hidden
-        >
-          <EnemyIcon kind={e.kind} />
-        </span>
-      ))}
+        {effects
+          ?.filter((e) => e.tone === 'damage' || e.tone === 'level')
+          .map((e) => {
+            // A shockwave ring: where a blow landed (impact) or over the hero on a
+            // level-up (a brighter, larger ring). A ranged hit's burst waits for the
+            // arrow to reach the tile; melee, incoming, and level bursts fire at once.
+            const ranged =
+              e.tone === 'damage' && projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
+            return (
+              <span
+                key={`burst-${e.id}`}
+                className={`noragon__burst${e.tone === 'level' ? ' noragon__burst--level' : ''}${
+                  ranged ? ' noragon__burst--delayed' : ''
+                }`}
+                style={{
+                  left: `${((e.x + 0.5) / cols) * 100}%`,
+                  top: `${((e.y + 0.5) / rows) * 100}%`,
+                }}
+                aria-hidden
+              />
+            )
+          })}
 
-      {effects
-        ?.filter((e) => e.tone === 'damage' || e.tone === 'level')
-        .map((e) => {
-          // A shockwave ring: where a blow landed (impact) or over the hero on a
-          // level-up (a brighter, larger ring). A ranged hit's burst waits for the
-          // arrow to reach the tile; melee, incoming, and level bursts fire at once.
+        {effects?.map((e) => {
+          // Text landing on a tile a fired arrow is reaching waits for the arrow.
           const ranged =
-            e.tone === 'damage' && projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
+            e.tone !== 'heal' && projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
           return (
             <span
-              key={`burst-${e.id}`}
-              className={`noragon__burst${e.tone === 'level' ? ' noragon__burst--level' : ''}${
-                ranged ? ' noragon__burst--delayed' : ''
+              key={e.id}
+              className={`noragon__float noragon__float--${e.tone}${
+                ranged ? ' noragon__float--delayed' : ''
               }`}
               style={{
                 left: `${((e.x + 0.5) / cols) * 100}%`,
                 top: `${((e.y + 0.5) / rows) * 100}%`,
               }}
               aria-hidden
-            />
+            >
+              {e.tone === 'miss'
+                ? 'miss'
+                : e.tone === 'level'
+                  ? `Level ${e.amount}!`
+                  : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
+            </span>
           )
         })}
 
-      {effects?.map((e) => {
-        // Text landing on a tile a fired arrow is reaching waits for the arrow.
-        const ranged = e.tone !== 'heal' && projectiles?.some((p) => p.toX === e.x && p.toY === e.y)
-        return (
-          <span
-            key={e.id}
-            className={`noragon__float noragon__float--${e.tone}${
-              ranged ? ' noragon__float--delayed' : ''
-            }`}
-            style={{
-              left: `${((e.x + 0.5) / cols) * 100}%`,
-              top: `${((e.y + 0.5) / rows) * 100}%`,
-            }}
-            aria-hidden
-          >
-            {e.tone === 'miss'
-              ? 'miss'
-              : e.tone === 'level'
-                ? `Level ${e.amount}!`
-                : `${e.tone === 'heal' ? '+' : '-'}${e.amount}`}
-          </span>
-        )
-      })}
-
-      {projectiles?.map((p) => {
-        // Rotate the arrow glyph (which points east at 0°) to face its target.
-        const angle = Math.atan2(p.toY - p.fromY, p.toX - p.fromX) * (180 / Math.PI)
-        const style: CSSProperties & Record<string, string | number> = {
-          '--arrow-from-x': `${((p.fromX + 0.5) / cols) * 100}%`,
-          '--arrow-from-y': `${((p.fromY + 0.5) / rows) * 100}%`,
-          '--arrow-to-x': `${((p.toX + 0.5) / cols) * 100}%`,
-          '--arrow-to-y': `${((p.toY + 0.5) / rows) * 100}%`,
-          '--arrow-angle': `${angle}deg`,
-        }
-        return (
-          <span
-            key={p.id}
-            className={`noragon__arrow noragon__arrow--${p.kind}`}
-            style={style}
-            aria-hidden
-          >
-            <MapIcon kind="arrow" />
-          </span>
-        )
-      })}
+        {projectiles?.map((p) => {
+          // Rotate the arrow glyph (which points east at 0°) to face its target.
+          const angle = Math.atan2(p.toY - p.fromY, p.toX - p.fromX) * (180 / Math.PI)
+          const style: CSSProperties & Record<string, string | number> = {
+            '--arrow-from-x': `${((p.fromX + 0.5) / cols) * 100}%`,
+            '--arrow-from-y': `${((p.fromY + 0.5) / rows) * 100}%`,
+            '--arrow-to-x': `${((p.toX + 0.5) / cols) * 100}%`,
+            '--arrow-to-y': `${((p.toY + 0.5) / rows) * 100}%`,
+            '--arrow-angle': `${angle}deg`,
+          }
+          return (
+            <span
+              key={p.id}
+              className={`noragon__arrow noragon__arrow--${p.kind}`}
+              style={style}
+              aria-hidden
+            >
+              <MapIcon kind="arrow" />
+            </span>
+          )
+        })}
+      </div>
 
       {banners && aiming && (
         <div className="noragon__aim-banner" role="status" data-testid="aim-banner">

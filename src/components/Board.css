@@ -9,9 +9,35 @@
 .noragon__board-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: var(--noragon-aspect, 1);
+  aspect-ratio: 1;
   min-width: 0;
+  /* A fixed square viewport that clips: the world inside is zoomed in and slid
+     to follow the hero, so the rest of the level is cut off at the frame. */
+  overflow: hidden;
+  /* The zoom: how many tiles span the viewport (default; <Noragon /> overrides
+     it per the player's choice via the `visibleTiles` prop). */
+  --noragon-visible: 11;
+}
+
+/* The world — the whole level at a fixed tile size (viewport ÷ visible), slid so
+   the hero's tile sits dead centre. A camera that follows the hero. Also the
+   sizing container the tiles and enemy sprites scale against. */
+.noragon__world {
+  position: absolute;
+  width: calc(var(--noragon-cols) / var(--noragon-visible) * 100%);
+  height: calc(var(--noragon-rows) / var(--noragon-visible) * 100%);
+  left: calc(50% - (var(--hero-x) + 0.5) / var(--noragon-visible) * 100%);
+  top: calc(50% - (var(--hero-y) + 0.5) / var(--noragon-visible) * 100%);
   container-type: inline-size;
+  transition:
+    left 0.14s ease-out,
+    top 0.14s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noragon__world {
+    transition: none;
+  }
 }
 
 /* Floating combat numbers — a short rise-and-fade over the tile they belong to.
@@ -199,8 +225,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* ~66% of a tile's width, derived from the board width and column count. */
-  font-size: clamp(0.4rem, calc(66cqi / var(--noragon-cols, 13)), 1.05rem);
+  /* Sized to the tile (board width ÷ columns) so the sprite fills ~70% of it and
+     scales with the zoom — no upper cap, since the camera fixes the tile size. */
+  font-size: calc(46cqi / var(--noragon-cols, 9));
   line-height: 1;
   user-select: none;
 }
@@ -271,8 +298,8 @@
    animate between tiles. Each is centred on its tile via inline left/top. */
 .noragon__enemy {
   position: absolute;
-  /* Match the tile glyph size — board-wrap carries --noragon-cols + container. */
-  font-size: clamp(0.4rem, calc(66cqi / var(--noragon-cols, 13)), 1.05rem);
+  /* Match the tile sprite size — the world carries --noragon-cols + container. */
+  font-size: calc(46cqi / var(--noragon-cols, 9));
   line-height: 1;
   text-shadow: 0 0 5px currentColor;
   transform: translate(-50%, -50%);

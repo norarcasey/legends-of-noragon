@@ -147,6 +147,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   demo has a toggle. (Tokenized the last two scrim colours — the overlay and
   stairs-banner backgrounds — so light themes read correctly.)
 
+### Added
+
+- The board is now a **hero-centred camera**: it zooms in to a fixed window
+  (default 11 tiles across), keeps the hero centred, and clips the rest of the
+  level at the frame, sliding to follow as you move. Sprites scale up with the
+  zoom. A **−/+ stepper** in the board corner and the **`+`/`-`** keys change the
+  zoom (presets 7–15); the choice is remembered in `localStorage`. New `zoom`
+  prop on `<Noragon>` sets the initial level, and a `useZoom` hook is exported.
+
 ### Changed
 
 - Glyphs are now SVG sprites instead of text/emoji characters. The board tiles

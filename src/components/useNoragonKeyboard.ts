@@ -15,6 +15,10 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 export interface UseNoragonKeyboardOptions {
   /** Listen for keys. Default `true`; pass `false` to disable without unmounting. */
   enabled?: boolean
+  /** Zoom the board in (fewer tiles), bound to `+`/`=`. Optional. */
+  onZoomIn?: () => void
+  /** Zoom the board out (more tiles), bound to `-`/`_`. Optional. */
+  onZoomOut?: () => void
 }
 
 /**
@@ -22,7 +26,8 @@ export interface UseNoragonKeyboardOptions {
  * arrow keys / WASD move (and start a stopped run on the first step), Enter
  * begins/restarts, `F` toggles aim on/off (while aiming, Enter fires, Tab/arrows
  * switch targets, Esc cancels), `>`/Enter descends on the stairs, `Q` quaffs
- * a health potion, and `E` attempts to disarm an adjacent trap.
+ * a health potion, `E` attempts to disarm an adjacent trap, and `+`/`-` zoom the
+ * board (when zoom handlers are supplied).
  *
  * Attaches a single `window` keydown listener. `<Noragon />` uses this; call it
  * yourself when composing your own layout from the exported parts.
@@ -32,6 +37,7 @@ export function useNoragonKeyboard(
   options: UseNoragonKeyboardOptions = {},
 ): void {
   const enabled = options.enabled ?? true
+  const { onZoomIn, onZoomOut } = options
   const { aiming, shopping, start, move, descend, drink, aimStart, aimCycle, aimCancel, fire } =
     game
   const { closeShop, disarm, adjacentTrap } = game
@@ -43,6 +49,18 @@ export function useNoragonKeyboard(
     if (!enabled) return
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // Zoom is a view setting — works in any mode (and doesn't take a turn).
+      if ((e.key === '+' || e.key === '=') && onZoomIn) {
+        e.preventDefault()
+        onZoomIn()
+        return
+      }
+      if ((e.key === '-' || e.key === '_') && onZoomOut) {
+        e.preventDefault()
+        onZoomOut()
+        return
+      }
+
       // ---- Shopping: the overlay owns the screen. Esc leaves; buying and
       // selling are click-only, and every other key is swallowed. ----
       if (shopping) {
@@ -129,6 +147,8 @@ export function useNoragonKeyboard(
     onStairs,
     firstPotion,
     adjacentTrap,
+    onZoomIn,
+    onZoomOut,
     start,
     move,
     descend,

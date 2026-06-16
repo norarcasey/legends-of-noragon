@@ -107,10 +107,51 @@
   place-content: center;
 }
 
-/* Fit the grid to the frame's content box, preserving square tiles (letterbox). */
+/* The board viewport is the largest square that fits the frame's content box;
+   it clips, and the world inside follows the hero (see Board.css). */
 .noragon__stage > .noragon__board-wrap {
-  width: min(100cqw, calc(100cqh * var(--noragon-aspect, 1)));
+  width: min(100cqw, 100cqh);
   margin: auto;
+}
+
+/* Zoom stepper — small − / + buttons in the lower-right corner of the frame. */
+.noragon__zoom {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.35rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.noragon__zoom-btn {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--noragon-text);
+  background: var(--noragon-floor);
+  border: 1px solid var(--noragon-wall-edge);
+  border-radius: 5px;
+  opacity: 0.65;
+  transition:
+    opacity 0.12s ease,
+    filter 0.12s ease;
+}
+
+.noragon__zoom-btn:hover:not(:disabled) {
+  opacity: 1;
+  filter: brightness(1.12);
+}
+
+.noragon__zoom-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 .noragon__chrome {
