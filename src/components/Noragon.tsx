@@ -9,7 +9,7 @@ import { NoragonRoot } from './NoragonRoot'
 import { Overlay } from './Overlay'
 import { Shop } from './Shop'
 import { useNoragonKeyboard } from './useNoragonKeyboard'
-import { useZoom } from './useZoom'
+import { useZoom, FIT_ZOOM } from './useZoom'
 import './Noragon.css'
 
 export interface NoragonProps {
@@ -56,6 +56,11 @@ export function Noragon({
   const { aiming, start, descend, disarm, equip, drink, drop } = game
   const { adjacentTrap } = game
   const zoom = useZoom(initialZoom)
+  // "Fit" zoom shows the whole level: size the window to its longest side and
+  // centre on the map rather than the hero. Otherwise the camera tracks the hero.
+  const fit = zoom.visible === FIT_ZOOM
+  const visibleTiles = fit ? Math.max(board.cols, board.rows) : zoom.visible
+  const camera = fit ? { x: (board.cols - 1) / 2, y: (board.rows - 1) / 2 } : undefined
 
   useNoragonKeyboard(game, {
     enabled: enableKeyboard,
@@ -139,7 +144,8 @@ export function Noragon({
               projectiles={game.projectiles}
               fadingEnemies={game.fadingEnemies}
               banners={false}
-              visibleTiles={zoom.visible}
+              visibleTiles={visibleTiles}
+              camera={camera}
             />
 
             <div className="noragon__chrome noragon__chrome--top" aria-live="polite">

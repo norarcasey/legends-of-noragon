@@ -47,8 +47,8 @@ press **`>`** (or the **Descend** button) to drop down.
 
 The board is a **camera that stays centred on the hero**, zoomed in so the dungeon
 is large and the surroundings clip at the frame as you move. Use the **−/+ control**
-in the board's corner (or the **`+`/`-`** keys) to zoom out or in; your choice is
-remembered between runs.
+in the board's corner (or the **`+`/`-`** keys) to zoom out or in; the farthest
+step **fits the whole map** in the frame, and your choice is remembered between runs.
 
 Combat:
 

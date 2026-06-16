@@ -10,6 +10,7 @@ import { ItemIcon } from './ItemIcon'
 import { EnemyIcon } from './EnemyIcon'
 import { MapIcon } from './MapIcon'
 import type { MapIconKind } from './MapIcon'
+import { useZoom, FIT_ZOOM } from './useZoom'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
 import type { EnemyKind } from '../game/enemies'
@@ -2070,6 +2071,43 @@ describe('board zoom', () => {
     const second = render(<Noragon seed={7} />)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(visibleOf(second.container)).toBe('13')
+    window.localStorage.clear()
+  })
+
+  it('useZoom steps all the way out to "fit" and back', () => {
+    window.localStorage.clear()
+    const { result } = renderHook(() => useZoom(15))
+    expect(result.current.visible).toBe(15)
+    act(() => result.current.zoomOut())
+    expect(result.current.visible).toBe(FIT_ZOOM)
+    expect(result.current.canZoomOut).toBe(false)
+    act(() => result.current.zoomIn())
+    expect(result.current.visible).toBe(15)
+    window.localStorage.clear()
+  })
+
+  it('the "fit" step sizes the window to the whole map and centres on it', () => {
+    window.localStorage.clear()
+    const { container } = render(<Noragon seed={7} />)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    // Step out until the control bottoms out at "fit".
+    const out = screen.getByLabelText('Zoom out')
+    for (let i = 0; i < 6 && !out.hasAttribute('disabled'); i++) fireEvent.click(out)
+    expect(out.hasAttribute('disabled')).toBe(true)
+
+    const styleNum = (sel: string, name: string) =>
+      Number(
+        container
+          .querySelector(sel)
+          ?.getAttribute('style')
+          ?.match(new RegExp(`${name}:\\s*([\\d.]+)`))?.[1],
+      )
+    const cols = styleNum('.noragon__world', '--noragon-cols')
+    const rows = styleNum('.noragon__world', '--noragon-rows')
+    // The window spans the level's longest side, and the camera sits on the map
+    // centre (not the hero) so the whole level shows.
+    expect(styleNum('.noragon__board-wrap', '--noragon-visible')).toBe(Math.max(cols, rows))
+    expect(styleNum('.noragon__world', '--cam-x')).toBeCloseTo((cols - 1) / 2)
     window.localStorage.clear()
   })
 })

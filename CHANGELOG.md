@@ -153,8 +153,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (default 11 tiles across), keeps the hero centred, and clips the rest of the
   level at the frame, sliding to follow as you move. Sprites scale up with the
   zoom. A **−/+ stepper** in the board corner and the **`+`/`-`** keys change the
-  zoom (presets 7–15); the choice is remembered in `localStorage`. New `zoom`
-  prop on `<Noragon>` sets the initial level, and a `useZoom` hook is exported.
+  zoom (presets 7–15, plus a **fit-the-whole-map** step at the far end that sizes
+  the window to the level and centres on it); the choice is remembered in
+  `localStorage`. New `zoom` prop on `<Noragon>` sets the initial level, and a
+  `useZoom` hook is exported. The camera pans via `transform` (compositor-only)
+  so movement stays smooth.
 
 ### Changed
 

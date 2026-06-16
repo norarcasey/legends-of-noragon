@@ -24,14 +24,20 @@
    sizing container the tiles and enemy sprites scale against. */
 .noragon__world {
   position: absolute;
+  left: 0;
+  top: 0;
   width: calc(var(--noragon-cols) / var(--noragon-visible) * 100%);
   height: calc(var(--noragon-rows) / var(--noragon-visible) * 100%);
-  left: calc(50% - (var(--hero-x) + 0.5) / var(--noragon-visible) * 100%);
-  top: calc(50% - (var(--hero-y) + 0.5) / var(--noragon-visible) * 100%);
+  /* Centre the camera tile in the viewport. The offsets are expressed relative to
+     the world's own size (how `transform` percentages work), so we can animate
+     `transform` — compositor-only, so the pan stays smooth — instead of left/top. */
+  transform: translate(
+    calc((var(--noragon-visible) / 2 - var(--cam-x) - 0.5) / var(--noragon-cols) * 100%),
+    calc((var(--noragon-visible) / 2 - var(--cam-y) - 0.5) / var(--noragon-rows) * 100%)
+  );
   container-type: inline-size;
-  transition:
-    left 0.14s ease-out,
-    top 0.14s ease-out;
+  transition: transform 0.16s linear;
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {

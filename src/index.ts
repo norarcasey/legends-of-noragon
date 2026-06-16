@@ -31,7 +31,7 @@ export { Overlay } from './components/Overlay'
 export type { OverlayProps } from './components/Overlay'
 export { useNoragonKeyboard } from './components/useNoragonKeyboard'
 export type { UseNoragonKeyboardOptions } from './components/useNoragonKeyboard'
-export { useZoom, ZOOM_PRESETS } from './components/useZoom'
+export { useZoom, ZOOM_PRESETS, FIT_ZOOM } from './components/useZoom'
 export type { Zoom } from './components/useZoom'
 
 export { useNoragon } from './game/useNoragon'

@@ -58,6 +58,9 @@ export interface BoardProps {
   /** How many tiles span the viewport — the zoom. Smaller = more zoomed in.
    *  Omit to use the CSS default (`--noragon-visible`, 11). */
   visibleTiles?: number
+  /** The tile the camera centres on. Defaults to the hero; pass the map centre
+   *  to show the whole level (fit zoom). */
+  camera?: Point
 }
 
 /** The board features that draw a sprite; the rest (wall/floor/corridor/door)
@@ -94,6 +97,7 @@ export function Board({
   onDescend,
   banners = true,
   visibleTiles,
+  camera,
 }: BoardProps) {
   const { cols, rows, tiles, visible, floorItems } = board
   // Override the CSS zoom default only when a count is supplied.
@@ -104,15 +108,17 @@ export function Board({
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   }
   // The board-wrap is a fixed square viewport that clips; the world inside it is
-  // sized to the whole level (at a fixed tile size) and slid so the hero stays
-  // centred — a camera that follows the hero, with the rest of the level clipped
-  // at the frame. `--hero-x/y` drive the slide; `--noragon-cols/rows` size the
-  // world and scale the tile/enemy sprites to the tiles.
+  // sized to the whole level (at a fixed tile size) and slid (via `transform`, so
+  // the pan stays smooth) so the camera tile sits centred — a camera that follows
+  // the hero, with the rest of the level clipped at the frame. `--cam-x/y` drive
+  // the slide; `--noragon-cols/rows` size the world and scale the tile/enemy
+  // sprites. The camera defaults to the hero (pass `camera` for fit zoom).
+  const eye = camera ?? hero
   const worldStyle: CSSProperties & Record<string, string | number> = {
     '--noragon-cols': cols,
     '--noragon-rows': rows,
-    '--hero-x': hero.x,
-    '--hero-y': hero.y,
+    '--cam-x': eye.x,
+    '--cam-y': eye.y,
   }
 
   const enemyAt = (x: number, y: number) => enemies.find((e) => e.x === x && e.y === y)

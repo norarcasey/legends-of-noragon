@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 
-/** Selectable zoom levels — how many tiles span the board. Smaller = more zoomed
- *  in (bigger tiles, less of the level visible). */
-export const ZOOM_PRESETS = [7, 9, 11, 13, 15]
+/** Selectable zoom levels — how many tiles span the board, most zoomed-in first.
+ *  Smaller = more zoomed in. The trailing `0` is a sentinel for "fit the whole
+ *  map" (the level's size decides the tile count); see {@link FIT_ZOOM}. */
+export const FIT_ZOOM = 0
+export const ZOOM_PRESETS = [7, 9, 11, 13, 15, FIT_ZOOM]
+const TILE_PRESETS = [7, 9, 11, 13, 15]
 const DEFAULT_ZOOM = 11
 const STORAGE_KEY = 'noragon:zoom'
 
 const nearestPreset = (n: number): number =>
-  ZOOM_PRESETS.reduce(
-    (best, p) => (Math.abs(p - n) < Math.abs(best - n) ? p : best),
-    ZOOM_PRESETS[0],
-  )
+  n <= 0
+    ? FIT_ZOOM
+    : TILE_PRESETS.reduce(
+        (best, p) => (Math.abs(p - n) < Math.abs(best - n) ? p : best),
+        TILE_PRESETS[0],
+      )
 
 function storedZoom(fallback: number): number {
   if (typeof window === 'undefined') return fallback
