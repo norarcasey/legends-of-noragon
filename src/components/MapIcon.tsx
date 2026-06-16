@@ -56,23 +56,53 @@ function body(kind: MapIconKind) {
         </>
       )
     case 'trap':
+      // A bear trap, jaws open: two semicircular rows of teeth, round springs to
+      // each side, and a trigger plate at the centre.
       return (
         <>
-          <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M12 3l1.6 4.2L12 9l-1.6-1.8ZM12 21l-1.6-4.2L12 15l1.6 1.8ZM3 12l4.2-1.6L9 12l-1.8 1.6ZM21 12l-4.2 1.6L15 12l1.8-1.6Z" />
+          {/* Upper jaw — outer arc, teeth pointing down toward the mouth. */}
+          <path d="M4.8 9.2A7.6 7.4 0 0 1 19.2 9.2L17.8 10.6 16.6 9.2 15.4 10.6 14.2 9.2 13 10.6 11.8 9.2 10.6 10.6 9.4 9.2 8.2 10.6 7 9.2 5.8 10.6Z" />
+          {/* Lower jaw — mirror. */}
+          <path d="M4.8 14.8A7.6 7.4 0 0 0 19.2 14.8L17.8 13.4 16.6 14.8 15.4 13.4 14.2 14.8 13 13.4 11.8 14.8 10.6 13.4 9.4 14.8 8.2 13.4 7 14.8 5.8 13.4Z" />
+          {/* Side springs and the centre trigger plate. */}
+          <circle cx="3.6" cy="12" r="2" />
+          <circle cx="20.4" cy="12" r="2" />
+          <circle cx="3.6" cy="12" r="0.7" fill="#10101a" />
+          <circle cx="20.4" cy="12" r="0.7" fill="#10101a" />
+          <circle cx="12" cy="12" r="1" fill="#10101a" />
         </>
       )
     case 'loot':
+      // A mystery loot box, à la a "?" block: a rounded block with corner
+      // rivets and a bold question mark — its contents stay a surprise.
       return (
         <>
-          <path d="M8 8h8l2 4v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-5Z" />
-          <path
-            d="M9 8c0-2 1.5-3 3-3s3 1 3 3"
+          <rect x="4" y="4" width="16" height="16" rx="2.5" />
+          <g fill="#10101a">
+            <circle cx="6.7" cy="6.7" r="0.85" />
+            <circle cx="17.3" cy="6.7" r="0.85" />
+            <circle cx="6.7" cy="17.3" r="0.85" />
+            <circle cx="17.3" cy="17.3" r="0.85" />
+          </g>
+          <rect
+            x="4"
+            y="4"
+            width="16"
+            height="16"
+            rx="2.5"
             fill="none"
-            stroke="currentColor"
-            strokeWidth="1.3"
+            stroke="#10101a"
+            strokeWidth="1.1"
           />
-          <path d="M6 12h12" stroke="#10101a" strokeWidth="1" />
+          <path
+            d="M9.4 9.6C9.4 6.8 14.6 6.8 14.6 9.8 14.6 11.6 12 11.6 12 13.6"
+            fill="none"
+            stroke="#10101a"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="16" r="1.05" fill="#10101a" />
         </>
       )
     case 'player':

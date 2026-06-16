@@ -17,10 +17,19 @@ export interface EnemyIconProps {
 function body(kind: EnemyKind) {
   switch (kind) {
     case 'bat':
+      // Traditional bat: head + ears in the centre, scalloped wings to each side.
       return (
         <>
-          <path d="M12 9c-2-3-5-4-8-3 1 1 1 2 0 4 2-1 3 0 4 2 1-1 3-1 4 0 1-2 2-3 4-2-1-2-1-3 0-4-3-1-6 0-8 3Z" />
-          <ellipse cx="12" cy="12.5" rx="1.7" ry="3" />
+          {/* Left wing — top edge sweeps out to the tip, scalloped membrane back. */}
+          <path d="M11.6 8.5C8 7 5 6.4 1.5 6.6C2.5 8.6 3 9.2 3.8 10.6C4.4 9.5 5 9.3 5.6 9.9C6.2 11.3 6.8 11.7 7.5 12.3C8.1 10.9 8.7 10.7 9.3 11.1C9.9 12.1 10.4 12.5 11 12.9C11.2 11.1 11.4 9.8 11.6 8.5Z" />
+          {/* Right wing — mirror of the left. */}
+          <path d="M12.4 8.5C16 7 19 6.4 22.5 6.6C21.5 8.6 21 9.2 20.2 10.6C19.6 9.5 19 9.3 18.4 9.9C17.8 11.3 17.2 11.7 16.5 12.3C15.9 10.9 15.3 10.7 14.7 11.1C14.1 12.1 13.6 12.5 13 12.9C12.8 11.1 12.6 9.8 12.4 8.5Z" />
+          {/* Ears, head, body, and two little eyes — facing forward. */}
+          <path d="M10 6 9.3 3 11.4 5.8ZM14 6l.7-3-2.1 2.8Z" />
+          <circle cx="12" cy="8" r="2.6" />
+          <ellipse cx="12" cy="12" rx="2" ry="3.4" />
+          <circle cx="11" cy="7.7" r="0.55" fill="#10101a" />
+          <circle cx="13" cy="7.7" r="0.55" fill="#10101a" />
         </>
       )
     case 'kobold':
