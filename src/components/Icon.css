@@ -1,0 +1,11 @@
+/* Shared sizing for the board sprites (EnemyIcon / MapIcon). They sit inside the
+   tile cells and enemy overlay spans, which already carry the right `color`
+   token and a responsive `font-size`; sizing in `em` and filling with
+   `currentColor` lets each sprite inherit both, exactly as the old glyphs did. */
+.noragon__sprite {
+  display: block;
+  width: 1.5em;
+  height: 1.5em;
+  fill: currentColor;
+  overflow: visible;
+}

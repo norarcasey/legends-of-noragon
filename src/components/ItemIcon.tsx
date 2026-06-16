@@ -13,6 +13,9 @@ const STEEL = '#c6ccd8'
 const GOLD = '#e6c34a'
 const WOOD = '#7a4f28'
 const GEM = '#7ec8e3'
+const LEATHER = '#8a5a32'
+const POTION = '#d4504e'
+const GLASS = '#9fb4c7'
 
 /** A melee weapon, point-up; the shape varies by kind. */
 function weaponIcon(kind: ItemKind) {
@@ -57,16 +60,58 @@ function ringIcon() {
   )
 }
 
+/** A breastplate — cloth/leather kinds read browner, metal kinds steelier. */
+function armorIcon(kind: ItemKind) {
+  const heavy = kind === 'chainmail' || kind === 'plate'
+  const fill = heavy ? STEEL : LEATHER
+  return (
+    <>
+      <path
+        d="M5 5 L9 6 L12 5 L15 6 L19 5 L18 15 C18 19 15 21 12 21 C9 21 6 19 6 15 Z"
+        fill={fill}
+      />
+      <path d="M12 5 L12 21" stroke="#23232b" strokeWidth="0.7" />
+      <path d="M9 6 L12 9 L15 6" fill="none" stroke="#23232b" strokeWidth="0.7" />
+    </>
+  )
+}
+
+/** A pendant on a chain — amulets. */
+function amuletIcon() {
+  return (
+    <>
+      <path d="M7 5 C8 11 16 11 17 5" fill="none" stroke={GOLD} strokeWidth="1.6" />
+      <circle cx="12" cy="15" r="4.6" fill={GOLD} />
+      <circle cx="12" cy="15" r="2.1" fill={GEM} />
+    </>
+  )
+}
+
+/** A stoppered potion flask. */
+function potionIcon() {
+  return (
+    <>
+      <rect x="10.4" y="3.4" width="3.2" height="3" rx="0.5" fill={WOOD} />
+      <path d="M10.5 6 L13.5 6 L15 11 A5 5 0 1 1 9 11 Z" fill={GLASS} />
+      <path d="M8.4 13 A5 5 0 0 0 15.6 13 Z" fill={POTION} />
+    </>
+  )
+}
+
 /**
- * A small SVG icon for an item — used in the pack's equipment slots. Weapons
- * draw by kind (sword / dagger / axe), rings as a gemmed band. Other categories
- * fall back to a simple mark. Decorative (the slot's label names the item).
+ * A small SVG icon for an item — used in the pack list, equipment slots, and the
+ * shop. Weapons draw by kind (sword / dagger / axe), armor as a breastplate,
+ * rings as a gemmed band, amulets as a pendant, potions as a flask. Decorative
+ * (the row/slot label names the item).
  */
 export function ItemIcon({ kind, className }: ItemIconProps) {
   const category = ITEMS[kind].category
   let body
   if (category === 'weapon') body = weaponIcon(kind)
+  else if (category === 'armor') body = armorIcon(kind)
   else if (category === 'ring') body = ringIcon()
+  else if (category === 'amulet') body = amuletIcon()
+  else if (category === 'potion') body = potionIcon()
   else body = <circle cx="12" cy="12" r="4" fill={GOLD} />
 
   return (

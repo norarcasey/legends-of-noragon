@@ -2,6 +2,7 @@ import { ITEMS, itemEffect } from '../game/items'
 import type { ItemKind } from '../game/items'
 import { buyPrice, sellPrice } from '../game/utils'
 import type { Equipment, InventoryItem, ShopItem } from '../game/types'
+import { ItemIcon } from './ItemIcon'
 import './Shop.css'
 
 /** Collapse stackable kinds (potions) into one counted row, preserving order;
@@ -70,7 +71,7 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                 return (
                   <li key={g.items[0].id} className="noragon__shop-item" data-testid="shop-buy">
                     <span className="noragon__shop-glyph" aria-hidden>
-                      {def.glyph}
+                      <ItemIcon kind={g.kind} />
                     </span>
                     <span className="noragon__shop-name">
                       {def.name}
@@ -107,7 +108,7 @@ export function Shop({ stock, gold, inventory, equipment, onBuy, onSell, onLeave
                 return (
                   <li key={g.items[0].id} className="noragon__shop-item" data-testid="shop-sell">
                     <span className="noragon__shop-glyph" aria-hidden>
-                      {def.glyph}
+                      <ItemIcon kind={g.kind} />
                     </span>
                     <span className="noragon__shop-name">
                       {def.name}

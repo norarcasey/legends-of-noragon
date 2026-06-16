@@ -349,7 +349,9 @@ list, roughly grouped:
 
 **Presentation & meta**
 
-- **Stylized art** — replace the block/glyph tiles with real SVG sprites.
+- **Stylized art** — the tiles, loot, hero, enemies, and items now draw as flat
+  SVG sprites (`MapIcon` / `EnemyIcon` / `ItemIcon`); next is richer, more
+  detailed art and animation.
 - **Save & resume** — persist a run so a player can come back to it.
 - **Richer generation** — locked doors and keys, interior cover (pillars), themed
   rooms.

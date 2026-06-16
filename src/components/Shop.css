@@ -117,9 +117,10 @@
 
 .noragon__shop-glyph {
   flex: none;
-  width: 1.1em;
-  text-align: center;
-  color: var(--noragon-loot);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7em;
 }
 
 .noragon__shop-name {

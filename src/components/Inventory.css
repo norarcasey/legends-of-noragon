@@ -173,9 +173,11 @@
 }
 
 .noragon__item-glyph {
-  width: 1.1em;
-  text-align: center;
-  color: var(--noragon-accent);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7em;
 }
 
 .noragon__item-name {

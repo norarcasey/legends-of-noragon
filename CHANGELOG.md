@@ -149,6 +149,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Glyphs are now SVG sprites instead of text/emoji characters. The board tiles
+  (chest, stairs, rubble, merchant, trap), loot satchel, hero, and all ten enemy
+  kinds draw as flat `currentColor` silhouettes (`MapIcon` / `EnemyIcon`) that
+  inherit each feature's existing theme colour and responsive sizing; the pack
+  and shop draw items via `ItemIcon` (now covering armor, amulets, and potions);
+  the fired arrow is an SVG too. `MapIcon` and `EnemyIcon` are exported parts.
+  The now-unused `glyph` field was dropped from `ItemDef` and `EnemyInfo`.
 - The activity log's lines are now right-aligned.
 - Swapped the side columns: the activity log and enemy cards now sit on the left,
   and the pack on the right. The hero avatar moved to the top of the pack, with

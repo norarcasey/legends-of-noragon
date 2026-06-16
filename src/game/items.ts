@@ -22,8 +22,6 @@ export type ItemKind =
 /** Static definition of an item kind: how it reads and what it does. */
 export interface ItemDef {
   name: string
-  /** Glyph drawn when the item lies on the dungeon floor. */
-  glyph: string
   category: ItemCategory
   /** Weapon: bonus added to the hero's min and max melee damage. */
   meleeDamage: number
@@ -50,7 +48,6 @@ const weapon = (
   value: number,
 ): ItemDef => ({
   name,
-  glyph: '/',
   category: 'weapon',
   meleeDamage,
   meleeAccuracy,
@@ -63,7 +60,6 @@ const weapon = (
 
 const armor = (name: string, defense: number, value: number): ItemDef => ({
   name,
-  glyph: ']',
   category: 'armor',
   meleeDamage: 0,
   meleeAccuracy: 0,
@@ -82,7 +78,6 @@ const jewel = (
   value: number,
 ): ItemDef => ({
   name,
-  glyph: category === 'ring' ? '○' : '♦',
   category,
   meleeDamage: bonus.meleeDamage ?? 0,
   meleeAccuracy: bonus.meleeAccuracy ?? 0,
@@ -109,7 +104,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
   amuletOfValor: jewel('Amulet of Valor', 'amulet', { meleeDamage: 1, meleeAccuracy: 0.05 }, 40),
   healthPotion: {
     name: 'Health Potion',
-    glyph: '!',
     category: 'potion',
     meleeDamage: 0,
     meleeAccuracy: 0,

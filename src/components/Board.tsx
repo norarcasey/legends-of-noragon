@@ -8,7 +8,9 @@ import type {
   Projectile,
   TileType,
 } from '../game/types'
-import { ENEMY_INFO } from '../game/enemies'
+import { EnemyIcon } from './EnemyIcon'
+import { MapIcon } from './MapIcon'
+import type { MapIconKind } from './MapIcon'
 import { Overlay } from './Overlay'
 import { Shop } from './Shop'
 import type { ShopProps } from './Shop'
@@ -55,21 +57,15 @@ export interface BoardProps {
   banners?: boolean
 }
 
-const TILE_GLYPH: Record<TileType, string> = {
-  wall: '',
-  floor: '',
-  corridor: '',
-  door: '',
-  chest: '▣',
-  stairs: '>',
-  rubble: '▲',
-  merchant: '⚖',
-  trap: '✕',
+/** The board features that draw a sprite; the rest (wall/floor/corridor/door)
+ *  show nothing. Loot and the hero are handled separately below. */
+const TILE_ICON: Partial<Record<TileType, MapIconKind>> = {
+  chest: 'chest',
+  stairs: 'stairs',
+  rubble: 'rubble',
+  merchant: 'merchant',
+  trap: 'trap',
 }
-
-/** Every floor pickup looks the same — a satchel — so its contents stay a
- *  surprise until the hero grabs it (the log reveals what it was). */
-const LOOT_GLYPH = '💰'
 
 /**
  * Renders the dungeon as a fixed CSS grid of block tiles, plus the overlays that
@@ -130,22 +126,22 @@ export function Board({
             // between tiles); a tile only hides loot a foe is standing on.
             const item = enemyAt(x, y) ? undefined : itemAt(x, y)
             let cls = `noragon__tile noragon__tile--${tile}`
-            let glyph = TILE_GLYPH[tile]
+            let icon: MapIconKind | undefined = TILE_ICON[tile]
             let testid: string | undefined
             if (isPlayer) {
               cls += ' noragon__tile--player'
-              glyph = '☻'
+              icon = 'player'
               testid = 'player'
             } else if (item) {
               // Loot reads as a generic satchel — its contents are a surprise
               // revealed only in the log when the hero steps on it.
               cls += ' noragon__tile--loot'
-              glyph = LOOT_GLYPH
+              icon = 'loot'
               testid = 'loot'
             }
             return (
               <div key={`${x},${y}`} className={cls} data-testid={testid}>
-                {glyph}
+                {icon && <MapIcon kind={icon} />}
               </div>
             )
           }),
@@ -168,7 +164,7 @@ export function Board({
             data-testid={`enemy-${e.kind}`}
             aria-hidden
           >
-            {ENEMY_INFO[e.kind].glyph}
+            <EnemyIcon kind={e.kind} />
           </span>
         )
       })}
@@ -180,7 +176,7 @@ export function Board({
           style={centre(e.x, e.y)}
           aria-hidden
         >
-          {ENEMY_INFO[e.kind].glyph}
+          <EnemyIcon kind={e.kind} />
         </span>
       ))}
 
@@ -248,7 +244,7 @@ export function Board({
             style={style}
             aria-hidden
           >
-            ➤
+            <MapIcon kind="arrow" />
           </span>
         )
       })}

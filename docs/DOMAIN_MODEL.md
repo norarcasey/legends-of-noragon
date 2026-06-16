@@ -178,7 +178,6 @@ classDiagram
   class EnemyInfo {
     +name : string
     +description : string
-    +glyph : string
     +maxHp : number
     +accuracy : number
     +damage : number
@@ -213,7 +212,6 @@ classDiagram
   }
   class ItemDef {
     +name : string
-    +glyph : string
     +category : ItemCategory
     +meleeDamage : number
     +meleeAccuracy : number
@@ -759,7 +757,6 @@ classDiagram
   class EnemyInfo {
     +name : string
     +description : string
-    +glyph : string
     +maxHp : number
     +accuracy : number
     +damage : number
@@ -794,7 +791,6 @@ classDiagram
   }
   class ItemDef {
     +name : string
-    +glyph : string
     +category : ItemCategory
     +meleeDamage : number
     +meleeAccuracy : number

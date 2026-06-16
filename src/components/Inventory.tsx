@@ -115,7 +115,7 @@ export function Inventory({
     return (
       <li key={`stack-${kind}`} className="noragon__item" data-testid="inventory-item">
         <span className="noragon__item-glyph" aria-hidden>
-          {def.glyph}
+          <ItemIcon kind={kind} />
         </span>
         <span className="noragon__item-name">
           {def.name}
@@ -156,7 +156,7 @@ export function Inventory({
         data-testid="inventory-item"
       >
         <span className="noragon__item-glyph" aria-hidden>
-          {def.glyph}
+          <ItemIcon kind={item.kind} />
         </span>
         <span className="noragon__item-name">{def.name}</span>
         <span className="noragon__item-actions">

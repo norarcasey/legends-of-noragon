@@ -7,9 +7,14 @@ import { Board } from './Board'
 import { EnemyCards } from './EnemyCards'
 import { HeroAvatar } from './HeroAvatar'
 import { ItemIcon } from './ItemIcon'
+import { EnemyIcon } from './EnemyIcon'
+import { MapIcon } from './MapIcon'
+import type { MapIconKind } from './MapIcon'
 import { useNoragon } from './../game/useNoragon'
 import { ENEMY_INFO, enemyStatsAt } from '../game/enemies'
+import type { EnemyKind } from '../game/enemies'
 import { ITEMS } from '../game/items'
+import type { ItemKind } from '../game/items'
 import { buyPrice, sellPrice } from '../game/utils'
 import { Shop } from './Shop'
 import type {
@@ -1800,7 +1805,8 @@ describe('Board combat floats', () => {
         targetId={null}
       />,
     )
-    expect(container.querySelector('.noragon__tile--rubble')?.textContent).toBe('▲')
+    // The tile draws an SVG sprite (no longer a text glyph).
+    expect(container.querySelector('.noragon__tile--rubble svg.noragon__sprite')).not.toBeNull()
   })
 
   it('draws a visible trap tile so it can be side-stepped', () => {
@@ -1810,7 +1816,7 @@ describe('Board combat floats', () => {
     const { container } = render(
       <Board board={trapBoard} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
     )
-    expect(container.querySelector('.noragon__tile--trap')?.textContent).toBe('✕')
+    expect(container.querySelector('.noragon__tile--trap svg.noragon__sprite')).not.toBeNull()
   })
 
   it('draws floor loot as a generic satchel, not its specific kind', () => {
@@ -1820,9 +1826,9 @@ describe('Board combat floats', () => {
       <Board board={lootBoard} hero={{ x: 0, y: 0 }} enemies={[]} aiming={false} targetId={null} />,
     )
     const loot = screen.getByTestId('loot')
-    // The satchel hides the contents — no weapon glyph giving the type away.
-    expect(loot.textContent).not.toBe(ITEMS.longSword.glyph)
-    // And nothing tagged with the kind-specific test id of the old behavior.
+    // The satchel hides the contents — a generic loot sprite, the same for any
+    // kind, with nothing identifying the item it holds.
+    expect(loot.querySelector('svg.noragon__sprite')).not.toBeNull()
     expect(screen.queryByTestId('loot-longSword')).not.toBeInTheDocument()
   })
 
@@ -1958,11 +1964,56 @@ describe('Shop overlay', () => {
 })
 
 describe('ItemIcon', () => {
-  it('renders an svg icon for weapons and rings', () => {
-    const { container, rerender } = render(<ItemIcon kind="battleAxe" />)
-    expect(container.querySelector('svg.noragon__item-icon')).not.toBeNull()
-    rerender(<ItemIcon kind="ringOfProtection" />)
-    expect(container.querySelector('svg.noragon__item-icon')).not.toBeNull()
+  it('renders an svg icon for every item category', () => {
+    const kinds: ItemKind[] = [
+      'battleAxe', // weapon
+      'plate', // armor
+      'ringOfProtection', // ring
+      'amuletOfHealth', // amulet
+      'healthPotion', // potion
+    ]
+    for (const kind of kinds) {
+      const { container } = render(<ItemIcon kind={kind} />)
+      expect(container.querySelector('svg.noragon__item-icon')).not.toBeNull()
+    }
+  })
+})
+
+describe('board sprites', () => {
+  it('draws an SVG for each enemy kind', () => {
+    const kinds: EnemyKind[] = [
+      'bat',
+      'kobold',
+      'spider',
+      'direWolf',
+      'skeleton',
+      'goblin',
+      'orc',
+      'ogre',
+      'troll',
+      'wraith',
+    ]
+    for (const kind of kinds) {
+      const { container } = render(<EnemyIcon kind={kind} />)
+      expect(container.querySelector('svg.noragon__sprite')).not.toBeNull()
+    }
+  })
+
+  it('draws an SVG for each map feature', () => {
+    const kinds: MapIconKind[] = [
+      'chest',
+      'stairs',
+      'rubble',
+      'merchant',
+      'trap',
+      'loot',
+      'player',
+      'arrow',
+    ]
+    for (const kind of kinds) {
+      const { container } = render(<MapIcon kind={kind} />)
+      expect(container.querySelector('svg.noragon__sprite')).not.toBeNull()
+    }
   })
 })
 
